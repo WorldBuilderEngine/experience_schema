@@ -21,7 +21,7 @@ Primary contract constant:
 - `ANONYMOUS_BROWSE_PLAY_V1` (`experience_schema.anonymous_browse_play.v1`)
 
 Detailed required-field tables and canonical JSON payloads:
-- `docs/contracts/anonymous_browse_play_v1.md`
+- In the wiki, `anonymous_browse_play_v1.md`
 - `examples/anonymous_browse_play_v1/`
 
 ## Release Policy
