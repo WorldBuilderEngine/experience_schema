@@ -1,0 +1,16 @@
+[package]
+name = "experience_schema"
+version = "0.1.0"
+authors = ["World Builder"]
+edition = "2024"
+description = "Shared experience schema contracts for WorldBuilder clients and backend services."
+readme = "README.md"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/worldbuilder/experience_schema"
+homepage = "https://github.com/worldbuilder/experience_schema"
+documentation = "https://docs.rs/experience_schema"
+keywords = ["game", "schema", "serialization", "worldbuilder"]
+categories = ["game-development", "data-structures"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }

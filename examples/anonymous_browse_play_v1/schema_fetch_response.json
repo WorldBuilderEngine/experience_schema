@@ -1,0 +1,54 @@
+{
+  "contract_version": "experience_schema.anonymous_browse_play.v1",
+  "publisher_info": {
+    "publisher_id": "pub_worldbuilder",
+    "experience_id": "exp_dungeon_crawler",
+    "publish_id": "pub_20260221_001",
+    "publish_version": 12,
+    "published_at_unix_seconds": 1771622400
+  },
+  "experience_schema": {
+    "service_authored_schema": {
+      "publisher_info": {
+        "publisher_id": "pub_worldbuilder",
+        "experience_id": "exp_dungeon_crawler",
+        "publish_id": "pub_20260221_001",
+        "publish_version": 12,
+        "published_at_unix_seconds": 1771622400
+      }
+    },
+    "client_authored_schema": {
+      "metadata": {
+        "display_name": "Dungeon Crawler",
+        "short_description": "Traverse a compact single-player dungeon run.",
+        "long_description": "A deterministic dungeon run built for anonymous quick play.",
+        "tile_color_hex": "#2E4A7D",
+        "tile_icon_image": "https://cdn.worldbuilder.dev/tiles/dungeon.png",
+        "screenshot_gallery_image_urls": [
+          "https://cdn.worldbuilder.dev/screenshots/dungeon_1.png"
+        ],
+        "genre": "adventure",
+        "tags": [
+          "2d",
+          "single-player"
+        ],
+        "is_featured": true
+      },
+      "asset_bundles": {
+        "bundles": []
+      },
+      "worlds": [
+        {
+          "objects": [],
+          "properties": {
+            "properties": []
+          },
+          "state_machines": [],
+          "input_layers": [],
+          "asset_bundle_ids": [],
+          "object_templates": {}
+        }
+      ]
+    }
+  }
+}

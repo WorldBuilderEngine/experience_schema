@@ -1,0 +1,6 @@
+owner-domain: experience
+owner-teams:
+  - schema
+products:
+  - experience_schema
+description: "The shared schema for experiences."
