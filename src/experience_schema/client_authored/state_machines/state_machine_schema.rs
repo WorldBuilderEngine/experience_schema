@@ -1,6 +1,4 @@
-use crate::shared::state_machine_node_schema::{
-    ScriptLanguageSchema, StateMachineNodeSchema, StateMachineNodeTypeSchema,
-};
+use crate::shared::state_machine_node_schema::{StateMachineNodeSchema, StateMachineNodeTypeSchema};
 use crate::shared::state_machine_transition_schema::StateMachineTransitionSchema;
 use serde::{Deserialize, Serialize};
 
@@ -40,21 +38,6 @@ impl StateMachineSchema {
                 StateMachineNodeTypeSchema::Plain,
                 vec![transition],
             ));
-    }
-
-    pub fn register_script_node(
-        &mut self,
-        state_name: impl Into<String>,
-        script_name: impl Into<String>,
-        script_language: ScriptLanguageSchema,
-    ) {
-        self.nodes.push(StateMachineNodeSchema::new(
-            state_name,
-            StateMachineNodeTypeSchema::Script {
-                script_name: script_name.into(),
-                script_language,
-            },
-        ));
     }
 
     pub fn register_callback_node(
