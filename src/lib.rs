@@ -1,6 +1,2 @@
-pub mod assets;
-pub mod properties;
-#[path = "experience_schema/mod.rs"]
-mod schema_root;
-
-pub use schema_root::*;
+pub mod experience_schema;
+pub use experience_schema::{client_authored, service_authored, shared};

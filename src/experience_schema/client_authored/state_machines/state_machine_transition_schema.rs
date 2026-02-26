@@ -7,6 +7,12 @@ pub enum StateMachineTransitionTriggerSchema {
     Always,
     GlobalEvent(String),
     LocalEvent(String),
+    #[serde(alias = "PropertyIsTruthy")]
+    Conditional {
+        property_map_id: String,
+        property_id: String,
+    },
+    Default,
     DeterministicRandom {
         threshold_numerator: u32,
         threshold_denominator: u32,

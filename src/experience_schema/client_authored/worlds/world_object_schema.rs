@@ -1,5 +1,5 @@
-use crate::properties::property_map::PropertyMap;
 use crate::shared::state_machine_schema::StateMachineSchema;
+use properties::property_map::PropertyMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Default, Debug)]

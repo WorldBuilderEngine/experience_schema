@@ -1,8 +1,6 @@
-use crate::client_authored::{
-    input::input_layer_schema::InputLayerSchema, worlds::world_object_schema::WorldObjectSchema,
-};
-use crate::properties::property_map::PropertyMap;
+use crate::client_authored::{input::input_layer_schema::InputLayerSchema, worlds::world_object_schema::WorldObjectSchema};
 use crate::shared::state_machine_schema::StateMachineSchema;
+use properties::property_map::PropertyMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

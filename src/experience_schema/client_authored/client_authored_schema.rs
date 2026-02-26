@@ -1,7 +1,5 @@
 use crate::client_authored::meta_data::client_published_metadata_schema::ClientPublishedMetadataSchema;
-use crate::client_authored::{
-    assets::asset_bundles_schema::AssetBundlesSchema, worlds::world_schema::WorldSchema,
-};
+use crate::client_authored::{assets::asset_bundles_schema::AssetBundlesSchema, worlds::world_schema::WorldSchema};
 use serde::{Deserialize, Serialize};
 
 /// Describes unprivileged data, which can be authored from an untrustworthy client-side source.

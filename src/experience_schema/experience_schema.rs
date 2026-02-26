@@ -1,7 +1,4 @@
-use crate::{
-    client_authored::client_authored_schema::ClientAuthoredSchema,
-    service_authored::service_authored_schema::ServiceAuthoredSchema,
-};
+use crate::{client_authored::client_authored_schema::ClientAuthoredSchema, service_authored::service_authored_schema::ServiceAuthoredSchema};
 use serde::{Deserialize, Serialize};
 
 /// Describes a fully serialized experience consumed by runtimes/clients.
