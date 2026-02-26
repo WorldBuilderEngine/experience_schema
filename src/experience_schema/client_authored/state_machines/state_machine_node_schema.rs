@@ -24,10 +24,7 @@ pub struct StateMachineNodeSchema {
 }
 
 impl StateMachineNodeSchema {
-    pub fn new(
-        state_name: impl Into<String>,
-        node_type: StateMachineNodeTypeSchema,
-    ) -> Self {
+    pub fn new(state_name: impl Into<String>, node_type: StateMachineNodeTypeSchema) -> Self {
         Self::new_with_transitions(state_name, node_type, Vec::new())
     }
 
@@ -43,10 +40,7 @@ impl StateMachineNodeSchema {
         }
     }
 
-    pub fn add_transition(
-        &mut self,
-        transition: StateMachineTransitionSchema,
-    ) {
+    pub fn add_transition(&mut self, transition: StateMachineTransitionSchema) {
         self.transitions.push(transition);
     }
 }

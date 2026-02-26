@@ -5,7 +5,7 @@ fn normalize_bundle_identifier(bundle_identifier: impl Into<String>) -> String {
     bundle_identifier.into().trim().to_string()
 }
 
-#[derive(Deserialize, Serialize, Clone, Default, Debug)]
+#[derive(Deserialize, Serialize, Clone, Default, Debug, PartialEq)]
 pub struct AssetRef {
     #[serde(alias = "store_id")]
     bundle_id: Option<String>,

@@ -13,9 +13,6 @@ keywords = ["game", "schema", "serialization", "worldbuilder"]
 categories = ["game-development", "data-structures"]
 
 [dependencies]
-assets = { path = "../../engine/world_builder/engine/assets" }
-math = { path = "../../engine/world_builder/engine/math" }
-properties = { path = "../../engine/world_builder/engine/properties" }
 anyhow = ">=1.0.98"
 bytemuck = ">=1.24.0"
 log = ">=0.4.27"

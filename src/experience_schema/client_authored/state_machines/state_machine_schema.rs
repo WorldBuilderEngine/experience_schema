@@ -1,6 +1,8 @@
-use crate::shared::state_machine_node_schema::{StateMachineNodeSchema, StateMachineNodeTypeSchema};
+use crate::properties::property_map::PropertyMap;
+use crate::shared::state_machine_node_schema::{
+    StateMachineNodeSchema, StateMachineNodeTypeSchema,
+};
 use crate::shared::state_machine_transition_schema::StateMachineTransitionSchema;
-use properties::property_map::PropertyMap;
 use serde::{Deserialize, Serialize};
 
 /// Serializable state-machine definition used in authored world schemas.
@@ -26,10 +28,7 @@ impl StateMachineSchema {
         Self::new_with_seed(initial_state_name, 0)
     }
 
-    pub fn new_with_seed(
-        initial_state_name: impl Into<String>,
-        deterministic_seed: u64,
-    ) -> Self {
+    pub fn new_with_seed(initial_state_name: impl Into<String>, deterministic_seed: u64) -> Self {
         Self {
             initial_state_name: initial_state_name.into(),
             deterministic_seed,
@@ -38,15 +37,13 @@ impl StateMachineSchema {
         }
     }
 
-    pub fn add_transition(
-        &mut self,
-        transition: StateMachineTransitionSchema,
-    ) {
-        self.nodes.push(StateMachineNodeSchema::new_with_transitions(
-            transition.from_state_name.clone(),
-            StateMachineNodeTypeSchema::Plain,
-            vec![transition],
-        ));
+    pub fn add_transition(&mut self, transition: StateMachineTransitionSchema) {
+        self.nodes
+            .push(StateMachineNodeSchema::new_with_transitions(
+                transition.from_state_name.clone(),
+                StateMachineNodeTypeSchema::Plain,
+                vec![transition],
+            ));
     }
 
     pub fn register_api_dispatch_node(
@@ -64,12 +61,11 @@ impl StateMachineSchema {
         ));
     }
 
-    pub fn register_terminate_node(
-        &mut self,
-        state_name: impl Into<String>,
-    ) {
-        self.nodes
-            .push(StateMachineNodeSchema::new(state_name, StateMachineNodeTypeSchema::Terminate));
+    pub fn register_terminate_node(&mut self, state_name: impl Into<String>) {
+        self.nodes.push(StateMachineNodeSchema::new(
+            state_name,
+            StateMachineNodeTypeSchema::Terminate,
+        ));
     }
 
     pub fn register_property_map(
@@ -78,15 +74,18 @@ impl StateMachineSchema {
         property_map: PropertyMap,
     ) {
         let property_map_id_string = property_map_id.into().trim().to_string();
-        if let Some(existing_property_map_index) = self
-            .property_maps
-            .iter()
-            .position(|(existing_property_map_id, _)| existing_property_map_id == &property_map_id_string)
+        if let Some(existing_property_map_index) =
+            self.property_maps
+                .iter()
+                .position(|(existing_property_map_id, _)| {
+                    existing_property_map_id == &property_map_id_string
+                })
         {
             self.property_maps[existing_property_map_index].1 = property_map;
             return;
         }
 
-        self.property_maps.push((property_map_id_string, property_map));
+        self.property_maps
+            .push((property_map_id_string, property_map));
     }
 }

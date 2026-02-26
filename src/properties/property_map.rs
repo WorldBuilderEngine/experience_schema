@@ -3,7 +3,7 @@ use crate::properties::property::Property;
 use serde::{Deserialize, Serialize};
 use std::slice::Iter;
 
-#[derive(Deserialize, Serialize, Clone, Default, Debug)]
+#[derive(Deserialize, Serialize, Clone, Default, Debug, PartialEq)]
 pub struct PropertyMap {
     pub properties: Vec<(String, Property)>,
 }

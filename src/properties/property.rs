@@ -1,7 +1,7 @@
 use crate::assets::asset_ref::AssetRef;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 pub enum Property {
     Bool(bool),
     BoolArray(Vec<bool>),
