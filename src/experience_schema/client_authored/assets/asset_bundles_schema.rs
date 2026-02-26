@@ -1,4 +1,4 @@
-use crate::assets::asset_store_schema::AssetBundleSchema;
+use assets::asset_store_schema::AssetBundleSchema;
 use serde::{Deserialize, Serialize};
 
 /// Serializable asset-bundle payload for an experience.

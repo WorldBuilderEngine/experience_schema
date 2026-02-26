@@ -6,8 +6,8 @@ pub mod service_authored;
 pub mod shared;
 pub use experience_schema::ExperienceSchema;
 
-pub use crate::assets::{
+pub use assets::{
     asset_ref::AssetRef,
     asset_store_schema::{AssetBundleKind, AssetBundleSchema, AssetStoreKind, AssetStoreSchema},
 };
-pub use crate::properties::property_map::PropertyMap;
+pub use properties::property_map::PropertyMap;

@@ -13,6 +13,8 @@ keywords = ["game", "schema", "serialization", "worldbuilder"]
 categories = ["game-development", "data-structures"]
 
 [dependencies]
+assets = { git = "https://github.com/WorldBuilderEngine/world_builder.git", package = "assets" }
+properties = { git = "https://github.com/WorldBuilderEngine/world_builder.git", package = "properties" }
 anyhow = ">=1.0.98"
 bytemuck = ">=1.24.0"
 log = ">=0.4.27"

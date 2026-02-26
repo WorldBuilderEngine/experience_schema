@@ -1,4 +1,4 @@
-use crate::properties::property_map::PropertyMap;
+use properties::property_map::PropertyMap;
 use crate::shared::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
