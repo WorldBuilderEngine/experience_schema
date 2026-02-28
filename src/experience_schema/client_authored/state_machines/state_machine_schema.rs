@@ -1,8 +1,8 @@
-use properties::property_map::PropertyMap;
 use crate::shared::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
 use crate::shared::state_machine_transition_schema::StateMachineTransitionSchema;
+use properties::property_map::PropertyMap;
 use serde::{Deserialize, Serialize};
 
 /// Serializable state-machine definition used in authored world schemas.
@@ -37,11 +37,18 @@ impl StateMachineSchema {
         }
     }
 
-    pub fn add_transition(&mut self, transition: StateMachineTransitionSchema) {
+    pub fn add_transition(
+        &mut self,
+        api_identifier: impl Into<String>,
+        transition: StateMachineTransitionSchema,
+    ) {
         self.nodes
             .push(StateMachineNodeSchema::new_with_transitions(
                 transition.from_state_name.clone(),
-                StateMachineNodeTypeSchema::Plain,
+                StateMachineNodeTypeSchema::ApiDispatch {
+                    api_identifier: api_identifier.into(),
+                    args_property_map_id: None,
+                },
                 vec![transition],
             ));
     }
@@ -58,13 +65,6 @@ impl StateMachineSchema {
                 api_identifier: api_identifier.into(),
                 args_property_map_id,
             },
-        ));
-    }
-
-    pub fn register_terminate_node(&mut self, state_name: impl Into<String>) {
-        self.nodes.push(StateMachineNodeSchema::new(
-            state_name,
-            StateMachineNodeTypeSchema::Terminate,
         ));
     }
 

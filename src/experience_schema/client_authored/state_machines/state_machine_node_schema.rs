@@ -2,15 +2,21 @@ use crate::shared::state_machine_transition_schema::StateMachineTransitionSchema
 use serde::{Deserialize, Serialize};
 
 /// Node action metadata that executes on state entry.
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum StateMachineNodeTypeSchema {
-    #[default]
-    Plain,
     ApiDispatch {
         api_identifier: String,
         args_property_map_id: Option<String>,
     },
-    Terminate,
+}
+
+impl Default for StateMachineNodeTypeSchema {
+    fn default() -> Self {
+        Self::ApiDispatch {
+            api_identifier: String::new(),
+            args_property_map_id: None,
+        }
+    }
 }
 
 /// Serializable state-node configuration keyed by state name.
