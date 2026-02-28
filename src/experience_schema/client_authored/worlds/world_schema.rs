@@ -1,6 +1,4 @@
-use crate::client_authored::{
-    input::input_layer_schema::InputLayerSchema, worlds::world_object_schema::WorldObjectSchema,
-};
+use crate::client_authored::worlds::world_object_schema::WorldObjectSchema;
 use properties::property_map::PropertyMap;
 use crate::shared::state_machine_schema::StateMachineSchema;
 use serde::{Deserialize, Serialize};
@@ -18,9 +16,6 @@ pub struct WorldSchema {
 
     /// State machines (code) for this world.
     pub state_machines: Vec<StateMachineSchema>,
-
-    /// The input layers, which can be activated or deactivated.
-    pub input_layers: Vec<InputLayerSchema>,
 
     /// Optional list of asset-bundle ids required by this world.
     pub asset_bundle_ids: Vec<String>,

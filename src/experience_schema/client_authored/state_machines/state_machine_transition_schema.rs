@@ -7,7 +7,6 @@ pub enum StateMachineTransitionTriggerSchema {
     Always,
     GlobalEvent(String),
     LocalEvent(String),
-    #[serde(alias = "PropertyIsTruthy")]
     Conditional {
         property_map_id: String,
         property_id: String,
