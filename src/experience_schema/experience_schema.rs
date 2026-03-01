@@ -13,16 +13,20 @@ fn default_schema_version() -> u32 {
 
 /// Describes a fully serialized experience consumed by runtimes/clients.
 ///
-/// Layering contract for schemas:
-/// - Game/studio compilers first produce typed runtime schemas (for example `World2dSchema`).
-/// - Translators then wrap typed runtime schemas into this universal experience envelope.
-/// - This envelope should stay minimal and avoid direct game-specific fields.
+/// This is the universal target format for all published experiences.
+/// Experiences may have their own internal schemas and formats that transpile to this format.
 #[derive(Deserialize, Serialize, Clone, Default, Debug)]
 pub struct ExperienceSchema {
+    /// The version of this schema. Older versions will need migration steps.
     #[serde(default = "default_schema_version")]
     pub schema_version: u32,
+
+    /// Schema populated by backend trusted services.
     pub service_authored_schema: ServiceAuthoredSchema,
+
+    /// Schema populated by clients. May still need verification on the backend side if submitted for publishing.
     pub client_authored_schema: ClientAuthoredSchema,
+
     // Future-proof reserved extension space to allow inserting new members above.
     #[serde(default, flatten)]
     pub _extensions: HashMap<String, serde_json::Value>,
