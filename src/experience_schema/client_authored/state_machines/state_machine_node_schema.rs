@@ -1,5 +1,6 @@
 use crate::shared::state_machine_transition_schema::StateMachineTransitionSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Node action metadata that executes on state entry.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -27,6 +28,9 @@ pub struct StateMachineNodeSchema {
     pub node_type: StateMachineNodeTypeSchema,
     #[serde(default)]
     pub transitions: Vec<StateMachineTransitionSchema>,
+    // Future-proof reserved extension space to allow inserting new members above.
+    #[serde(default, flatten)]
+    pub _extensions: HashMap<String, serde_json::Value>,
 }
 
 impl StateMachineNodeSchema {
@@ -43,6 +47,7 @@ impl StateMachineNodeSchema {
             state_name: state_name.into(),
             node_type,
             transitions,
+            _extensions: HashMap::new(),
         }
     }
 

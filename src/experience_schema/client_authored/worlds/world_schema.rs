@@ -22,6 +22,9 @@ pub struct WorldSchema {
 
     /// Reusable object templates that can be instantiated at runtime.
     pub object_templates: HashMap<String, WorldObjectSchema>,
+    // Future-proof reserved extension space to allow inserting new members above.
+    #[serde(default, flatten)]
+    pub _extensions: HashMap<String, serde_json::Value>,
 }
 
 impl WorldSchema {}

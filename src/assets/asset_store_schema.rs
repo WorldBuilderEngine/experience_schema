@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 fn normalize_bundle_identifier(bundle_identifier: impl Into<String>) -> String {
@@ -24,6 +25,9 @@ pub struct StoredAssetSchema {
     pub asset_path: PathBuf,
     /// Serialized bytes for this asset.
     pub asset_data: Vec<u8>,
+    // Future-proof reserved extension space to allow inserting new members above.
+    #[serde(default, flatten)]
+    pub _extensions: HashMap<String, serde_json::Value>,
 }
 
 impl StoredAssetSchema {
@@ -31,6 +35,7 @@ impl StoredAssetSchema {
         Self {
             asset_path,
             asset_data,
+            _extensions: HashMap::new(),
         }
     }
 }
@@ -39,13 +44,14 @@ impl StoredAssetSchema {
 #[derive(Deserialize, Serialize, Clone, Default, Debug, PartialEq, Eq)]
 pub struct AssetBundleSchema {
     /// Unique identifier for this bundle within an experience.
-    #[serde(alias = "store_id")]
     pub bundle_id: String,
     /// Bundle source classification.
-    #[serde(alias = "store_kind")]
     pub bundle_kind: AssetBundleKind,
     /// Serialized assets for this bundle.
     pub assets: Vec<StoredAssetSchema>,
+    // Future-proof reserved extension space to allow inserting new members above.
+    #[serde(default, flatten)]
+    pub _extensions: HashMap<String, serde_json::Value>,
 }
 
 impl AssetBundleSchema {
@@ -54,6 +60,7 @@ impl AssetBundleSchema {
             bundle_id: normalize_bundle_identifier(bundle_id),
             bundle_kind,
             assets: Vec::new(),
+            _extensions: HashMap::new(),
         }
     }
 
