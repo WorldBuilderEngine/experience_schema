@@ -10,8 +10,9 @@ pub struct ClientAuthoredSchema {
     #[serde(default)]
     pub asset_bundles: AssetBundlesSchema,
 
-    /// All available worlds.
-    pub worlds: Vec<WorldSchema>,
+    /// All available worlds keyed by short world identifier.
+    #[serde(default)]
+    pub worlds: HashMap<String, WorldSchema>,
 
     // Future-proof reserved extension space to allow inserting new members above.
     #[serde(default, flatten)]
