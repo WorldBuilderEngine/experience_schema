@@ -1,7 +1,7 @@
-use crate::shared::state_machine_node_schema::{
+use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
-use crate::shared::state_machine_transition_schema::StateMachineTransitionSchema;
+use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
 use properties::property_map::PropertyMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

@@ -1,12 +1,12 @@
+use crate::client_authored::state_machines::state_machine_schema::StateMachineSchema;
 use crate::client_authored::worlds::world_object_schema::WorldObjectSchema;
-use crate::shared::state_machine_schema::StateMachineSchema;
 use properties::property_map::PropertyMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Describes a world and its contents within this experience.
 /// Note from owner: No longer differentiate 2d and 3d. This is not useful at the tail end of the schema.
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Default, Clone, Debug)]
 pub struct WorldSchema {
     /// Objects to be instantiated by this world.
     pub objects: Vec<WorldObjectSchema>,

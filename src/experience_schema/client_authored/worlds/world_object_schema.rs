@@ -1,4 +1,4 @@
-use crate::shared::state_machine_schema::StateMachineSchema;
+use crate::client_authored::state_machines::state_machine_schema::StateMachineSchema;
 use properties::property_map::PropertyMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

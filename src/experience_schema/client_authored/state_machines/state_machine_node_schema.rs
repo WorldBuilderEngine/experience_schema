@@ -1,4 +1,4 @@
-use crate::shared::state_machine_transition_schema::StateMachineTransitionSchema;
+use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
