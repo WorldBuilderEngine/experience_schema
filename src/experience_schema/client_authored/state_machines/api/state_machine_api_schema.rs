@@ -1,11 +1,12 @@
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
-use super::{MathStateMachineApiSchema, PropertyMapStateMachineApiSchema, WorldStateMachineApiSchema};
+use super::{MathStateMachineApiSchema, Physics2dStateMachineApiSchema, PropertyMapStateMachineApiSchema, WorldStateMachineApiSchema};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum StateMachineApiSchema {
     Math(MathStateMachineApiSchema),
+    Physics2d(Physics2dStateMachineApiSchema),
     PropertyMap(PropertyMapStateMachineApiSchema),
     World(WorldStateMachineApiSchema),
     Custom(String),
@@ -57,6 +58,9 @@ impl StateMachineApiSchema {
             Self::Math(MathStateMachineApiSchema::TransformDirection) => "math:transform_direction",
             Self::Math(MathStateMachineApiSchema::TransformPoint) => "math:transform_point",
             Self::Math(MathStateMachineApiSchema::TransformVector) => "math:transform_vector",
+            Self::Physics2d(Physics2dStateMachineApiSchema::SetNodeLinearVelocityByTag) => "physics2d:set_node_linear_velocity_by_tag",
+            Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForceByTag) => "physics2d:add_node_force_by_tag",
+            Self::Physics2d(Physics2dStateMachineApiSchema::StepAndEmitCollisionEvents) => "physics2d:step_and_emit_collision_events",
             Self::PropertyMap(PropertyMapStateMachineApiSchema::RemoveProperty) => "property_map:remove_property",
             Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty) => "property_map:upsert_property",
             Self::World(WorldStateMachineApiSchema::SetNodePositionByTag) => "world:set_node_position_by_tag",
@@ -106,6 +110,13 @@ impl StateMachineApiSchema {
             "math:transform_direction" => Self::Math(MathStateMachineApiSchema::TransformDirection),
             "math:transform_point" => Self::Math(MathStateMachineApiSchema::TransformPoint),
             "math:transform_vector" => Self::Math(MathStateMachineApiSchema::TransformVector),
+            "physics2d:set_node_linear_velocity_by_tag" => {
+                Self::Physics2d(Physics2dStateMachineApiSchema::SetNodeLinearVelocityByTag)
+            }
+            "physics2d:add_node_force_by_tag" => Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForceByTag),
+            "physics2d:step_and_emit_collision_events" => {
+                Self::Physics2d(Physics2dStateMachineApiSchema::StepAndEmitCollisionEvents)
+            }
             "property_map:remove_property" => Self::PropertyMap(PropertyMapStateMachineApiSchema::RemoveProperty),
             "property_map:upsert_property" => Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty),
             "world:set_node_position_by_tag" => Self::World(WorldStateMachineApiSchema::SetNodePositionByTag),
