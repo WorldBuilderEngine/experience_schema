@@ -1,4 +1,4 @@
-use crate::client_authored::state_machines::state_machine_api_identifier_schema::StateMachineApiIdentifierSchema;
+use crate::client_authored::state_machines::api::StateMachineApiSchema;
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
@@ -45,14 +45,14 @@ impl StateMachineSchema {
 
     pub fn add_transition(
         &mut self,
-        api_identifier: impl Into<StateMachineApiIdentifierSchema>,
+        api: impl Into<StateMachineApiSchema>,
         transition: StateMachineTransitionSchema,
     ) {
         self.nodes
             .push(StateMachineNodeSchema::new_with_transitions(
                 transition.from_state_name.clone(),
                 StateMachineNodeTypeSchema::ApiDispatch {
-                    api_identifier: api_identifier.into(),
+                    api: api.into(),
                     args_property_map_id: None,
                 },
                 vec![transition],
@@ -62,13 +62,13 @@ impl StateMachineSchema {
     pub fn register_api_dispatch_node(
         &mut self,
         state_name: impl Into<String>,
-        api_identifier: impl Into<StateMachineApiIdentifierSchema>,
+        api: impl Into<StateMachineApiSchema>,
         args_property_map_id: Option<String>,
     ) {
         self.nodes.push(StateMachineNodeSchema::new(
             state_name,
             StateMachineNodeTypeSchema::ApiDispatch {
-                api_identifier: api_identifier.into(),
+                api: api.into(),
                 args_property_map_id,
             },
         ));

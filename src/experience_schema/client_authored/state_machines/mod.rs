@@ -1,4 +1,4 @@
-pub mod state_machine_api_identifier_schema;
+pub mod api;
 pub mod state_machine_node_schema;
 pub mod state_machine_schema;
 pub mod state_machine_transition_schema;

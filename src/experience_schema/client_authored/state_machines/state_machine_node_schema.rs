@@ -1,4 +1,4 @@
-use crate::client_authored::state_machines::state_machine_api_identifier_schema::StateMachineApiIdentifierSchema;
+use crate::client_authored::state_machines::api::StateMachineApiSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -7,7 +7,7 @@ use std::collections::HashMap;
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum StateMachineNodeTypeSchema {
     ApiDispatch {
-        api_identifier: StateMachineApiIdentifierSchema,
+        api: StateMachineApiSchema,
         args_property_map_id: Option<String>,
     },
 }
@@ -15,7 +15,7 @@ pub enum StateMachineNodeTypeSchema {
 impl Default for StateMachineNodeTypeSchema {
     fn default() -> Self {
         Self::ApiDispatch {
-            api_identifier: StateMachineApiIdentifierSchema::default(),
+            api: StateMachineApiSchema::default(),
             args_property_map_id: None,
         }
     }
