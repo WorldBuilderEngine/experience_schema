@@ -1,10 +1,16 @@
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
-use super::{MathStateMachineApiSchema, Physics2dStateMachineApiSchema, PropertyMapStateMachineApiSchema, WorldStateMachineApiSchema};
+use super::{
+    Animation2dStateMachineApiSchema, ExperienceStorageStateMachineApiSchema,
+    MathStateMachineApiSchema, Physics2dStateMachineApiSchema, PropertyMapStateMachineApiSchema,
+    WorldStateMachineApiSchema,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum StateMachineApiSchema {
+    Animation2d(Animation2dStateMachineApiSchema),
+    ExperienceStorage(ExperienceStorageStateMachineApiSchema),
     Math(MathStateMachineApiSchema),
     Physics2d(Physics2dStateMachineApiSchema),
     PropertyMap(PropertyMapStateMachineApiSchema),
@@ -21,6 +27,18 @@ impl Default for StateMachineApiSchema {
 impl StateMachineApiSchema {
     pub fn as_str(&self) -> &str {
         match self {
+            Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers) => {
+                "animation2d:step_players"
+            }
+            Self::ExperienceStorage(
+                ExperienceStorageStateMachineApiSchema::LoadPropertyMapByKey,
+            ) => "experience_storage:load_property_map_by_key",
+            Self::ExperienceStorage(
+                ExperienceStorageStateMachineApiSchema::SavePropertyMapByKey,
+            ) => "experience_storage:save_property_map_by_key",
+            Self::ExperienceStorage(
+                ExperienceStorageStateMachineApiSchema::QueryPropertyMapByKey,
+            ) => "experience_storage:query_property_map_by_key",
             Self::Math(MathStateMachineApiSchema::Add) => "math:add",
             Self::Math(MathStateMachineApiSchema::Sub) => "math:sub",
             Self::Math(MathStateMachineApiSchema::Mul) => "math:mul",
@@ -46,26 +64,48 @@ impl StateMachineApiSchema {
             Self::Math(MathStateMachineApiSchema::Atan2) => "math:atan2",
             Self::Math(MathStateMachineApiSchema::Lerp) => "math:lerp",
             Self::Math(MathStateMachineApiSchema::MatrixComposeTrs) => "math:matrix_compose_trs",
-            Self::Math(MathStateMachineApiSchema::MatrixDecomposeTrs) => "math:matrix_decompose_trs",
+            Self::Math(MathStateMachineApiSchema::MatrixDecomposeTrs) => {
+                "math:matrix_decompose_trs"
+            }
             Self::Math(MathStateMachineApiSchema::MatrixInverse) => "math:matrix_inverse",
             Self::Math(MathStateMachineApiSchema::MatrixMultiply) => "math:matrix_multiply",
             Self::Math(MathStateMachineApiSchema::MatrixTranspose) => "math:matrix_transpose",
             Self::Math(MathStateMachineApiSchema::QuaternionFromTo) => "math:quaternion_from_to",
-            Self::Math(MathStateMachineApiSchema::QuaternionLookRotation) => "math:quaternion_look_rotation",
+            Self::Math(MathStateMachineApiSchema::QuaternionLookRotation) => {
+                "math:quaternion_look_rotation"
+            }
             Self::Math(MathStateMachineApiSchema::QuaternionMultiply) => "math:quaternion_multiply",
-            Self::Math(MathStateMachineApiSchema::QuaternionNormalize) => "math:quaternion_normalize",
+            Self::Math(MathStateMachineApiSchema::QuaternionNormalize) => {
+                "math:quaternion_normalize"
+            }
             Self::Math(MathStateMachineApiSchema::QuaternionSlerp) => "math:quaternion_slerp",
             Self::Math(MathStateMachineApiSchema::TransformDirection) => "math:transform_direction",
             Self::Math(MathStateMachineApiSchema::TransformPoint) => "math:transform_point",
             Self::Math(MathStateMachineApiSchema::TransformVector) => "math:transform_vector",
-            Self::Physics2d(Physics2dStateMachineApiSchema::SetNodeLinearVelocityByTag) => "physics2d:set_node_linear_velocity_by_tag",
-            Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForceByTag) => "physics2d:add_node_force_by_tag",
-            Self::Physics2d(Physics2dStateMachineApiSchema::StepAndEmitCollisionEvents) => "physics2d:step_and_emit_collision_events",
-            Self::PropertyMap(PropertyMapStateMachineApiSchema::RemoveProperty) => "property_map:remove_property",
-            Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty) => "property_map:upsert_property",
-            Self::World(WorldStateMachineApiSchema::SetNodePositionByTag) => "world:set_node_position_by_tag",
-            Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag) => "world:set_node_visibility_by_tag",
-            Self::World(WorldStateMachineApiSchema::SpawnObjectTemplate) => "world:spawn_object_template",
+            Self::Physics2d(Physics2dStateMachineApiSchema::SetNodeLinearVelocityByTag) => {
+                "physics2d:set_node_linear_velocity_by_tag"
+            }
+            Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForceByTag) => {
+                "physics2d:add_node_force_by_tag"
+            }
+            Self::Physics2d(Physics2dStateMachineApiSchema::StepAndEmitCollisionEvents) => {
+                "physics2d:step_and_emit_collision_events"
+            }
+            Self::PropertyMap(PropertyMapStateMachineApiSchema::RemoveProperty) => {
+                "property_map:remove_property"
+            }
+            Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty) => {
+                "property_map:upsert_property"
+            }
+            Self::World(WorldStateMachineApiSchema::SetNodePositionByTag) => {
+                "world:set_node_position_by_tag"
+            }
+            Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag) => {
+                "world:set_node_visibility_by_tag"
+            }
+            Self::World(WorldStateMachineApiSchema::SpawnObjectTemplate) => {
+                "world:spawn_object_template"
+            }
             Self::Custom(identifier) => identifier.as_str(),
         }
     }
@@ -73,6 +113,20 @@ impl StateMachineApiSchema {
     pub fn from_identifier(identifier: impl Into<String>) -> Self {
         let identifier = identifier.into();
         match identifier.as_str() {
+            "animation2d:step_players" => {
+                Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers)
+            }
+            "experience_storage:load_property_map_by_key"
+            | "property_map:load_property_map_by_key" => Self::ExperienceStorage(
+                ExperienceStorageStateMachineApiSchema::LoadPropertyMapByKey,
+            ),
+            "experience_storage:save_property_map_by_key"
+            | "property_map:save_property_map_by_key" => Self::ExperienceStorage(
+                ExperienceStorageStateMachineApiSchema::SavePropertyMapByKey,
+            ),
+            "experience_storage:query_property_map_by_key" => Self::ExperienceStorage(
+                ExperienceStorageStateMachineApiSchema::QueryPropertyMapByKey,
+            ),
             "math:add" => Self::Math(MathStateMachineApiSchema::Add),
             "math:sub" => Self::Math(MathStateMachineApiSchema::Sub),
             "math:mul" => Self::Math(MathStateMachineApiSchema::Mul),
@@ -98,14 +152,20 @@ impl StateMachineApiSchema {
             "math:atan2" => Self::Math(MathStateMachineApiSchema::Atan2),
             "math:lerp" => Self::Math(MathStateMachineApiSchema::Lerp),
             "math:matrix_compose_trs" => Self::Math(MathStateMachineApiSchema::MatrixComposeTrs),
-            "math:matrix_decompose_trs" => Self::Math(MathStateMachineApiSchema::MatrixDecomposeTrs),
+            "math:matrix_decompose_trs" => {
+                Self::Math(MathStateMachineApiSchema::MatrixDecomposeTrs)
+            }
             "math:matrix_inverse" => Self::Math(MathStateMachineApiSchema::MatrixInverse),
             "math:matrix_multiply" => Self::Math(MathStateMachineApiSchema::MatrixMultiply),
             "math:matrix_transpose" => Self::Math(MathStateMachineApiSchema::MatrixTranspose),
             "math:quaternion_from_to" => Self::Math(MathStateMachineApiSchema::QuaternionFromTo),
-            "math:quaternion_look_rotation" => Self::Math(MathStateMachineApiSchema::QuaternionLookRotation),
+            "math:quaternion_look_rotation" => {
+                Self::Math(MathStateMachineApiSchema::QuaternionLookRotation)
+            }
             "math:quaternion_multiply" => Self::Math(MathStateMachineApiSchema::QuaternionMultiply),
-            "math:quaternion_normalize" => Self::Math(MathStateMachineApiSchema::QuaternionNormalize),
+            "math:quaternion_normalize" => {
+                Self::Math(MathStateMachineApiSchema::QuaternionNormalize)
+            }
             "math:quaternion_slerp" => Self::Math(MathStateMachineApiSchema::QuaternionSlerp),
             "math:transform_direction" => Self::Math(MathStateMachineApiSchema::TransformDirection),
             "math:transform_point" => Self::Math(MathStateMachineApiSchema::TransformPoint),
@@ -113,15 +173,27 @@ impl StateMachineApiSchema {
             "physics2d:set_node_linear_velocity_by_tag" => {
                 Self::Physics2d(Physics2dStateMachineApiSchema::SetNodeLinearVelocityByTag)
             }
-            "physics2d:add_node_force_by_tag" => Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForceByTag),
+            "physics2d:add_node_force_by_tag" => {
+                Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForceByTag)
+            }
             "physics2d:step_and_emit_collision_events" => {
                 Self::Physics2d(Physics2dStateMachineApiSchema::StepAndEmitCollisionEvents)
             }
-            "property_map:remove_property" => Self::PropertyMap(PropertyMapStateMachineApiSchema::RemoveProperty),
-            "property_map:upsert_property" => Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty),
-            "world:set_node_position_by_tag" => Self::World(WorldStateMachineApiSchema::SetNodePositionByTag),
-            "world:set_node_visibility_by_tag" => Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag),
-            "world:spawn_object_template" => Self::World(WorldStateMachineApiSchema::SpawnObjectTemplate),
+            "property_map:remove_property" => {
+                Self::PropertyMap(PropertyMapStateMachineApiSchema::RemoveProperty)
+            }
+            "property_map:upsert_property" => {
+                Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty)
+            }
+            "world:set_node_position_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)
+            }
+            "world:set_node_visibility_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
+            }
+            "world:spawn_object_template" => {
+                Self::World(WorldStateMachineApiSchema::SpawnObjectTemplate)
+            }
             _ => Self::Custom(identifier),
         }
     }
@@ -150,7 +222,9 @@ impl<'de> Deserialize<'de> for StateMachineApiSchema {
         let identifier = String::deserialize(deserializer)?;
         let trimmed_identifier = identifier.trim();
         if trimmed_identifier.is_empty() {
-            return Err(de::Error::custom("state machine API in schema must not be blank"));
+            return Err(de::Error::custom(
+                "state machine API in schema must not be blank",
+            ));
         }
         Ok(Self::from_identifier(trimmed_identifier.to_string()))
     }
@@ -166,17 +240,42 @@ mod tests {
         let serialized = serde_json::to_string(&api).expect("serialize");
         assert_eq!(serialized, "\"world:set_node_visibility_by_tag\"");
 
-        let deserialized: StateMachineApiSchema = serde_json::from_str(&serialized).expect("deserialize");
+        let deserialized: StateMachineApiSchema =
+            serde_json::from_str(&serialized).expect("deserialize");
         assert_eq!(deserialized, api);
     }
 
     #[test]
     fn unknown_identifier_is_preserved_as_custom() {
         let deserialized: StateMachineApiSchema =
-            serde_json::from_str("\"point_and_click:dispatch_progression_complete\"").expect("deserialize");
+            serde_json::from_str("\"point_and_click:dispatch_progression_complete\"")
+                .expect("deserialize");
         assert_eq!(
             deserialized,
-            StateMachineApiSchema::Custom("point_and_click:dispatch_progression_complete".to_string())
+            StateMachineApiSchema::Custom(
+                "point_and_click:dispatch_progression_complete".to_string()
+            )
+        );
+    }
+
+    #[test]
+    fn animation2d_identifier_round_trips_as_string() {
+        let api = StateMachineApiSchema::from("animation2d:step_players");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"animation2d:step_players\"");
+
+        let deserialized: StateMachineApiSchema =
+            serde_json::from_str(&serialized).expect("deserialize");
+        assert_eq!(deserialized, api);
+    }
+
+    #[test]
+    fn property_map_persistence_identifiers_normalize_to_experience_storage_namespace() {
+        let api = StateMachineApiSchema::from("property_map:save_property_map_by_key");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(
+            serialized,
+            "\"experience_storage:save_property_map_by_key\""
         );
     }
 }
