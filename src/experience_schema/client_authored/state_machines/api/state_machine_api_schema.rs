@@ -116,6 +116,8 @@ impl StateMachineApiSchema {
             "animation2d:step_players" => {
                 Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers)
             }
+            // TODO(governance#91): Remove property_map compatibility aliases after
+            // authored schemas stop using legacy persistence identifiers.
             "experience_storage:load_property_map_by_key"
             | "property_map:load_property_map_by_key" => Self::ExperienceStorage(
                 ExperienceStorageStateMachineApiSchema::LoadPropertyMapByKey,
