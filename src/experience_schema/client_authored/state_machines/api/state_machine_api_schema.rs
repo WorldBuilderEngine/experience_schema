@@ -116,14 +116,10 @@ impl StateMachineApiSchema {
             "animation2d:step_players" => {
                 Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers)
             }
-            // TODO(governance#91): Remove property_map compatibility aliases after
-            // authored schemas stop using legacy persistence identifiers.
-            "experience_storage:load_property_map_by_key"
-            | "property_map:load_property_map_by_key" => Self::ExperienceStorage(
+            "experience_storage:load_property_map_by_key" => Self::ExperienceStorage(
                 ExperienceStorageStateMachineApiSchema::LoadPropertyMapByKey,
             ),
-            "experience_storage:save_property_map_by_key"
-            | "property_map:save_property_map_by_key" => Self::ExperienceStorage(
+            "experience_storage:save_property_map_by_key" => Self::ExperienceStorage(
                 ExperienceStorageStateMachineApiSchema::SavePropertyMapByKey,
             ),
             "experience_storage:query_property_map_by_key" => Self::ExperienceStorage(
@@ -272,8 +268,8 @@ mod tests {
     }
 
     #[test]
-    fn property_map_persistence_identifiers_normalize_to_experience_storage_namespace() {
-        let api = StateMachineApiSchema::from("property_map:save_property_map_by_key");
+    fn experience_storage_persistence_identifier_round_trips_as_canonical() {
+        let api = StateMachineApiSchema::from("experience_storage:save_property_map_by_key");
         let serialized = serde_json::to_string(&api).expect("serialize");
         assert_eq!(
             serialized,
