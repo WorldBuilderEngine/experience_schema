@@ -7,6 +7,7 @@ use std::collections::HashMap;
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum StateMachineNodeTypeSchema {
     ApiDispatch {
+        #[serde(alias = "api_identifier")]
         api: StateMachineApiSchema,
         args_property_map_id: Option<String>,
     },
@@ -54,5 +55,32 @@ impl StateMachineNodeSchema {
 
     pub fn add_transition(&mut self, transition: StateMachineTransitionSchema) {
         self.transitions.push(transition);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::StateMachineNodeTypeSchema;
+    use crate::client_authored::state_machines::api::StateMachineApiSchema;
+
+    #[test]
+    fn deserializes_api_dispatch_from_api_identifier_field() {
+        let node_type_json = r#"{
+            "ApiDispatch": {
+                "api_identifier": "world:set_node_visibility_by_tag",
+                "args_property_map_id": "args_visibility"
+            }
+        }"#;
+
+        let parsed_node_type = serde_json::from_str::<StateMachineNodeTypeSchema>(node_type_json)
+            .expect("expected api_identifier payload to deserialize");
+
+        assert_eq!(
+            parsed_node_type,
+            StateMachineNodeTypeSchema::ApiDispatch {
+                api: StateMachineApiSchema::from("world:set_node_visibility_by_tag"),
+                args_property_map_id: Some("args_visibility".to_string()),
+            }
+        );
     }
 }
