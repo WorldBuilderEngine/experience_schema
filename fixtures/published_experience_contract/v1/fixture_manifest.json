@@ -1,0 +1,24 @@
+{
+  "fixture_id": "published_experience_contract_v1",
+  "contract_version": "experience_schema.published_experience_contract.v1",
+  "schema_version": 1,
+  "publish_payload": {
+    "experience_id": "exp_contract_fixture",
+    "slug": "contract-fixture",
+    "payload_template_path": "publish_payload_template.json",
+    "client_authored_schema_path": "client_authored_schema.json",
+    "max_publish_payload_bytes": 67108864
+  },
+  "runtime_smoke": {
+    "service_base_url": "https://api.worldbuilder.gg",
+    "dedicated_route": "/experience/1/dungeon-crawler"
+  },
+  "owners": {
+    "schema": "experience_schema",
+    "publishing": [
+      "publishing_tools",
+      "backend-experience-publishing"
+    ],
+    "runtime": "world_builder"
+  }
+}

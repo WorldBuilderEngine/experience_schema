@@ -1,0 +1,17 @@
+{
+  "experience": {
+    "experienceId": "exp_contract_fixture",
+    "slug": "contract-fixture",
+    "title": "Published Contract Fixture",
+    "description": "Canonical fixture payload template for publish contract conformance checks.",
+    "thumbnailUrl": "https://worldbuilder.gg/contract-fixture.png",
+    "genre": "test",
+    "schemaVersion": "v1"
+  },
+  "schema": {
+    "asset_bundles": {
+      "bundles": []
+    },
+    "worlds": []
+  }
+}

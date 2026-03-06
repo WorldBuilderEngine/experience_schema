@@ -2,9 +2,17 @@ name: ci
 
 on:
   pull_request:
+    paths:
+      - "src/**"
+      - "fixtures/published_experience_contract/**"
+      - ".github/workflows/ci.yml"
   push:
     branches:
       - main
+    paths:
+      - "src/**"
+      - "fixtures/published_experience_contract/**"
+      - ".github/workflows/ci.yml"
 
 jobs:
   test-and-package:
@@ -27,3 +35,100 @@ jobs:
 
       - name: Package dry run
         run: cargo publish --dry-run --locked
+
+  published-experience-contract-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout experience_schema
+        uses: actions/checkout@v4
+
+      - name: Checkout publishing_tools
+        uses: actions/checkout@v4
+        with:
+          repository: WorldBuilderEngine/publishing_tools
+          path: tmp/publishing_tools
+          token: ${{ secrets.SPELLBOOK_ACTIONS }}
+
+      - name: Checkout backend-experience-publishing
+        uses: actions/checkout@v4
+        with:
+          repository: WorldBuilderEngine/backend-experience-publishing
+          path: tmp/backend-experience-publishing
+          token: ${{ secrets.SPELLBOOK_ACTIONS }}
+
+      - name: Checkout world_builder
+        uses: actions/checkout@v4
+        with:
+          repository: WorldBuilderEngine/world_builder
+          path: tmp/world_builder
+          submodules: recursive
+          fetch-depth: 0
+          token: ${{ secrets.SPELLBOOK_ACTIONS }}
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Resolve fixture manifest variables
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          workspace = Path(os.environ["GITHUB_WORKSPACE"])
+          manifest_path = workspace / "fixtures" / "published_experience_contract" / "v1" / "fixture_manifest.json"
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          publish = manifest["publish_payload"]
+          runtime = manifest["runtime_smoke"]
+
+          env_lines = [
+              f"CONTRACT_FIXTURE_MANIFEST_PATH={manifest_path}",
+              f"CONTRACT_FIXTURE_DIR={manifest_path.parent}",
+              f"CONTRACT_FIXTURE_TEMPLATE_PATH={manifest_path.parent / publish['payload_template_path']}",
+              f"CONTRACT_FIXTURE_SCHEMA_PATH={manifest_path.parent / publish['client_authored_schema_path']}",
+              f"CONTRACT_FIXTURE_EXPERIENCE_ID={publish['experience_id']}",
+              f"CONTRACT_FIXTURE_SLUG={publish['slug']}",
+              f"CONTRACT_FIXTURE_MAX_PAYLOAD_BYTES={publish['max_publish_payload_bytes']}",
+              f"CONTRACT_RUNTIME_BASE_URL={runtime['service_base_url']}",
+              f"CONTRACT_RUNTIME_DEDICATED_ROUTE={runtime['dedicated_route']}",
+          ]
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              env_file.write("\n".join(env_lines) + "\n")
+          PY
+
+      - name: Ensure world_builder path override to experience_schema checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /home/runner/work/experience
+          rm -rf /home/runner/work/experience/experience_schema
+          ln -s "$GITHUB_WORKSPACE" /home/runner/work/experience/experience_schema
+
+      - name: Payload conformance preflight (publishing_tools CLI)
+        run: |
+          cargo run --manifest-path ./tmp/publishing_tools/Cargo.toml --bin preflight_publish_payload -- \
+            --experience-id "${CONTRACT_FIXTURE_EXPERIENCE_ID}" \
+            --slug "${CONTRACT_FIXTURE_SLUG}" \
+            --payload-template-path "${CONTRACT_FIXTURE_TEMPLATE_PATH}" \
+            --client-authored-schema-path "${CONTRACT_FIXTURE_SCHEMA_PATH}" \
+            --max-publish-payload-bytes "${CONTRACT_FIXTURE_MAX_PAYLOAD_BYTES}"
+
+      - name: Payload conformance test (publishing_tools fixture consumer)
+        env:
+          WORLD_BUILDER_CONTRACT_FIXTURE_MANIFEST_PATH: ${{ env.CONTRACT_FIXTURE_MANIFEST_PATH }}
+        run: cargo test --manifest-path ./tmp/publishing_tools/Cargo.toml build_publish_payload_accepts_shared_contract_fixture -- --ignored --exact
+
+      - name: Publish contract normalization test (backend-experience-publishing fixture consumer)
+        env:
+          WORLD_BUILDER_CONTRACT_FIXTURE_MANIFEST_PATH: ${{ env.CONTRACT_FIXTURE_MANIFEST_PATH }}
+        run: cargo test --manifest-path ./tmp/backend-experience-publishing/Cargo.toml normalize_publish_schema_accepts_shared_contract_fixture -- --ignored --exact
+
+      - name: Runtime dedicated-route smoke (world_builder headless)
+        env:
+          WORLD_BUILDER_PUBLISHED_EXPERIENCE_SERVICE_BASE_URL: ${{ env.CONTRACT_RUNTIME_BASE_URL }}
+        run: |
+          cargo run --manifest-path ./tmp/world_builder/Cargo.toml -p client_headless_cli -- \
+            --published-dedicated-route-smoke "${CONTRACT_RUNTIME_DEDICATED_ROUTE}"

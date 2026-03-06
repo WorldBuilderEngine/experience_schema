@@ -24,6 +24,20 @@ Detailed required-field tables and canonical JSON payloads:
 - In the wiki, `anonymous_browse_play_v1.md`
 - `examples/anonymous_browse_play_v1/`
 
+## Published Experience Contract Fixtures
+
+Canonical fixture package for publish-to-runtime conformance:
+- `fixtures/published_experience_contract/v1/fixture_manifest.json`
+- `fixtures/published_experience_contract/v1/publish_payload_template.json`
+- `fixtures/published_experience_contract/v1/client_authored_schema.json`
+
+The fixture manifest defines:
+- Contract version and schema version.
+- Payload conformance inputs consumed by `publishing_tools` and `backend-experience-publishing`.
+- Runtime dedicated-route smoke target consumed by `world_builder` CI gates.
+
+When contract-affecting schema behavior changes, update this fixture package in the same change.
+
 ## Release Policy
 
 - Semver is used with pre-1.0 constraints (`0.x`).

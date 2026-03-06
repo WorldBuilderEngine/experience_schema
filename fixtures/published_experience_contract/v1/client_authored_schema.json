@@ -1,0 +1,9 @@
+{
+  "asset_bundles": {
+    "bundles": []
+  },
+  "worlds": [],
+  "mode": "single_player",
+  "dimensions": "2d",
+  "entryWorldIndex": 0
+}
