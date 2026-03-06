@@ -103,6 +103,9 @@ impl StateMachineApiSchema {
             Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag) => {
                 "world:set_node_visibility_by_tag"
             }
+            Self::World(WorldStateMachineApiSchema::ReorderNodeByTag) => {
+                "world:reorder_node_by_tag"
+            }
             Self::World(WorldStateMachineApiSchema::SpawnObjectTemplate) => {
                 "world:spawn_object_template"
             }
@@ -188,6 +191,9 @@ impl StateMachineApiSchema {
             }
             "world:set_node_visibility_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
+            }
+            "world:reorder_node_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::ReorderNodeByTag)
             }
             "world:spawn_object_template" => {
                 Self::World(WorldStateMachineApiSchema::SpawnObjectTemplate)
@@ -275,5 +281,12 @@ mod tests {
             serialized,
             "\"experience_storage:save_property_map_by_key\""
         );
+    }
+
+    #[test]
+    fn world_reorder_identifier_round_trips_as_canonical() {
+        let api = StateMachineApiSchema::from("world:reorder_node_by_tag");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"world:reorder_node_by_tag\"");
     }
 }

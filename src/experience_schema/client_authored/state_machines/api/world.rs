@@ -5,5 +5,6 @@ use serde::{Deserialize, Serialize};
 pub enum WorldStateMachineApiSchema {
     SetNodePositionByTag,
     SetNodeVisibilityByTag,
+    ReorderNodeByTag,
     SpawnObjectTemplate,
 }
