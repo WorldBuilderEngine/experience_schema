@@ -1,3 +1,10 @@
+use crate::prost_json_message::{
+    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
+};
+use prost::DecodeError;
+use prost::Message;
+use prost::bytes::{Buf, BufMut};
+use prost::encoding::{DecodeContext, WireType};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -32,6 +39,30 @@ impl StoredAssetSchema {
             asset_path,
             asset_data,
         }
+    }
+}
+
+impl Message for StoredAssetSchema {
+    fn encode_raw(&self, buf: &mut impl BufMut) {
+        encode_as_json_message(self, buf);
+    }
+
+    fn merge_field(
+        &mut self,
+        tag: u32,
+        wire_type: WireType,
+        buf: &mut impl Buf,
+        ctx: DecodeContext,
+    ) -> Result<(), DecodeError> {
+        merge_from_json_message(self, tag, wire_type, buf, ctx)
+    }
+
+    fn encoded_len(&self) -> usize {
+        json_message_encoded_len(self)
+    }
+
+    fn clear(&mut self) {
+        *self = Self::default();
     }
 }
 
@@ -72,6 +103,30 @@ impl AssetBundleSchema {
         self.assets
             .iter()
             .find(|asset_schema| asset_schema.asset_path == asset_path)
+    }
+}
+
+impl Message for AssetBundleSchema {
+    fn encode_raw(&self, buf: &mut impl BufMut) {
+        encode_as_json_message(self, buf);
+    }
+
+    fn merge_field(
+        &mut self,
+        tag: u32,
+        wire_type: WireType,
+        buf: &mut impl Buf,
+        ctx: DecodeContext,
+    ) -> Result<(), DecodeError> {
+        merge_from_json_message(self, tag, wire_type, buf, ctx)
+    }
+
+    fn encoded_len(&self) -> usize {
+        json_message_encoded_len(self)
+    }
+
+    fn clear(&mut self) {
+        *self = Self::default();
     }
 }
 

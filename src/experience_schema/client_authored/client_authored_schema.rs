@@ -1,18 +1,21 @@
 use crate::client_authored::{
     assets::asset_bundles_schema::AssetBundlesSchema, worlds::world_schema::WorldSchema,
 };
+use prost::Message;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Describes unprivileged data, which can be authored from an untrustworthy client-side source.
-#[derive(Deserialize, Serialize, Clone, Default, Debug)]
+#[derive(Deserialize, Serialize, Clone, PartialEq, Message)]
 pub struct ClientAuthoredSchema {
     /// All assets used in the experience.
     #[serde(default)]
+    #[prost(message, required, tag = "1")]
     pub asset_bundles: AssetBundlesSchema,
 
     /// All available worlds keyed by short world identifier. Empty string is the default world.
     #[serde(default)]
+    #[prost(map = "string, message", tag = "2")]
     pub worlds: HashMap<String, WorldSchema>,
 }
 

@@ -3,7 +3,14 @@ use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
-use properties::property_map::PropertyMap;
+use crate::properties::property_map::PropertyMap;
+use crate::prost_json_message::{
+    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
+};
+use prost::DecodeError;
+use prost::Message;
+use prost::bytes::{Buf, BufMut};
+use prost::encoding::{DecodeContext, WireType};
 use serde::{Deserialize, Serialize};
 
 /// Serializable state-machine definition used in authored world schemas.
@@ -88,6 +95,30 @@ impl StateMachineSchema {
 
         self.property_maps
             .push((property_map_id_string, property_map));
+    }
+}
+
+impl Message for StateMachineSchema {
+    fn encode_raw(&self, buf: &mut impl BufMut) {
+        encode_as_json_message(self, buf);
+    }
+
+    fn merge_field(
+        &mut self,
+        tag: u32,
+        wire_type: WireType,
+        buf: &mut impl Buf,
+        ctx: DecodeContext,
+    ) -> Result<(), DecodeError> {
+        merge_from_json_message(self, tag, wire_type, buf, ctx)
+    }
+
+    fn encoded_len(&self) -> usize {
+        json_message_encoded_len(self)
+    }
+
+    fn clear(&mut self) {
+        *self = Self::default();
     }
 }
 

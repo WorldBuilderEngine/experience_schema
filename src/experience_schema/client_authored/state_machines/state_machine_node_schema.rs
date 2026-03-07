@@ -1,5 +1,12 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
+use crate::prost_json_message::{
+    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
+};
+use prost::DecodeError;
+use prost::Message;
+use prost::bytes::{Buf, BufMut};
+use prost::encoding::{DecodeContext, WireType};
 use serde::{Deserialize, Serialize};
 
 /// Node action metadata that executes on state entry.
@@ -12,6 +19,30 @@ pub enum StateMachineNodeTypeSchema {
     },
 }
 
+impl Message for StateMachineNodeTypeSchema {
+    fn encode_raw(&self, buf: &mut impl BufMut) {
+        encode_as_json_message(self, buf);
+    }
+
+    fn merge_field(
+        &mut self,
+        tag: u32,
+        wire_type: WireType,
+        buf: &mut impl Buf,
+        ctx: DecodeContext,
+    ) -> Result<(), DecodeError> {
+        merge_from_json_message(self, tag, wire_type, buf, ctx)
+    }
+
+    fn encoded_len(&self) -> usize {
+        json_message_encoded_len(self)
+    }
+
+    fn clear(&mut self) {
+        *self = Self::default();
+    }
+}
+
 impl Default for StateMachineNodeTypeSchema {
     fn default() -> Self {
         Self::ApiDispatch {
@@ -22,12 +53,15 @@ impl Default for StateMachineNodeTypeSchema {
 }
 
 /// Serializable state-node configuration keyed by state name.
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Message)]
 pub struct StateMachineNodeSchema {
+    #[prost(string, tag = "1")]
     pub state_name: String,
     #[serde(default)]
+    #[prost(message, required, tag = "2")]
     pub node_type: StateMachineNodeTypeSchema,
     #[serde(default)]
+    #[prost(message, repeated, tag = "3")]
     pub transitions: Vec<StateMachineTransitionSchema>,
 }
 
