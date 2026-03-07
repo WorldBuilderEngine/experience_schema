@@ -5,7 +5,6 @@ use crate::client_authored::state_machines::state_machine_node_schema::{
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
 use properties::property_map::PropertyMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Serializable state-machine definition used in authored world schemas.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -17,9 +16,6 @@ pub struct StateMachineSchema {
     pub property_maps: Vec<(String, PropertyMap)>,
     #[serde(default)]
     pub nodes: Vec<StateMachineNodeSchema>,
-    // Future-proof reserved extension space to allow inserting new members above.
-    #[serde(default, flatten)]
-    pub _extensions: HashMap<String, serde_json::Value>,
 }
 
 impl Default for StateMachineSchema {
@@ -39,7 +35,6 @@ impl StateMachineSchema {
             deterministic_seed,
             property_maps: Vec::new(),
             nodes: Vec::new(),
-            _extensions: HashMap::new(),
         }
     }
 

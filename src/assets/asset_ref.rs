@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::collections::HashMap;
 
 fn normalize_bundle_identifier(bundle_identifier: impl Into<String>) -> String {
     bundle_identifier.into().trim().to_string()
@@ -10,9 +9,6 @@ fn normalize_bundle_identifier(bundle_identifier: impl Into<String>) -> String {
 pub struct AssetRef {
     bundle_id: Option<String>,
     asset_path: PathBuf,
-    // Future-proof reserved extension space to allow inserting new members above.
-    #[serde(default, flatten)]
-    _extensions: HashMap<String, serde_json::Value>,
 }
 
 impl AssetRef {
@@ -21,7 +17,6 @@ impl AssetRef {
         Self {
             bundle_id: None,
             asset_path,
-            _extensions: HashMap::new(),
         }
     }
 
@@ -30,7 +25,6 @@ impl AssetRef {
         Self {
             bundle_id: Some(normalize_bundle_identifier(bundle_id)),
             asset_path,
-            _extensions: HashMap::new(),
         }
     }
 

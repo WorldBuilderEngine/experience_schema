@@ -2,10 +2,16 @@ use crate::{
     client_authored::client_authored_schema::ClientAuthoredSchema,
     service_authored::service_authored_schema::ServiceAuthoredSchema,
 };
+use prost::Enumeration;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
-pub const CURRENT_EXPERIENCE_SCHEMA_VERSION: u32 = 1;
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Enumeration)]
+#[repr(i32)]
+pub enum ExperienceSchemaVersion {
+    V1 = 1,
+}
+
+pub const CURRENT_EXPERIENCE_SCHEMA_VERSION: u32 = ExperienceSchemaVersion::V1 as i32 as u32;
 
 fn default_schema_version() -> u32 {
     CURRENT_EXPERIENCE_SCHEMA_VERSION
@@ -27,9 +33,6 @@ pub struct ExperienceSchema {
     /// Schema populated by clients. May still need verification on the backend side if submitted for publishing.
     pub client_authored_schema: ClientAuthoredSchema,
 
-    // Future-proof reserved extension space to allow inserting new members above.
-    #[serde(default, flatten)]
-    pub _extensions: HashMap<String, serde_json::Value>,
 }
 
 impl ExperienceSchema {}
