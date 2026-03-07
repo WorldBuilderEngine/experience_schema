@@ -9,6 +9,6 @@ pub use transpile::ExperienceSchemaTranspile;
 
 pub use crate::assets::{
     asset_ref::AssetRef,
-    asset_store_schema::{AssetBundleKind, AssetBundleSchema, AssetStoreKind, AssetStoreSchema},
+    asset_bundle_schema::{AssetBundleKind, AssetBundleSchema},
 };
 pub use crate::properties::property_map::PropertyMap;

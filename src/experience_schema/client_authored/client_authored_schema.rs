@@ -28,7 +28,7 @@ mod tests {
     #[test]
     fn deserializes_worlds_from_map_wire_shape() {
         let client_authored_schema_json = r#"{
-            "asset_bundles": {"bundles":[]},
+            "asset_bundles": {"bundles":{}},
             "worlds": {
                 "": {
                     "objects": [],

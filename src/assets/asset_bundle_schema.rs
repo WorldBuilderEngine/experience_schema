@@ -129,6 +129,3 @@ impl Message for AssetBundleSchema {
         *self = Self::default();
     }
 }
-
-pub type AssetStoreKind = AssetBundleKind;
-pub type AssetStoreSchema = AssetBundleSchema;
