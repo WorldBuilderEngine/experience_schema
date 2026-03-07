@@ -14,7 +14,6 @@ pub struct ClientAuthoredSchema {
     /// All available worlds keyed by short world identifier. Empty string is the default world.
     #[serde(default)]
     pub worlds: HashMap<String, WorldSchema>,
-
 }
 
 impl ClientAuthoredSchema {}
@@ -38,11 +37,11 @@ mod tests {
             }
         }"#;
 
-        let client_authored_schema = serde_json::from_str::<ClientAuthoredSchema>(client_authored_schema_json)
-            .expect("expected map-based worlds schema to deserialize");
+        let client_authored_schema =
+            serde_json::from_str::<ClientAuthoredSchema>(client_authored_schema_json)
+                .expect("expected map-based worlds schema to deserialize");
 
         assert_eq!(client_authored_schema.worlds.len(), 1);
         assert!(client_authored_schema.worlds.contains_key(""));
     }
-
 }

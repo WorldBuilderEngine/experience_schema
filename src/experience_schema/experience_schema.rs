@@ -32,7 +32,6 @@ pub struct ExperienceSchema {
 
     /// Schema populated by clients. May still need verification on the backend side if submitted for publishing.
     pub client_authored_schema: ClientAuthoredSchema,
-
 }
 
 impl ExperienceSchema {}

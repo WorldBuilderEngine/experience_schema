@@ -2,9 +2,11 @@
 
 pub mod client_authored;
 pub mod experience_schema;
+pub mod protobuf;
 pub mod service_authored;
 pub mod transpile;
 pub use experience_schema::ExperienceSchema;
+pub use protobuf::ExperienceSchemaProto;
 pub use transpile::ExperienceSchemaTranspile;
 
 pub use assets::{
