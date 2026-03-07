@@ -7,4 +7,5 @@ pub enum WorldStateMachineApiSchema {
     SetNodeVisibilityByTag,
     ReorderNodeByTag,
     SpawnObjectTemplate,
+    FollowActiveCameraByTag,
 }

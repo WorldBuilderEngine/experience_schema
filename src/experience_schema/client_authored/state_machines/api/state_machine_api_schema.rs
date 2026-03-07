@@ -109,6 +109,9 @@ impl StateMachineApiSchema {
             Self::World(WorldStateMachineApiSchema::SpawnObjectTemplate) => {
                 "world:spawn_object_template"
             }
+            Self::World(WorldStateMachineApiSchema::FollowActiveCameraByTag) => {
+                "world:follow_active_camera_by_tag"
+            }
             Self::Custom(identifier) => identifier.as_str(),
         }
     }
@@ -197,6 +200,9 @@ impl StateMachineApiSchema {
             }
             "world:spawn_object_template" => {
                 Self::World(WorldStateMachineApiSchema::SpawnObjectTemplate)
+            }
+            "world:follow_active_camera_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::FollowActiveCameraByTag)
             }
             _ => Self::Custom(identifier),
         }
