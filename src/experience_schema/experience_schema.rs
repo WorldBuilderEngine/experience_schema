@@ -38,11 +38,11 @@ pub struct ExperienceSchema {
 }
 
 impl ExperienceSchema {
-    pub fn encode_protobuf(&self) -> anyhow::Result<Vec<u8>> {
+    pub fn encode_prost(&self) -> anyhow::Result<Vec<u8>> {
         Ok(self.encode_to_vec())
     }
 
-    pub fn decode_protobuf(schema_bytes: &[u8]) -> anyhow::Result<Self> {
+    pub fn decode_prost(schema_bytes: &[u8]) -> anyhow::Result<Self> {
         Ok(Self::decode(schema_bytes)?)
     }
 }
@@ -57,7 +57,7 @@ mod tests {
     use crate::experience_schema::client_authored::state_machines::state_machine_schema::StateMachineSchema;
 
     #[test]
-    fn protobuf_round_trip_preserves_custom_api_identifiers() {
+    fn prost_round_trip_preserves_custom_api_identifiers() {
         let mut schema = ExperienceSchema::default();
         schema
             .client_authored_schema
@@ -84,8 +84,8 @@ mod tests {
                 )],
             });
 
-        let bytes = schema.encode_protobuf().expect("encode");
-        let decoded = ExperienceSchema::decode_protobuf(&bytes).expect("decode");
+        let bytes = schema.encode_prost().expect("encode");
+        let decoded = ExperienceSchema::decode_prost(&bytes).expect("decode");
 
         assert_eq!(
             decoded.client_authored_schema.worlds[""].state_machines[0].nodes[0].node_type,
