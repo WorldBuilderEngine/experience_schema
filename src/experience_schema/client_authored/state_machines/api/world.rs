@@ -8,4 +8,6 @@ pub enum WorldStateMachineApiSchema {
     ReorderNodeByTag,
     SpawnObjectTemplate,
     FollowActiveCameraByTag,
+    RemoveStateMachine,
+    InsertStateMachineTemplate,
 }

@@ -119,6 +119,12 @@ impl StateMachineApiSchema {
             Self::World(WorldStateMachineApiSchema::FollowActiveCameraByTag) => {
                 "world:follow_active_camera_by_tag"
             }
+            Self::World(WorldStateMachineApiSchema::RemoveStateMachine) => {
+                "world:remove_state_machine"
+            }
+            Self::World(WorldStateMachineApiSchema::InsertStateMachineTemplate) => {
+                "world:insert_state_machine_template"
+            }
             Self::Custom(identifier) => identifier.as_str(),
         }
     }
@@ -210,6 +216,12 @@ impl StateMachineApiSchema {
             }
             "world:follow_active_camera_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::FollowActiveCameraByTag)
+            }
+            "world:remove_state_machine" => {
+                Self::World(WorldStateMachineApiSchema::RemoveStateMachine)
+            }
+            "world:insert_state_machine_template" => {
+                Self::World(WorldStateMachineApiSchema::InsertStateMachineTemplate)
             }
             _ => Self::Custom(identifier),
         }
@@ -325,5 +337,12 @@ mod tests {
         let api = StateMachineApiSchema::from("world:reorder_node_by_tag");
         let serialized = serde_json::to_string(&api).expect("serialize");
         assert_eq!(serialized, "\"world:reorder_node_by_tag\"");
+    }
+
+    #[test]
+    fn world_remove_state_machine_identifier_round_trips_as_canonical() {
+        let api = StateMachineApiSchema::from("world:remove_state_machine");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"world:remove_state_machine\"");
     }
 }
