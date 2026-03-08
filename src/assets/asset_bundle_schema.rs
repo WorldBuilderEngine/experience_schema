@@ -1,10 +1,12 @@
 use crate::prost_json_message::{
     encode_as_json_message, json_message_encoded_len, merge_from_json_message,
 };
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use prost::DecodeError;
 use prost::Message;
 use prost::bytes::{Buf, BufMut};
 use prost::encoding::{DecodeContext, WireType};
+use serde::de::{self, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -30,6 +32,7 @@ pub struct StoredAssetSchema {
     /// Bundle-relative asset path.
     pub asset_path: PathBuf,
     /// Serialized bytes for this asset.
+    #[serde(deserialize_with = "deserialize_asset_data_bytes")]
     pub asset_data: Vec<u8>,
 }
 
@@ -127,5 +130,79 @@ impl Message for AssetBundleSchema {
 
     fn clear(&mut self) {
         *self = Self::default();
+    }
+}
+
+fn deserialize_asset_data_bytes<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    struct AssetDataVisitor;
+
+    impl<'de> Visitor<'de> for AssetDataVisitor {
+        type Value = Vec<u8>;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            formatter.write_str("a byte array or a base64-encoded byte string")
+        }
+
+        fn visit_seq<A>(self, mut sequence: A) -> Result<Self::Value, A::Error>
+        where
+            A: SeqAccess<'de>,
+        {
+            let mut bytes = Vec::new();
+            while let Some(byte_value) = sequence.next_element::<u8>()? {
+                bytes.push(byte_value);
+            }
+            Ok(bytes)
+        }
+
+        fn visit_str<E>(self, encoded_value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            BASE64_STANDARD
+                .decode(encoded_value)
+                .map_err(|decode_error| E::custom(format!("invalid base64 asset_data: {decode_error}")))
+        }
+
+        fn visit_string<E>(self, encoded_value: String) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            self.visit_str(encoded_value.as_str())
+        }
+
+        fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(bytes.to_vec())
+        }
+
+        fn visit_byte_buf<E>(self, bytes: Vec<u8>) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(bytes)
+        }
+    }
+
+    deserializer.deserialize_any(AssetDataVisitor)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::StoredAssetSchema;
+    use std::path::PathBuf;
+
+    #[test]
+    fn stored_asset_schema_deserializes_base64_asset_data() {
+        let serialized = r#"{"asset_path":"sprites/example.png","asset_data":"AP9/"}"#;
+        let parsed: StoredAssetSchema =
+            serde_json::from_str(serialized).expect("base64 encoding should parse");
+
+        assert_eq!(parsed.asset_path, PathBuf::from("sprites/example.png"));
+        assert_eq!(parsed.asset_data, vec![0, 255, 127]);
     }
 }
