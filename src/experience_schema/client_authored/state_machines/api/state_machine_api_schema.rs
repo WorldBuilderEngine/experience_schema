@@ -11,7 +11,7 @@ use serde::ser::{Serialize, Serializer};
 use super::{
     Animation2dStateMachineApiSchema, ExperienceStorageStateMachineApiSchema,
     MathStateMachineApiSchema, Physics2dStateMachineApiSchema, PropertyMapStateMachineApiSchema,
-    WorldStateMachineApiSchema,
+    RuntimeStateMachineApiSchema, WorldStateMachineApiSchema,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -21,6 +21,7 @@ pub enum StateMachineApiSchema {
     Math(MathStateMachineApiSchema),
     Physics2d(Physics2dStateMachineApiSchema),
     PropertyMap(PropertyMapStateMachineApiSchema),
+    Runtime(RuntimeStateMachineApiSchema),
     World(WorldStateMachineApiSchema),
     Custom(String),
 }
@@ -103,6 +104,9 @@ impl StateMachineApiSchema {
             }
             Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty) => {
                 "property_map:upsert_property"
+            }
+            Self::Runtime(RuntimeStateMachineApiSchema::QueryStepDeltaSeconds) => {
+                "runtime:query_step_delta_seconds"
             }
             Self::World(WorldStateMachineApiSchema::SetNodePositionByTag) => {
                 "world:set_node_position_by_tag"
@@ -201,6 +205,9 @@ impl StateMachineApiSchema {
             }
             "property_map:upsert_property" => {
                 Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty)
+            }
+            "runtime:query_step_delta_seconds" => {
+                Self::Runtime(RuntimeStateMachineApiSchema::QueryStepDeltaSeconds)
             }
             "world:set_node_position_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)
@@ -344,5 +351,12 @@ mod tests {
         let api = StateMachineApiSchema::from("world:remove_state_machine");
         let serialized = serde_json::to_string(&api).expect("serialize");
         assert_eq!(serialized, "\"world:remove_state_machine\"");
+    }
+
+    #[test]
+    fn runtime_query_step_delta_identifier_round_trips_as_canonical() {
+        let api = StateMachineApiSchema::from("runtime:query_step_delta_seconds");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"runtime:query_step_delta_seconds\"");
     }
 }

@@ -3,6 +3,7 @@ pub mod experience_storage;
 pub mod math;
 pub mod physics2d;
 pub mod property_map;
+pub mod runtime;
 pub mod state_machine_api_schema;
 pub mod world;
 
@@ -11,5 +12,6 @@ pub use experience_storage::ExperienceStorageStateMachineApiSchema;
 pub use math::MathStateMachineApiSchema;
 pub use physics2d::Physics2dStateMachineApiSchema;
 pub use property_map::PropertyMapStateMachineApiSchema;
+pub use runtime::RuntimeStateMachineApiSchema;
 pub use state_machine_api_schema::StateMachineApiSchema;
 pub use world::WorldStateMachineApiSchema;
