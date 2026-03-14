@@ -8,7 +8,7 @@ pub use experience_schema::ExperienceSchema;
 pub use transpile::ExperienceSchemaTranspile;
 
 pub use crate::assets::{
-    asset_ref::AssetRef,
     asset_bundle_schema::{AssetBundleKind, AssetBundleSchema},
+    asset_ref::AssetRef,
 };
 pub use crate::properties::property_map::PropertyMap;

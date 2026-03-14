@@ -163,7 +163,9 @@ where
         {
             BASE64_STANDARD
                 .decode(encoded_value)
-                .map_err(|decode_error| E::custom(format!("invalid base64 asset_data: {decode_error}")))
+                .map_err(|decode_error| {
+                    E::custom(format!("invalid base64 asset_data: {decode_error}"))
+                })
         }
 
         fn visit_string<E>(self, encoded_value: String) -> Result<Self::Value, E>
