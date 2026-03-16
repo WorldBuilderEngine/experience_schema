@@ -77,7 +77,7 @@ mod tests {
                     "idle",
                     StateMachineNodeTypeSchema::ApiDispatch {
                         api: StateMachineApiSchema::from(
-                            "point_and_click:dispatch_progression_complete",
+                            "puppet_master:dispatch_progression_complete",
                         ),
                         args_property_map_id: Some("args".to_string()),
                     },
@@ -91,7 +91,7 @@ mod tests {
             decoded.client_authored_schema.worlds[""].state_machines[0].nodes[0].node_type,
             StateMachineNodeTypeSchema::ApiDispatch {
                 api: StateMachineApiSchema::Custom(
-                    "point_and_click:dispatch_progression_complete".to_string()
+                    "puppet_master:dispatch_progression_complete".to_string()
                 ),
                 args_property_map_id: Some("args".to_string()),
             }
