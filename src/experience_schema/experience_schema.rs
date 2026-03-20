@@ -54,6 +54,7 @@ mod tests {
     use crate::experience_schema::client_authored::state_machines::state_machine_node_schema::{
         StateMachineNodeSchema, StateMachineNodeTypeSchema,
     };
+    use crate::experience_schema::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
     use crate::experience_schema::client_authored::state_machines::state_machine_schema::StateMachineSchema;
 
     #[test]
@@ -70,6 +71,7 @@ mod tests {
             .expect("world should exist")
             .state_machines
             .push(StateMachineSchema {
+                proof_class: StateMachineProofClassSchema::BoundedExtended,
                 initial_state_name: "idle".to_string(),
                 deterministic_seed: 7,
                 property_maps: Vec::new(),
@@ -87,6 +89,10 @@ mod tests {
         let bytes = schema.encode_prost().expect("encode");
         let decoded = ExperienceSchema::decode_prost(&bytes).expect("decode");
 
+        assert_eq!(
+            decoded.client_authored_schema.worlds[""].state_machines[0].proof_class,
+            StateMachineProofClassSchema::BoundedExtended
+        );
         assert_eq!(
             decoded.client_authored_schema.worlds[""].state_machines[0].nodes[0].node_type,
             StateMachineNodeTypeSchema::ApiDispatch {
