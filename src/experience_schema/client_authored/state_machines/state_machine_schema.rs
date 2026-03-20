@@ -3,6 +3,7 @@ use crate::client_authored::state_machines::state_machine_finite_domain_abstract
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
+use crate::client_authored::state_machines::state_machine_proof_assertion_schema::StateMachineProofAssertionSchema;
 use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
 use crate::properties::property_map::PropertyMap;
@@ -26,6 +27,8 @@ pub struct StateMachineSchema {
     pub property_maps: Vec<(String, PropertyMap)>,
     #[serde(default)]
     pub finite_domain_abstractions: Vec<StateMachineFiniteDomainAbstractionSchema>,
+    #[serde(default)]
+    pub proof_assertions: Vec<StateMachineProofAssertionSchema>,
     #[serde(default)]
     pub nodes: Vec<StateMachineNodeSchema>,
 }
@@ -70,6 +73,7 @@ impl StateMachineSchema {
             deterministic_seed,
             property_maps: Vec::new(),
             finite_domain_abstractions: Vec::new(),
+            proof_assertions: Vec::new(),
             nodes: Vec::new(),
         }
     }
@@ -136,6 +140,10 @@ impl StateMachineSchema {
     ) {
         self.finite_domain_abstractions.push(abstraction);
     }
+
+    pub fn register_proof_assertion(&mut self, assertion: StateMachineProofAssertionSchema) {
+        self.proof_assertions.push(assertion);
+    }
 }
 
 impl Message for StateMachineSchema {
@@ -169,6 +177,9 @@ mod tests {
         StateMachineFiniteDomainAbstractionSchema, StateMachineFiniteDomainSchema,
         StateMachineFiniteDomainSemanticsSchema, StateMachineFiniteDomainTargetSchema,
     };
+    use crate::client_authored::state_machines::state_machine_proof_assertion_schema::{
+        StateMachineProofAssertionKindSchema, StateMachineProofAssertionSchema,
+    };
     use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
 
     #[test]
@@ -194,6 +205,7 @@ mod tests {
         assert_eq!(schema.initial_state_name, "idle");
         assert_eq!(schema.deterministic_seed, 7);
         assert!(schema.finite_domain_abstractions.is_empty());
+        assert!(schema.proof_assertions.is_empty());
     }
 
     #[test]
@@ -235,6 +247,7 @@ mod tests {
         .expect("schema should deserialize");
 
         assert!(schema.finite_domain_abstractions.is_empty());
+        assert!(schema.proof_assertions.is_empty());
     }
 
     #[test]
@@ -252,5 +265,18 @@ mod tests {
         });
 
         assert_eq!(schema.finite_domain_abstractions.len(), 1);
+    }
+
+    #[test]
+    fn register_proof_assertion_appends_declaration() {
+        let mut schema = StateMachineSchema::new("idle");
+        schema.register_proof_assertion(StateMachineProofAssertionSchema {
+            label: Some("idle_is_reachable".to_string()),
+            kind: StateMachineProofAssertionKindSchema::ReachableState {
+                state_name: "idle".to_string(),
+            },
+        });
+
+        assert_eq!(schema.proof_assertions.len(), 1);
     }
 }

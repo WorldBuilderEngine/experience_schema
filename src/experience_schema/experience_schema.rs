@@ -76,6 +76,7 @@ mod tests {
                 deterministic_seed: 7,
                 property_maps: Vec::new(),
                 finite_domain_abstractions: Vec::new(),
+                proof_assertions: Vec::new(),
                 nodes: vec![StateMachineNodeSchema::new(
                     "idle",
                     StateMachineNodeTypeSchema::ApiDispatch {
