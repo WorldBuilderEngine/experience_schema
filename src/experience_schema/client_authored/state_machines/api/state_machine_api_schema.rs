@@ -209,8 +209,14 @@ impl StateMachineApiSchema {
             "runtime:query_step_delta_seconds" => {
                 Self::Runtime(RuntimeStateMachineApiSchema::QueryStepDeltaSeconds)
             }
+            "world:set_node_position" => {
+                Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)
+            }
             "world:set_node_position_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)
+            }
+            "world:set_node_visibility" => {
+                Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
             }
             "world:set_node_visibility_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
@@ -292,7 +298,7 @@ impl Message for StateMachineApiSchema {
 
 #[cfg(test)]
 mod tests {
-    use super::StateMachineApiSchema;
+    use super::{StateMachineApiSchema, WorldStateMachineApiSchema};
 
     #[test]
     fn canonical_identifier_round_trips_as_string() {
@@ -316,6 +322,16 @@ mod tests {
                 "puppet_master:dispatch_progression_complete".to_string()
             )
         );
+    }
+
+    #[test]
+    fn legacy_world_identifier_aliases_lower_to_canonical_variants() {
+        let api = StateMachineApiSchema::from("world:set_node_visibility");
+        assert_eq!(
+            api,
+            StateMachineApiSchema::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
+        );
+        assert_eq!(api.as_str(), "world:set_node_visibility_by_tag");
     }
 
     #[test]
