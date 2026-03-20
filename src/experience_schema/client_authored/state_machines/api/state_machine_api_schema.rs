@@ -105,6 +105,7 @@ impl StateMachineApiSchema {
             Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty) => {
                 "property_map:upsert_property"
             }
+            Self::Runtime(RuntimeStateMachineApiSchema::NoOp) => "runtime:no_op",
             Self::Runtime(RuntimeStateMachineApiSchema::QueryStepDeltaSeconds) => {
                 "runtime:query_step_delta_seconds"
             }
@@ -206,6 +207,7 @@ impl StateMachineApiSchema {
             "property_map:upsert_property" => {
                 Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty)
             }
+            "runtime:no_op" => Self::Runtime(RuntimeStateMachineApiSchema::NoOp),
             "runtime:query_step_delta_seconds" => {
                 Self::Runtime(RuntimeStateMachineApiSchema::QueryStepDeltaSeconds)
             }
@@ -298,7 +300,7 @@ impl Message for StateMachineApiSchema {
 
 #[cfg(test)]
 mod tests {
-    use super::{StateMachineApiSchema, WorldStateMachineApiSchema};
+    use super::{RuntimeStateMachineApiSchema, StateMachineApiSchema, WorldStateMachineApiSchema};
 
     #[test]
     fn canonical_identifier_round_trips_as_string() {
@@ -314,12 +316,12 @@ mod tests {
     #[test]
     fn unknown_identifier_is_preserved_as_custom() {
         let deserialized: StateMachineApiSchema =
-            serde_json::from_str("\"puppet_master:dispatch_progression_complete\"")
+            serde_json::from_str("\"custom:puppet_master:dispatch_progression_complete\"")
                 .expect("deserialize");
         assert_eq!(
             deserialized,
             StateMachineApiSchema::Custom(
-                "puppet_master:dispatch_progression_complete".to_string()
+                "custom:puppet_master:dispatch_progression_complete".to_string()
             )
         );
     }
@@ -374,5 +376,19 @@ mod tests {
         let api = StateMachineApiSchema::from("runtime:query_step_delta_seconds");
         let serialized = serde_json::to_string(&api).expect("serialize");
         assert_eq!(serialized, "\"runtime:query_step_delta_seconds\"");
+    }
+
+    #[test]
+    fn runtime_no_op_identifier_round_trips_as_canonical() {
+        let api = StateMachineApiSchema::from("runtime:no_op");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"runtime:no_op\"");
+
+        let deserialized: StateMachineApiSchema =
+            serde_json::from_str(&serialized).expect("deserialize");
+        assert_eq!(
+            deserialized,
+            StateMachineApiSchema::Runtime(RuntimeStateMachineApiSchema::NoOp)
+        );
     }
 }
