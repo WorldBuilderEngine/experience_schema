@@ -61,10 +61,13 @@ pub struct StateMachineFloatBucketSchema {
 #[cfg(test)]
 mod tests {
     use super::{
-        StateMachineFiniteDomainAbstractionSchema, StateMachineFiniteDomainSchema, StateMachineFiniteDomainSemanticsSchema,
-        StateMachineFiniteDomainTargetSchema, StateMachineFloatBucketSchema,
+        StateMachineFiniteDomainAbstractionSchema, StateMachineFiniteDomainSchema,
+        StateMachineFiniteDomainSemanticsSchema, StateMachineFiniteDomainTargetSchema,
+        StateMachineFloatBucketSchema,
     };
-    use crate::client_authored::state_machines::api::{RuntimeStateMachineApiSchema, StateMachineApiSchema};
+    use crate::client_authored::state_machines::api::{
+        RuntimeStateMachineApiSchema, StateMachineApiSchema,
+    };
 
     #[test]
     fn deserializes_property_field_abstraction() {
@@ -129,7 +132,9 @@ mod tests {
             abstraction,
             StateMachineFiniteDomainAbstractionSchema {
                 target: StateMachineFiniteDomainTargetSchema::ApiOutput {
-                    api: StateMachineApiSchema::Runtime(RuntimeStateMachineApiSchema::QueryStepDeltaSeconds),
+                    api: StateMachineApiSchema::Runtime(
+                        RuntimeStateMachineApiSchema::QueryStepDeltaSeconds
+                    ),
                     property_map_id: "runtime".to_string(),
                     property_id: "step_delta_seconds".to_string(),
                 },
