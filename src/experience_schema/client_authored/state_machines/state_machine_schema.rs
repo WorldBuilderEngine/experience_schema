@@ -1,4 +1,5 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
+use crate::client_authored::state_machines::state_machine_finite_domain_abstraction_schema::StateMachineFiniteDomainAbstractionSchema;
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
@@ -23,6 +24,8 @@ pub struct StateMachineSchema {
     pub deterministic_seed: u64,
     #[serde(default)]
     pub property_maps: Vec<(String, PropertyMap)>,
+    #[serde(default)]
+    pub finite_domain_abstractions: Vec<StateMachineFiniteDomainAbstractionSchema>,
     #[serde(default)]
     pub nodes: Vec<StateMachineNodeSchema>,
 }
@@ -66,6 +69,7 @@ impl StateMachineSchema {
             initial_state_name: initial_state_name.into(),
             deterministic_seed,
             property_maps: Vec::new(),
+            finite_domain_abstractions: Vec::new(),
             nodes: Vec::new(),
         }
     }
@@ -125,6 +129,13 @@ impl StateMachineSchema {
         self.property_maps
             .push((property_map_id_string, property_map));
     }
+
+    pub fn register_finite_domain_abstraction(
+        &mut self,
+        abstraction: StateMachineFiniteDomainAbstractionSchema,
+    ) {
+        self.finite_domain_abstractions.push(abstraction);
+    }
 }
 
 impl Message for StateMachineSchema {
@@ -154,6 +165,10 @@ impl Message for StateMachineSchema {
 #[cfg(test)]
 mod tests {
     use super::StateMachineSchema;
+    use crate::client_authored::state_machines::state_machine_finite_domain_abstraction_schema::{
+        StateMachineFiniteDomainAbstractionSchema, StateMachineFiniteDomainSchema,
+        StateMachineFiniteDomainSemanticsSchema, StateMachineFiniteDomainTargetSchema,
+    };
     use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
 
     #[test]
@@ -178,6 +193,7 @@ mod tests {
         assert_eq!(schema.proof_class, StateMachineProofClassSchema::Finite);
         assert_eq!(schema.initial_state_name, "idle");
         assert_eq!(schema.deterministic_seed, 7);
+        assert!(schema.finite_domain_abstractions.is_empty());
     }
 
     #[test]
@@ -205,5 +221,36 @@ mod tests {
         .expect_err("unknown proof_class should fail to deserialize");
 
         assert!(parse_error.to_string().contains("unknown variant"));
+    }
+
+    #[test]
+    fn deserialization_defaults_finite_domain_abstractions_to_empty() {
+        let schema = serde_json::from_str::<StateMachineSchema>(
+            r#"{
+                "proof_class":"effectful_open",
+                "initial_state_name":"idle",
+                "nodes":[]
+            }"#,
+        )
+        .expect("schema should deserialize");
+
+        assert!(schema.finite_domain_abstractions.is_empty());
+    }
+
+    #[test]
+    fn register_finite_domain_abstraction_appends_declaration() {
+        let mut schema = StateMachineSchema::new("idle");
+        schema.register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
+            target: StateMachineFiniteDomainTargetSchema::PropertyField {
+                property_map_id: "runtime".to_string(),
+                property_id: "phase".to_string(),
+            },
+            domain: StateMachineFiniteDomainSchema::Enum {
+                values: vec!["idle".to_string(), "run".to_string()],
+            },
+            semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
+        });
+
+        assert_eq!(schema.finite_domain_abstractions.len(), 1);
     }
 }

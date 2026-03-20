@@ -75,6 +75,7 @@ mod tests {
                 initial_state_name: "idle".to_string(),
                 deterministic_seed: 7,
                 property_maps: Vec::new(),
+                finite_domain_abstractions: Vec::new(),
                 nodes: vec![StateMachineNodeSchema::new(
                     "idle",
                     StateMachineNodeTypeSchema::ApiDispatch {
