@@ -1,4 +1,5 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
+use crate::client_authored::state_machines::state_machine_bounded_effect_contract_schema::StateMachineBoundedEffectContractSchema;
 use crate::client_authored::state_machines::state_machine_finite_domain_abstraction_schema::StateMachineFiniteDomainAbstractionSchema;
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
@@ -25,6 +26,8 @@ pub struct StateMachineSchema {
     pub deterministic_seed: u64,
     #[serde(default)]
     pub property_maps: Vec<(String, PropertyMap)>,
+    #[serde(default)]
+    pub bounded_effect_contract: StateMachineBoundedEffectContractSchema,
     #[serde(default)]
     pub finite_domain_abstractions: Vec<StateMachineFiniteDomainAbstractionSchema>,
     #[serde(default)]
@@ -72,6 +75,7 @@ impl StateMachineSchema {
             initial_state_name: initial_state_name.into(),
             deterministic_seed,
             property_maps: Vec::new(),
+            bounded_effect_contract: StateMachineBoundedEffectContractSchema::default(),
             finite_domain_abstractions: Vec::new(),
             proof_assertions: Vec::new(),
             nodes: Vec::new(),
@@ -144,6 +148,13 @@ impl StateMachineSchema {
     pub fn register_proof_assertion(&mut self, assertion: StateMachineProofAssertionSchema) {
         self.proof_assertions.push(assertion);
     }
+
+    pub fn set_bounded_effect_contract(
+        &mut self,
+        bounded_effect_contract: StateMachineBoundedEffectContractSchema,
+    ) {
+        self.bounded_effect_contract = bounded_effect_contract;
+    }
 }
 
 impl Message for StateMachineSchema {
@@ -173,6 +184,10 @@ impl Message for StateMachineSchema {
 #[cfg(test)]
 mod tests {
     use super::StateMachineSchema;
+    use crate::client_authored::state_machines::state_machine_bounded_effect_contract_schema::{
+        StateMachineBoundedEffectContractSchema, StateMachinePersistenceKeyRegistrySchema,
+        StateMachineResourceCreationContractSchema,
+    };
     use crate::client_authored::state_machines::state_machine_finite_domain_abstraction_schema::{
         StateMachineFiniteDomainAbstractionSchema, StateMachineFiniteDomainSchema,
         StateMachineFiniteDomainSemanticsSchema, StateMachineFiniteDomainTargetSchema,
@@ -204,6 +219,10 @@ mod tests {
         assert_eq!(schema.proof_class, StateMachineProofClassSchema::Finite);
         assert_eq!(schema.initial_state_name, "idle");
         assert_eq!(schema.deterministic_seed, 7);
+        assert_eq!(
+            schema.bounded_effect_contract,
+            StateMachineBoundedEffectContractSchema::default()
+        );
         assert!(schema.finite_domain_abstractions.is_empty());
         assert!(schema.proof_assertions.is_empty());
     }
@@ -246,8 +265,38 @@ mod tests {
         )
         .expect("schema should deserialize");
 
+        assert_eq!(
+            schema.bounded_effect_contract,
+            StateMachineBoundedEffectContractSchema::default()
+        );
         assert!(schema.finite_domain_abstractions.is_empty());
         assert!(schema.proof_assertions.is_empty());
+    }
+
+    #[test]
+    fn set_bounded_effect_contract_replaces_contract_metadata() {
+        let mut schema = StateMachineSchema::new("idle");
+        schema.set_bounded_effect_contract(StateMachineBoundedEffectContractSchema {
+            resource_creation: Some(StateMachineResourceCreationContractSchema {
+                total_creations_upper_bound: 4,
+            }),
+            persistence_key_registry: Some(StateMachinePersistenceKeyRegistrySchema {
+                members: vec!["profile/player-1".to_string()],
+            }),
+        });
+
+        assert_eq!(
+            schema.bounded_effect_contract.resource_creation,
+            Some(StateMachineResourceCreationContractSchema {
+                total_creations_upper_bound: 4,
+            })
+        );
+        assert_eq!(
+            schema.bounded_effect_contract.persistence_key_registry,
+            Some(StateMachinePersistenceKeyRegistrySchema {
+                members: vec!["profile/player-1".to_string()],
+            })
+        );
     }
 
     #[test]

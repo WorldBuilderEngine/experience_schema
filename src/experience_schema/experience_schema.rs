@@ -75,6 +75,7 @@ mod tests {
                 initial_state_name: "idle".to_string(),
                 deterministic_seed: 7,
                 property_maps: Vec::new(),
+                bounded_effect_contract: Default::default(),
                 finite_domain_abstractions: Vec::new(),
                 proof_assertions: Vec::new(),
                 nodes: vec![StateMachineNodeSchema::new(
