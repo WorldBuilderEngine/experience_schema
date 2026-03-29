@@ -1,7 +1,9 @@
 use crate::client_authored::{
     assets::asset_bundles_schema::AssetBundlesSchema, worlds::world_schema::WorldSchema,
 };
-use crate::properties::property_map::PropertyMap;
+use crate::properties::{
+    compiled_property_layout_schema::CompiledPropertyLayoutsSchema, property_map::PropertyMap,
+};
 use prost::Message;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -23,6 +25,12 @@ pub struct ClientAuthoredSchema {
     #[serde(default)]
     #[prost(message, optional, tag = "3")]
     pub properties: Option<PropertyMap>,
+
+    /// Optional versioned compiled layout hints that runtimes may load instead of repeatedly
+    /// rediscovering hot field identity through dynamic property bags.
+    #[serde(default)]
+    #[prost(message, optional, tag = "4")]
+    pub compiled_property_layouts: Option<CompiledPropertyLayoutsSchema>,
 }
 
 impl ClientAuthoredSchema {}
@@ -30,6 +38,10 @@ impl ClientAuthoredSchema {}
 #[cfg(test)]
 mod tests {
     use super::ClientAuthoredSchema;
+    use crate::properties::compiled_property_layout_schema::{
+        CURRENT_COMPILED_PROPERTY_LAYOUTS_FORMAT_VERSION, CompiledPropertyStorageClassSchema,
+        CompiledPropertyValueTypeSchema,
+    };
 
     #[test]
     fn deserializes_worlds_from_map_wire_shape() {
@@ -79,6 +91,56 @@ mod tests {
                 .get_string("presentation_policy_2d")
                 .map(|value| value.as_str()),
             Some("fixed_height_reveal")
+        );
+        assert!(client_authored_schema.compiled_property_layouts.is_none());
+    }
+
+    #[test]
+    fn deserializes_compiled_property_layouts() {
+        let client_authored_schema_json = r#"{
+            "asset_bundles": {"bundles":{}},
+            "worlds": {},
+            "compiled_property_layouts": {
+                "format_version": 1,
+                "layouts": [
+                    {
+                        "layout_id": "camera_runtime",
+                        "compiled_layout_id": 0,
+                        "layout_version": 1,
+                        "storage_class": 1,
+                        "fields": [
+                            {
+                                "identifier": "viewport_width_px",
+                                "compiled_field_id": 0,
+                                "slot_index": 0,
+                                "value_type": 4,
+                                "default_value": {"Float64": 960.0}
+                            }
+                        ]
+                    }
+                ]
+            }
+        }"#;
+
+        let client_authored_schema =
+            serde_json::from_str::<ClientAuthoredSchema>(client_authored_schema_json)
+                .expect("expected compiled property layouts to deserialize");
+
+        let compiled_property_layouts = client_authored_schema
+            .compiled_property_layouts
+            .expect("compiled layouts should deserialize");
+        assert_eq!(
+            compiled_property_layouts.format_version,
+            CURRENT_COMPILED_PROPERTY_LAYOUTS_FORMAT_VERSION
+        );
+        assert_eq!(compiled_property_layouts.layouts.len(), 1);
+        assert_eq!(
+            compiled_property_layouts.layouts[0].storage_class,
+            CompiledPropertyStorageClassSchema::WarmFixedRecord as i32
+        );
+        assert_eq!(
+            compiled_property_layouts.layouts[0].fields[0].value_type,
+            CompiledPropertyValueTypeSchema::Float64 as i32
         );
     }
 }

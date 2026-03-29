@@ -23,6 +23,12 @@ pub enum Property {
     AssetRef(AssetRef),
 }
 
+impl Default for Property {
+    fn default() -> Self {
+        Self::Bool(false)
+    }
+}
+
 impl Message for Property {
     fn encode_raw(&self, buf: &mut impl BufMut) {
         encode_as_json_message(self, buf);
