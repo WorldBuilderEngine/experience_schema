@@ -109,6 +109,12 @@ impl StateMachineApiSchema {
             Self::Runtime(RuntimeStateMachineApiSchema::QueryStepDeltaSeconds) => {
                 "runtime:query_step_delta_seconds"
             }
+            Self::Runtime(RuntimeStateMachineApiSchema::QuerySimulatedStepDurationSeconds) => {
+                "runtime:query_simulated_step_duration_seconds"
+            }
+            Self::Runtime(RuntimeStateMachineApiSchema::QuerySimulatedElapsedSeconds) => {
+                "runtime:query_simulated_elapsed_seconds"
+            }
             Self::World(WorldStateMachineApiSchema::SetNodePositionByTag) => {
                 "world:set_node_position_by_tag"
             }
@@ -210,6 +216,12 @@ impl StateMachineApiSchema {
             "runtime:no_op" => Self::Runtime(RuntimeStateMachineApiSchema::NoOp),
             "runtime:query_step_delta_seconds" => {
                 Self::Runtime(RuntimeStateMachineApiSchema::QueryStepDeltaSeconds)
+            }
+            "runtime:query_simulated_step_duration_seconds" => {
+                Self::Runtime(RuntimeStateMachineApiSchema::QuerySimulatedStepDurationSeconds)
+            }
+            "runtime:query_simulated_elapsed_seconds" => {
+                Self::Runtime(RuntimeStateMachineApiSchema::QuerySimulatedElapsedSeconds)
             }
             "world:set_node_position" => {
                 Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)
@@ -376,6 +388,23 @@ mod tests {
         let api = StateMachineApiSchema::from("runtime:query_step_delta_seconds");
         let serialized = serde_json::to_string(&api).expect("serialize");
         assert_eq!(serialized, "\"runtime:query_step_delta_seconds\"");
+    }
+
+    #[test]
+    fn runtime_query_simulated_step_duration_identifier_round_trips_as_canonical() {
+        let api = StateMachineApiSchema::from("runtime:query_simulated_step_duration_seconds");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(
+            serialized,
+            "\"runtime:query_simulated_step_duration_seconds\""
+        );
+    }
+
+    #[test]
+    fn runtime_query_simulated_elapsed_identifier_round_trips_as_canonical() {
+        let api = StateMachineApiSchema::from("runtime:query_simulated_elapsed_seconds");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"runtime:query_simulated_elapsed_seconds\"");
     }
 
     #[test]

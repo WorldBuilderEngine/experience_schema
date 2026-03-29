@@ -5,4 +5,6 @@ use serde::{Deserialize, Serialize};
 pub enum RuntimeStateMachineApiSchema {
     NoOp,
     QueryStepDeltaSeconds,
+    QuerySimulatedStepDurationSeconds,
+    QuerySimulatedElapsedSeconds,
 }
