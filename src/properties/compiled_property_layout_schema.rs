@@ -36,6 +36,13 @@ pub enum CompiledPropertyValueTypeSchema {
     String = 6,
     StringArray = 7,
     AssetRef = 8,
+    UInt8 = 9,
+    UInt16 = 10,
+    UInt32 = 11,
+    Int8 = 12,
+    Int16 = 13,
+    Int32 = 14,
+    Float32 = 15,
 }
 
 impl CompiledPropertyValueTypeSchema {
@@ -254,5 +261,16 @@ mod tests {
             CURRENT_COMPILED_PROPERTY_LAYOUTS_FORMAT_VERSION
         );
         assert!(layouts.layouts.is_empty());
+    }
+
+    #[test]
+    fn packed_narrow_value_types_have_stable_schema_discriminants() {
+        assert_eq!(CompiledPropertyValueTypeSchema::UInt8 as i32, 9);
+        assert_eq!(CompiledPropertyValueTypeSchema::UInt16 as i32, 10);
+        assert_eq!(CompiledPropertyValueTypeSchema::UInt32 as i32, 11);
+        assert_eq!(CompiledPropertyValueTypeSchema::Int8 as i32, 12);
+        assert_eq!(CompiledPropertyValueTypeSchema::Int16 as i32, 13);
+        assert_eq!(CompiledPropertyValueTypeSchema::Int32 as i32, 14);
+        assert_eq!(CompiledPropertyValueTypeSchema::Float32 as i32, 15);
     }
 }
