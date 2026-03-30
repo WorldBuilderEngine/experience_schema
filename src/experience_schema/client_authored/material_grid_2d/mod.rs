@@ -1,0 +1,1 @@
+pub mod material_grid_rule_table_schema;
