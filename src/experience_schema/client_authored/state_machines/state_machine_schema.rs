@@ -6,6 +6,7 @@ use crate::client_authored::state_machines::state_machine_node_schema::{
 };
 use crate::client_authored::state_machines::state_machine_proof_assertion_schema::StateMachineProofAssertionSchema;
 use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
+use crate::client_authored::state_machines::state_machine_synchronous_invocation_contract_schema::StateMachineSynchronousInvocationContractSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
 use crate::properties::property_map::PropertyMap;
 use crate::prost_json_message::{
@@ -32,6 +33,8 @@ pub struct StateMachineSchema {
     pub finite_domain_abstractions: Vec<StateMachineFiniteDomainAbstractionSchema>,
     #[serde(default)]
     pub proof_assertions: Vec<StateMachineProofAssertionSchema>,
+    #[serde(default)]
+    pub synchronous_invocation_contract: StateMachineSynchronousInvocationContractSchema,
     #[serde(default)]
     pub nodes: Vec<StateMachineNodeSchema>,
 }
@@ -78,6 +81,8 @@ impl StateMachineSchema {
             bounded_effect_contract: StateMachineBoundedEffectContractSchema::default(),
             finite_domain_abstractions: Vec::new(),
             proof_assertions: Vec::new(),
+            synchronous_invocation_contract:
+                StateMachineSynchronousInvocationContractSchema::default(),
             nodes: Vec::new(),
         }
     }
@@ -155,6 +160,13 @@ impl StateMachineSchema {
     ) {
         self.bounded_effect_contract = bounded_effect_contract;
     }
+
+    pub fn set_synchronous_invocation_contract(
+        &mut self,
+        synchronous_invocation_contract: StateMachineSynchronousInvocationContractSchema,
+    ) {
+        self.synchronous_invocation_contract = synchronous_invocation_contract;
+    }
 }
 
 impl Message for StateMachineSchema {
@@ -196,6 +208,9 @@ mod tests {
         StateMachineProofAssertionKindSchema, StateMachineProofAssertionSchema,
     };
     use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
+    use crate::client_authored::state_machines::state_machine_synchronous_invocation_contract_schema::{
+        StateMachineSchedulerCapabilitySchema, StateMachineSynchronousInvocationContractSchema,
+    };
 
     #[test]
     fn constructor_populates_core_fields() {
@@ -225,6 +240,10 @@ mod tests {
         );
         assert!(schema.finite_domain_abstractions.is_empty());
         assert!(schema.proof_assertions.is_empty());
+        assert_eq!(
+            schema.synchronous_invocation_contract,
+            StateMachineSynchronousInvocationContractSchema::default()
+        );
     }
 
     #[test]
@@ -271,6 +290,10 @@ mod tests {
         );
         assert!(schema.finite_domain_abstractions.is_empty());
         assert!(schema.proof_assertions.is_empty());
+        assert_eq!(
+            schema.synchronous_invocation_contract,
+            StateMachineSynchronousInvocationContractSchema::default()
+        );
     }
 
     #[test]
@@ -327,5 +350,34 @@ mod tests {
         });
 
         assert_eq!(schema.proof_assertions.len(), 1);
+    }
+
+    #[test]
+    fn set_synchronous_invocation_contract_replaces_contract_metadata() {
+        let mut schema = StateMachineSchema::new("idle");
+        schema.set_synchronous_invocation_contract(
+            StateMachineSynchronousInvocationContractSchema {
+                machine_label: Some("combat:resolver".to_string()),
+                scheduler_capability: StateMachineSchedulerCapabilitySchema::SyncCall,
+                maximum_call_depth: Some(3),
+                call_fuel_budget: Some(5),
+                mutable_resources: vec!["world:turn_state".to_string()],
+                receive_entrypoints: Vec::new(),
+                outgoing_calls: Vec::new(),
+            },
+        );
+
+        assert_eq!(
+            schema.synchronous_invocation_contract,
+            StateMachineSynchronousInvocationContractSchema {
+                machine_label: Some("combat:resolver".to_string()),
+                scheduler_capability: StateMachineSchedulerCapabilitySchema::SyncCall,
+                maximum_call_depth: Some(3),
+                call_fuel_budget: Some(5),
+                mutable_resources: vec!["world:turn_state".to_string()],
+                receive_entrypoints: Vec::new(),
+                outgoing_calls: Vec::new(),
+            }
+        );
     }
 }

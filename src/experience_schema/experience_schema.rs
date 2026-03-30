@@ -78,6 +78,7 @@ mod tests {
                 bounded_effect_contract: Default::default(),
                 finite_domain_abstractions: Vec::new(),
                 proof_assertions: Vec::new(),
+                synchronous_invocation_contract: Default::default(),
                 nodes: vec![StateMachineNodeSchema::new(
                     "idle",
                     StateMachineNodeTypeSchema::ApiDispatch {
