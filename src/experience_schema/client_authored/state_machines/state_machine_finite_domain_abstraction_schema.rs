@@ -1,4 +1,5 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
+use crate::client_authored::state_machines::state_machine_proof_target_selector_schema::StateMachineProofTargetSelectorSchema;
 use serde::{Deserialize, Serialize};
 
 /// Declares a finite-domain contract that proof tooling may rely on for property fields or API outputs.
@@ -24,11 +25,19 @@ pub enum StateMachineFiniteDomainTargetSchema {
         property_map_id: String,
         property_id: String,
     },
+    RuntimeTarget {
+        selector: StateMachineProofTargetSelectorSchema,
+    },
     ApiOutput {
         #[serde(alias = "api_identifier")]
         api: StateMachineApiSchema,
         property_map_id: String,
         property_id: String,
+    },
+    ApiOutputSelector {
+        #[serde(alias = "api_identifier")]
+        api: StateMachineApiSchema,
+        selector: StateMachineProofTargetSelectorSchema,
     },
 }
 
@@ -68,6 +77,7 @@ mod tests {
     use crate::client_authored::state_machines::api::{
         RuntimeStateMachineApiSchema, StateMachineApiSchema,
     };
+    use crate::client_authored::state_machines::state_machine_proof_target_selector_schema::StateMachineProofTargetSelectorSchema;
 
     #[test]
     fn deserializes_property_field_abstraction() {
@@ -137,6 +147,106 @@ mod tests {
                     ),
                     property_map_id: "runtime".to_string(),
                     property_id: "step_delta_seconds".to_string(),
+                },
+                domain: StateMachineFiniteDomainSchema::FloatBuckets {
+                    buckets: vec![
+                        StateMachineFloatBucketSchema {
+                            label: "small".to_string(),
+                            min_inclusive: Some(0.0),
+                            max_exclusive: Some(0.25),
+                        },
+                        StateMachineFloatBucketSchema {
+                            label: "large".to_string(),
+                            min_inclusive: Some(0.25),
+                            max_exclusive: None,
+                        },
+                    ],
+                },
+                semantics: StateMachineFiniteDomainSemanticsSchema::Conservative,
+            }
+        );
+    }
+
+    #[test]
+    fn deserializes_runtime_target_selector_abstraction() {
+        let abstraction = serde_json::from_str::<StateMachineFiniteDomainAbstractionSchema>(
+            r#"{
+                "target": {
+                    "RuntimeTarget": {
+                        "selector": {
+                            "MachineLocalField": {
+                                "local_id": "runtime",
+                                "field_id": "phase"
+                            }
+                        }
+                    }
+                },
+                "domain": {
+                    "Enum": {
+                        "values": ["boot", "run", "done"]
+                    }
+                },
+                "semantics": "exact"
+            }"#,
+        )
+        .expect("runtime-target abstraction should deserialize");
+
+        assert_eq!(
+            abstraction,
+            StateMachineFiniteDomainAbstractionSchema {
+                target: StateMachineFiniteDomainTargetSchema::RuntimeTarget {
+                    selector: StateMachineProofTargetSelectorSchema::MachineLocalField {
+                        local_id: "runtime".to_string(),
+                        field_id: "phase".to_string(),
+                    },
+                },
+                domain: StateMachineFiniteDomainSchema::Enum {
+                    values: vec!["boot".to_string(), "run".to_string(), "done".to_string()],
+                },
+                semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
+            }
+        );
+    }
+
+    #[test]
+    fn deserializes_api_output_selector_abstraction() {
+        let abstraction = serde_json::from_str::<StateMachineFiniteDomainAbstractionSchema>(
+            r#"{
+                "target": {
+                    "ApiOutputSelector": {
+                        "api_identifier": "runtime:query_step_delta_seconds",
+                        "selector": {
+                            "MachineLocalField": {
+                                "local_id": "runtime",
+                                "field_id": "step_delta_seconds"
+                            }
+                        }
+                    }
+                },
+                "domain": {
+                    "FloatBuckets": {
+                        "buckets": [
+                            { "label": "small", "min_inclusive": 0.0, "max_exclusive": 0.25 },
+                            { "label": "large", "min_inclusive": 0.25 }
+                        ]
+                    }
+                },
+                "semantics": "conservative"
+            }"#,
+        )
+        .expect("api-output selector abstraction should deserialize");
+
+        assert_eq!(
+            abstraction,
+            StateMachineFiniteDomainAbstractionSchema {
+                target: StateMachineFiniteDomainTargetSchema::ApiOutputSelector {
+                    api: StateMachineApiSchema::Runtime(
+                        RuntimeStateMachineApiSchema::QueryStepDeltaSeconds
+                    ),
+                    selector: StateMachineProofTargetSelectorSchema::MachineLocalField {
+                        local_id: "runtime".to_string(),
+                        field_id: "step_delta_seconds".to_string(),
+                    },
                 },
                 domain: StateMachineFiniteDomainSchema::FloatBuckets {
                     buckets: vec![

@@ -1,3 +1,4 @@
+use crate::client_authored::state_machines::state_machine_proof_target_selector_schema::StateMachineProofTargetSelectorSchema;
 use crate::prost_json_message::{
     encode_as_json_message, json_message_encoded_len, merge_from_json_message,
 };
@@ -17,6 +18,9 @@ pub enum StateMachineTransitionTriggerSchema {
     Conditional {
         property_map_id: String,
         property_id: String,
+    },
+    ConditionalSelector {
+        selector: StateMachineProofTargetSelectorSchema,
     },
     Default,
     DeterministicRandom {
@@ -71,5 +75,38 @@ impl StateMachineTransitionSchema {
             to_state_name: to_state_name.into(),
             trigger,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::StateMachineTransitionTriggerSchema;
+    use crate::client_authored::state_machines::state_machine_proof_target_selector_schema::StateMachineProofTargetSelectorSchema;
+
+    #[test]
+    fn transition_trigger_deserializes_conditional_selector() {
+        let trigger = serde_json::from_str::<StateMachineTransitionTriggerSchema>(
+            r#"{
+                "ConditionalSelector": {
+                    "selector": {
+                        "MachineLocalField": {
+                            "local_id": "runtime",
+                            "field_id": "flag"
+                        }
+                    }
+                }
+            }"#,
+        )
+        .expect("conditional selector trigger should deserialize");
+
+        assert_eq!(
+            trigger,
+            StateMachineTransitionTriggerSchema::ConditionalSelector {
+                selector: StateMachineProofTargetSelectorSchema::MachineLocalField {
+                    local_id: "runtime".to_string(),
+                    field_id: "flag".to_string(),
+                },
+            }
+        );
     }
 }
