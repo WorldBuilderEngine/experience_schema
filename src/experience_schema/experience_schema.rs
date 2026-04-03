@@ -70,16 +70,14 @@ mod tests {
             .get_mut("")
             .expect("world should exist")
             .state_machines
-            .push(StateMachineSchema {
-                proof_class: StateMachineProofClassSchema::BoundedExtended,
-                initial_state_name: "idle".to_string(),
-                deterministic_seed: 7,
-                property_maps: Vec::new(),
-                bounded_effect_contract: Default::default(),
-                finite_domain_abstractions: Vec::new(),
-                proof_assertions: Vec::new(),
-                synchronous_invocation_contract: Default::default(),
-                nodes: vec![StateMachineNodeSchema::new(
+            .push({
+                let mut state_machine =
+                    StateMachineSchema::new_with_seed_and_proof_class(
+                        "idle",
+                        7,
+                        StateMachineProofClassSchema::BoundedExtended,
+                    );
+                state_machine.nodes = vec![StateMachineNodeSchema::new(
                     "idle",
                     StateMachineNodeTypeSchema::ApiDispatch {
                         api: StateMachineApiSchema::from(
@@ -87,15 +85,16 @@ mod tests {
                         ),
                         args_property_map_id: Some("args".to_string()),
                     },
-                )],
+                )];
+                state_machine
             });
 
         let bytes = schema.encode_prost().expect("encode");
         let decoded = ExperienceSchema::decode_prost(&bytes).expect("decode");
 
         assert_eq!(
-            decoded.client_authored_schema.worlds[""].state_machines[0].proof_class,
-            StateMachineProofClassSchema::BoundedExtended
+            decoded.client_authored_schema.worlds[""].state_machines[0].declared_proof_class(),
+            StateMachineProofClassSchema::EffectfulOpen
         );
         assert_eq!(
             decoded.client_authored_schema.worlds[""].state_machines[0].nodes[0].node_type,

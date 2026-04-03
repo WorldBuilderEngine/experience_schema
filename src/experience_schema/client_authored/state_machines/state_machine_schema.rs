@@ -4,6 +4,7 @@ use crate::client_authored::state_machines::state_machine_finite_domain_abstract
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
+use crate::client_authored::state_machines::state_machine_proof_metadata_schema::StateMachineProofMetadataSchema;
 use crate::client_authored::state_machines::state_machine_proof_assertion_schema::StateMachineProofAssertionSchema;
 use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
 use crate::client_authored::state_machines::state_machine_synchronous_invocation_contract_schema::StateMachineSynchronousInvocationContractSchema;
@@ -21,7 +22,6 @@ use serde::{Deserialize, Serialize};
 /// Serializable state-machine definition used in authored world schemas.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct StateMachineSchema {
-    pub proof_class: StateMachineProofClassSchema,
     pub initial_state_name: String,
     #[serde(default)]
     pub deterministic_seed: u64,
@@ -30,13 +30,11 @@ pub struct StateMachineSchema {
     #[serde(default)]
     pub bounded_effect_contract: StateMachineBoundedEffectContractSchema,
     #[serde(default)]
-    pub finite_domain_abstractions: Vec<StateMachineFiniteDomainAbstractionSchema>,
-    #[serde(default)]
-    pub proof_assertions: Vec<StateMachineProofAssertionSchema>,
-    #[serde(default)]
     pub synchronous_invocation_contract: StateMachineSynchronousInvocationContractSchema,
     #[serde(default)]
     pub nodes: Vec<StateMachineNodeSchema>,
+    #[serde(default, flatten, skip_serializing)]
+    proof_metadata: StateMachineProofMetadataSchema,
 }
 
 impl Default for StateMachineSchema {
@@ -73,22 +71,42 @@ impl StateMachineSchema {
         deterministic_seed: u64,
         proof_class: StateMachineProofClassSchema,
     ) -> Self {
+        let mut proof_metadata = StateMachineProofMetadataSchema::default();
+        proof_metadata.proof_class = proof_class;
         Self {
-            proof_class,
             initial_state_name: initial_state_name.into(),
             deterministic_seed,
             property_maps: Vec::new(),
             bounded_effect_contract: StateMachineBoundedEffectContractSchema::default(),
-            finite_domain_abstractions: Vec::new(),
-            proof_assertions: Vec::new(),
             synchronous_invocation_contract:
                 StateMachineSynchronousInvocationContractSchema::default(),
             nodes: Vec::new(),
+            proof_metadata,
         }
     }
 
     pub fn set_proof_class(&mut self, proof_class: StateMachineProofClassSchema) {
-        self.proof_class = proof_class;
+        self.proof_metadata.proof_class = proof_class;
+    }
+
+    pub fn declared_proof_class(&self) -> StateMachineProofClassSchema {
+        self.proof_metadata.proof_class
+    }
+
+    pub fn finite_domain_abstractions(&self) -> &[StateMachineFiniteDomainAbstractionSchema] {
+        self.proof_metadata.finite_domain_abstractions.as_slice()
+    }
+
+    pub fn proof_assertions(&self) -> &[StateMachineProofAssertionSchema] {
+        self.proof_metadata.proof_assertions.as_slice()
+    }
+
+    pub fn proof_metadata(&self) -> &StateMachineProofMetadataSchema {
+        &self.proof_metadata
+    }
+
+    pub fn set_proof_metadata(&mut self, proof_metadata: StateMachineProofMetadataSchema) {
+        self.proof_metadata = proof_metadata;
     }
 
     pub fn add_transition(
@@ -147,11 +165,11 @@ impl StateMachineSchema {
         &mut self,
         abstraction: StateMachineFiniteDomainAbstractionSchema,
     ) {
-        self.finite_domain_abstractions.push(abstraction);
+        self.proof_metadata.finite_domain_abstractions.push(abstraction);
     }
 
     pub fn register_proof_assertion(&mut self, assertion: StateMachineProofAssertionSchema) {
-        self.proof_assertions.push(assertion);
+        self.proof_metadata.proof_assertions.push(assertion);
     }
 
     pub fn set_bounded_effect_contract(
@@ -216,7 +234,7 @@ mod tests {
     fn constructor_populates_core_fields() {
         let schema = StateMachineSchema::new("idle");
         assert_eq!(
-            schema.proof_class,
+            schema.declared_proof_class(),
             StateMachineProofClassSchema::EffectfulOpen
         );
         assert_eq!(schema.initial_state_name, "idle".to_string());
@@ -231,15 +249,15 @@ mod tests {
             StateMachineProofClassSchema::Finite,
         );
 
-        assert_eq!(schema.proof_class, StateMachineProofClassSchema::Finite);
+        assert_eq!(schema.declared_proof_class(), StateMachineProofClassSchema::Finite);
         assert_eq!(schema.initial_state_name, "idle");
         assert_eq!(schema.deterministic_seed, 7);
         assert_eq!(
             schema.bounded_effect_contract,
             StateMachineBoundedEffectContractSchema::default()
         );
-        assert!(schema.finite_domain_abstractions.is_empty());
-        assert!(schema.proof_assertions.is_empty());
+        assert!(schema.finite_domain_abstractions().is_empty());
+        assert!(schema.proof_assertions().is_empty());
         assert_eq!(
             schema.synchronous_invocation_contract,
             StateMachineSynchronousInvocationContractSchema::default()
@@ -247,16 +265,21 @@ mod tests {
     }
 
     #[test]
-    fn deserialization_requires_proof_class_metadata() {
-        let parse_error = serde_json::from_str::<StateMachineSchema>(
+    fn deserialization_defaults_missing_inline_proof_metadata() {
+        let schema = serde_json::from_str::<StateMachineSchema>(
             r#"{
                 "initial_state_name":"idle",
                 "nodes":[]
             }"#,
         )
-        .expect_err("missing proof_class should fail to deserialize");
+        .expect("missing inline proof metadata should deserialize");
 
-        assert!(parse_error.to_string().contains("proof_class"));
+        assert_eq!(
+            schema.declared_proof_class(),
+            StateMachineProofClassSchema::EffectfulOpen
+        );
+        assert!(schema.finite_domain_abstractions().is_empty());
+        assert!(schema.proof_assertions().is_empty());
     }
 
     #[test]
@@ -274,22 +297,28 @@ mod tests {
     }
 
     #[test]
-    fn deserialization_defaults_finite_domain_abstractions_to_empty() {
+    fn deserialization_preserves_legacy_inline_proof_metadata() {
         let schema = serde_json::from_str::<StateMachineSchema>(
             r#"{
                 "proof_class":"effectful_open",
                 "initial_state_name":"idle",
+                "finite_domain_abstractions": [],
+                "proof_assertions": [],
                 "nodes":[]
             }"#,
         )
         .expect("schema should deserialize");
 
         assert_eq!(
+            schema.declared_proof_class(),
+            StateMachineProofClassSchema::EffectfulOpen
+        );
+        assert_eq!(
             schema.bounded_effect_contract,
             StateMachineBoundedEffectContractSchema::default()
         );
-        assert!(schema.finite_domain_abstractions.is_empty());
-        assert!(schema.proof_assertions.is_empty());
+        assert!(schema.finite_domain_abstractions().is_empty());
+        assert!(schema.proof_assertions().is_empty());
         assert_eq!(
             schema.synchronous_invocation_contract,
             StateMachineSynchronousInvocationContractSchema::default()
@@ -336,7 +365,7 @@ mod tests {
             semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
         });
 
-        assert_eq!(schema.finite_domain_abstractions.len(), 1);
+        assert_eq!(schema.finite_domain_abstractions().len(), 1);
     }
 
     #[test]
@@ -349,7 +378,7 @@ mod tests {
             },
         });
 
-        assert_eq!(schema.proof_assertions.len(), 1);
+        assert_eq!(schema.proof_assertions().len(), 1);
     }
 
     #[test]
@@ -379,5 +408,34 @@ mod tests {
                 outgoing_calls: Vec::new(),
             }
         );
+    }
+
+    #[test]
+    fn serialization_omits_proof_only_metadata_from_runtime_schema() {
+        let mut schema = StateMachineSchema::new_with_proof_class(
+            "idle",
+            StateMachineProofClassSchema::Finite,
+        );
+        schema.register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
+            target: StateMachineFiniteDomainTargetSchema::PropertyField {
+                property_map_id: "runtime".to_string(),
+                property_id: "phase".to_string(),
+            },
+            domain: StateMachineFiniteDomainSchema::Enum {
+                values: vec!["idle".to_string(), "done".to_string()],
+            },
+            semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
+        });
+        schema.register_proof_assertion(StateMachineProofAssertionSchema {
+            label: Some("idle_is_reachable".to_string()),
+            kind: StateMachineProofAssertionKindSchema::ReachableState {
+                state_name: "idle".to_string(),
+            },
+        });
+
+        let serialized = serde_json::to_value(&schema).expect("schema should serialize");
+        assert!(serialized.get("proof_class").is_none());
+        assert!(serialized.get("finite_domain_abstractions").is_none());
+        assert!(serialized.get("proof_assertions").is_none());
     }
 }
