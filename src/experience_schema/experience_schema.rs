@@ -71,12 +71,11 @@ mod tests {
             .expect("world should exist")
             .state_machines
             .push({
-                let mut state_machine =
-                    StateMachineSchema::new_with_seed_and_proof_class(
-                        "idle",
-                        7,
-                        StateMachineProofClassSchema::BoundedExtended,
-                    );
+                let mut state_machine = StateMachineSchema::new_with_seed_and_proof_class(
+                    "idle",
+                    7,
+                    StateMachineProofClassSchema::BoundedExtended,
+                );
                 state_machine.nodes = vec![StateMachineNodeSchema::new(
                     "idle",
                     StateMachineNodeTypeSchema::ApiDispatch {
