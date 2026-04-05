@@ -19,8 +19,6 @@ fn default_compiled_property_layout_version() -> u32 {
 pub enum CompiledPropertyStorageClassSchema {
     ColdDynamic = 0,
     WarmFixedRecord = 1,
-    HotColumnar = 2,
-    GridCellular = 3,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Enumeration)]
