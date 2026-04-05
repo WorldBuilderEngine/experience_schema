@@ -1,6 +1,6 @@
 use crate::assets::asset_ref::AssetRef;
 use crate::properties::property::Property;
-use crate::prost_json_message::{
+use crate::wire_compat::json_message::{
     encode_as_json_message, json_message_encoded_len, merge_from_json_message,
 };
 use prost::DecodeError;

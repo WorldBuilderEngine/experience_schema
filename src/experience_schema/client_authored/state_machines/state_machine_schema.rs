@@ -5,13 +5,13 @@ use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
 use crate::client_authored::state_machines::state_machine_owned_collection_capacity_schema::StateMachineOwnedCollectionCapacitySchema;
-use crate::client_authored::state_machines::state_machine_proof_metadata_schema::StateMachineProofMetadataSchema;
 use crate::client_authored::state_machines::state_machine_proof_assertion_schema::StateMachineProofAssertionSchema;
 use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
+use crate::client_authored::state_machines::state_machine_proof_metadata_schema::StateMachineProofMetadataSchema;
 use crate::client_authored::state_machines::state_machine_synchronous_invocation_contract_schema::StateMachineSynchronousInvocationContractSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
 use crate::properties::property_map::PropertyMap;
-use crate::prost_json_message::{
+use crate::wire_compat::json_message::{
     encode_as_json_message, json_message_encoded_len, merge_from_json_message,
 };
 use prost::DecodeError;
@@ -171,21 +171,17 @@ impl StateMachineSchema {
         property_id: impl Into<String>,
         capacity: u32,
     ) {
-        let declaration = StateMachineOwnedCollectionCapacitySchema::new(
-            property_map_id,
-            property_id,
-            capacity,
-        );
-        if let Some(existing_declaration_index) =
-            self.machine_owned_collection_capacities
-                .iter()
-                .position(|existing_declaration| {
-                    existing_declaration.property_map_id == declaration.property_map_id
-                        && existing_declaration.property_id == declaration.property_id
-                })
+        let declaration =
+            StateMachineOwnedCollectionCapacitySchema::new(property_map_id, property_id, capacity);
+        if let Some(existing_declaration_index) = self
+            .machine_owned_collection_capacities
+            .iter()
+            .position(|existing_declaration| {
+                existing_declaration.property_map_id == declaration.property_map_id
+                    && existing_declaration.property_id == declaration.property_id
+            })
         {
-            self.machine_owned_collection_capacities[existing_declaration_index] =
-                declaration;
+            self.machine_owned_collection_capacities[existing_declaration_index] = declaration;
             return;
         }
 
@@ -212,7 +208,9 @@ impl StateMachineSchema {
         &mut self,
         abstraction: StateMachineFiniteDomainAbstractionSchema,
     ) {
-        self.proof_metadata.finite_domain_abstractions.push(abstraction);
+        self.proof_metadata
+            .finite_domain_abstractions
+            .push(abstraction);
     }
 
     pub fn register_proof_assertion(&mut self, assertion: StateMachineProofAssertionSchema) {
@@ -297,7 +295,10 @@ mod tests {
             StateMachineProofClassSchema::Finite,
         );
 
-        assert_eq!(schema.declared_proof_class(), StateMachineProofClassSchema::Finite);
+        assert_eq!(
+            schema.declared_proof_class(),
+            StateMachineProofClassSchema::Finite
+        );
         assert_eq!(schema.initial_state_name, "idle");
         assert_eq!(schema.deterministic_seed, 7);
         assert_eq!(
@@ -482,10 +483,8 @@ mod tests {
 
     #[test]
     fn serialization_omits_proof_only_metadata_from_runtime_schema() {
-        let mut schema = StateMachineSchema::new_with_proof_class(
-            "idle",
-            StateMachineProofClassSchema::Finite,
-        );
+        let mut schema =
+            StateMachineSchema::new_with_proof_class("idle", StateMachineProofClassSchema::Finite);
         schema.register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
             target: StateMachineFiniteDomainTargetSchema::PropertyField {
                 property_map_id: "runtime".to_string(),

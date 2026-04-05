@@ -7,6 +7,12 @@ Shared `ExperienceSchema` contracts for WorldBuilder clients and backend service
 - Defines serializable schema primitives consumed by engine and service crates.
 - Provides a single package source-of-truth for cross-repository schema reuse.
 
+## Boundary Layout
+
+- Canonical schema/data-model types live under `client_authored`, `service_authored`, `assets`, and `properties`.
+- JSON-backed `prost::Message` compatibility shims live under `wire_compat::json_message` as an explicit transport boundary, not as part of the schema model itself.
+- Publish-time payload rewriting and contract downgrades belong in publish-boundary tools such as `publishing_tools`, not in the schema crate's core model modules.
+
 ## Anonymous 2D Browse/Play v1 Contract
 
 `experience_schema` now defines the canonical v1 anonymous browse/play response contracts used by:

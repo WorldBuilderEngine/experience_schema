@@ -1,4 +1,4 @@
-use crate::prost_json_message::{
+use crate::wire_compat::json_message::{
     encode_as_json_message, json_message_encoded_len, merge_from_json_message,
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
