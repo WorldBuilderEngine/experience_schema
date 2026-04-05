@@ -4,6 +4,7 @@ use crate::client_authored::state_machines::state_machine_finite_domain_abstract
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
+use crate::client_authored::state_machines::state_machine_owned_collection_capacity_schema::StateMachineOwnedCollectionCapacitySchema;
 use crate::client_authored::state_machines::state_machine_proof_metadata_schema::StateMachineProofMetadataSchema;
 use crate::client_authored::state_machines::state_machine_proof_assertion_schema::StateMachineProofAssertionSchema;
 use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
@@ -27,6 +28,8 @@ pub struct StateMachineSchema {
     pub deterministic_seed: u64,
     #[serde(default)]
     pub property_maps: Vec<(String, PropertyMap)>,
+    #[serde(default)]
+    pub machine_owned_collection_capacities: Vec<StateMachineOwnedCollectionCapacitySchema>,
     #[serde(default)]
     pub bounded_effect_contract: StateMachineBoundedEffectContractSchema,
     #[serde(default)]
@@ -77,6 +80,7 @@ impl StateMachineSchema {
             initial_state_name: initial_state_name.into(),
             deterministic_seed,
             property_maps: Vec::new(),
+            machine_owned_collection_capacities: Vec::new(),
             bounded_effect_contract: StateMachineBoundedEffectContractSchema::default(),
             synchronous_invocation_contract:
                 StateMachineSynchronousInvocationContractSchema::default(),
@@ -161,6 +165,49 @@ impl StateMachineSchema {
             .push((property_map_id_string, property_map));
     }
 
+    pub fn register_machine_owned_collection_capacity(
+        &mut self,
+        property_map_id: impl Into<String>,
+        property_id: impl Into<String>,
+        capacity: u32,
+    ) {
+        let declaration = StateMachineOwnedCollectionCapacitySchema::new(
+            property_map_id,
+            property_id,
+            capacity,
+        );
+        if let Some(existing_declaration_index) =
+            self.machine_owned_collection_capacities
+                .iter()
+                .position(|existing_declaration| {
+                    existing_declaration.property_map_id == declaration.property_map_id
+                        && existing_declaration.property_id == declaration.property_id
+                })
+        {
+            self.machine_owned_collection_capacities[existing_declaration_index] =
+                declaration;
+            return;
+        }
+
+        self.machine_owned_collection_capacities.push(declaration);
+    }
+
+    pub fn machine_owned_collection_capacity(
+        &self,
+        property_map_id: &str,
+        property_id: &str,
+    ) -> Option<u32> {
+        let normalized_property_map_id = property_map_id.trim();
+        let normalized_property_id = property_id.trim();
+        self.machine_owned_collection_capacities
+            .iter()
+            .find(|declaration| {
+                declaration.property_map_id == normalized_property_map_id
+                    && declaration.property_id == normalized_property_id
+            })
+            .map(|declaration| declaration.capacity)
+    }
+
     pub fn register_finite_domain_abstraction(
         &mut self,
         abstraction: StateMachineFiniteDomainAbstractionSchema,
@@ -222,6 +269,7 @@ mod tests {
         StateMachineFiniteDomainAbstractionSchema, StateMachineFiniteDomainSchema,
         StateMachineFiniteDomainSemanticsSchema, StateMachineFiniteDomainTargetSchema,
     };
+    use crate::client_authored::state_machines::state_machine_owned_collection_capacity_schema::StateMachineOwnedCollectionCapacitySchema;
     use crate::client_authored::state_machines::state_machine_proof_assertion_schema::{
         StateMachineProofAssertionKindSchema, StateMachineProofAssertionSchema,
     };
@@ -278,6 +326,7 @@ mod tests {
             schema.declared_proof_class(),
             StateMachineProofClassSchema::EffectfulOpen
         );
+        assert!(schema.machine_owned_collection_capacities.is_empty());
         assert!(schema.finite_domain_abstractions().is_empty());
         assert!(schema.proof_assertions().is_empty());
     }
@@ -407,6 +456,27 @@ mod tests {
                 receive_entrypoints: Vec::new(),
                 outgoing_calls: Vec::new(),
             }
+        );
+    }
+
+    #[test]
+    fn register_machine_owned_collection_capacity_replaces_existing_declaration() {
+        let mut schema = StateMachineSchema::new("idle");
+
+        schema.register_machine_owned_collection_capacity("runtime", "inventory", 3);
+        schema.register_machine_owned_collection_capacity("runtime", "inventory", 5);
+
+        assert_eq!(
+            schema.machine_owned_collection_capacities,
+            vec![StateMachineOwnedCollectionCapacitySchema::new(
+                "runtime",
+                "inventory",
+                5,
+            )]
+        );
+        assert_eq!(
+            schema.machine_owned_collection_capacity("runtime", "inventory"),
+            Some(5)
         );
     }
 
