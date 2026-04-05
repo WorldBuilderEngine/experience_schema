@@ -328,12 +328,12 @@ mod tests {
     #[test]
     fn unknown_identifier_is_preserved_as_custom() {
         let deserialized: StateMachineApiSchema =
-            serde_json::from_str("\"custom:puppet_master:dispatch_progression_complete\"")
+            serde_json::from_str("\"custom:sample_story:dispatch_progression_complete\"")
                 .expect("deserialize");
         assert_eq!(
             deserialized,
             StateMachineApiSchema::Custom(
-                "custom:puppet_master:dispatch_progression_complete".to_string()
+                "custom:sample_story:dispatch_progression_complete".to_string()
             )
         );
     }
