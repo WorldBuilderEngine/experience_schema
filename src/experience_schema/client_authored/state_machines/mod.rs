@@ -1,6 +1,7 @@
 pub mod api;
 pub mod state_machine_bounded_effect_contract_schema;
 pub mod state_machine_finite_domain_abstraction_schema;
+pub mod state_machine_legacy_compatibility_schema;
 pub mod state_machine_node_schema;
 pub mod state_machine_owned_collection_capacity_schema;
 pub mod state_machine_proof_assertion_schema;

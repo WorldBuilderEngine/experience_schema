@@ -1,16 +1,11 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
-use crate::client_authored::state_machines::state_machine_bounded_effect_contract_schema::StateMachineBoundedEffectContractSchema;
-use crate::client_authored::state_machines::state_machine_finite_domain_abstraction_schema::StateMachineFiniteDomainAbstractionSchema;
+use crate::client_authored::state_machines::state_machine_legacy_compatibility_schema::StateMachineLegacyCompatibilitySchema;
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
 use crate::client_authored::state_machines::state_machine_owned_collection_capacity_schema::StateMachineOwnedCollectionCapacitySchema;
-use crate::client_authored::state_machines::state_machine_proof_assertion_schema::StateMachineProofAssertionSchema;
 use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
-use crate::client_authored::state_machines::state_machine_proof_metadata_schema::StateMachineProofMetadataSchema;
-use crate::client_authored::state_machines::state_machine_synchronous_invocation_contract_schema::StateMachineSynchronousInvocationContractSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
-use crate::properties::property_map::PropertyMap;
 use crate::wire_compat::json_message::{
     encode_as_json_message, json_message_encoded_len, merge_from_json_message,
 };
@@ -27,17 +22,11 @@ pub struct StateMachineSchema {
     #[serde(default)]
     pub deterministic_seed: u64,
     #[serde(default)]
-    pub property_maps: Vec<(String, PropertyMap)>,
-    #[serde(default)]
     pub machine_owned_collection_capacities: Vec<StateMachineOwnedCollectionCapacitySchema>,
-    #[serde(default)]
-    pub bounded_effect_contract: StateMachineBoundedEffectContractSchema,
-    #[serde(default)]
-    pub synchronous_invocation_contract: StateMachineSynchronousInvocationContractSchema,
     #[serde(default)]
     pub nodes: Vec<StateMachineNodeSchema>,
     #[serde(default, flatten, skip_serializing)]
-    proof_metadata: StateMachineProofMetadataSchema,
+    legacy_compatibility: StateMachineLegacyCompatibilitySchema,
 }
 
 impl Default for StateMachineSchema {
@@ -74,43 +63,23 @@ impl StateMachineSchema {
         deterministic_seed: u64,
         proof_class: StateMachineProofClassSchema,
     ) -> Self {
-        let mut proof_metadata = StateMachineProofMetadataSchema::default();
-        proof_metadata.proof_class = proof_class;
         Self {
             initial_state_name: initial_state_name.into(),
             deterministic_seed,
-            property_maps: Vec::new(),
             machine_owned_collection_capacities: Vec::new(),
-            bounded_effect_contract: StateMachineBoundedEffectContractSchema::default(),
-            synchronous_invocation_contract:
-                StateMachineSynchronousInvocationContractSchema::default(),
             nodes: Vec::new(),
-            proof_metadata,
+            legacy_compatibility: StateMachineLegacyCompatibilitySchema::with_proof_class(
+                proof_class,
+            ),
         }
     }
 
-    pub fn set_proof_class(&mut self, proof_class: StateMachineProofClassSchema) {
-        self.proof_metadata.proof_class = proof_class;
+    pub fn legacy_compatibility(&self) -> &StateMachineLegacyCompatibilitySchema {
+        &self.legacy_compatibility
     }
 
-    pub fn declared_proof_class(&self) -> StateMachineProofClassSchema {
-        self.proof_metadata.proof_class
-    }
-
-    pub fn finite_domain_abstractions(&self) -> &[StateMachineFiniteDomainAbstractionSchema] {
-        self.proof_metadata.finite_domain_abstractions.as_slice()
-    }
-
-    pub fn proof_assertions(&self) -> &[StateMachineProofAssertionSchema] {
-        self.proof_metadata.proof_assertions.as_slice()
-    }
-
-    pub fn proof_metadata(&self) -> &StateMachineProofMetadataSchema {
-        &self.proof_metadata
-    }
-
-    pub fn set_proof_metadata(&mut self, proof_metadata: StateMachineProofMetadataSchema) {
-        self.proof_metadata = proof_metadata;
+    pub fn legacy_compatibility_mut(&mut self) -> &mut StateMachineLegacyCompatibilitySchema {
+        &mut self.legacy_compatibility
     }
 
     pub fn add_transition(
@@ -142,27 +111,6 @@ impl StateMachineSchema {
                 args_property_map_id,
             },
         ));
-    }
-
-    pub fn register_property_map(
-        &mut self,
-        property_map_id: impl Into<String>,
-        property_map: PropertyMap,
-    ) {
-        let property_map_id_string = property_map_id.into().trim().to_string();
-        if let Some(existing_property_map_index) =
-            self.property_maps
-                .iter()
-                .position(|(existing_property_map_id, _)| {
-                    existing_property_map_id == &property_map_id_string
-                })
-        {
-            self.property_maps[existing_property_map_index].1 = property_map;
-            return;
-        }
-
-        self.property_maps
-            .push((property_map_id_string, property_map));
     }
 
     pub fn register_machine_owned_collection_capacity(
@@ -202,33 +150,6 @@ impl StateMachineSchema {
                     && declaration.property_id == normalized_property_id
             })
             .map(|declaration| declaration.capacity)
-    }
-
-    pub fn register_finite_domain_abstraction(
-        &mut self,
-        abstraction: StateMachineFiniteDomainAbstractionSchema,
-    ) {
-        self.proof_metadata
-            .finite_domain_abstractions
-            .push(abstraction);
-    }
-
-    pub fn register_proof_assertion(&mut self, assertion: StateMachineProofAssertionSchema) {
-        self.proof_metadata.proof_assertions.push(assertion);
-    }
-
-    pub fn set_bounded_effect_contract(
-        &mut self,
-        bounded_effect_contract: StateMachineBoundedEffectContractSchema,
-    ) {
-        self.bounded_effect_contract = bounded_effect_contract;
-    }
-
-    pub fn set_synchronous_invocation_contract(
-        &mut self,
-        synchronous_invocation_contract: StateMachineSynchronousInvocationContractSchema,
-    ) {
-        self.synchronous_invocation_contract = synchronous_invocation_contract;
     }
 }
 
@@ -280,7 +201,7 @@ mod tests {
     fn constructor_populates_core_fields() {
         let schema = StateMachineSchema::new("idle");
         assert_eq!(
-            schema.declared_proof_class(),
+            schema.legacy_compatibility().declared_proof_class(),
             StateMachineProofClassSchema::EffectfulOpen
         );
         assert_eq!(schema.initial_state_name, "idle".to_string());
@@ -296,19 +217,26 @@ mod tests {
         );
 
         assert_eq!(
-            schema.declared_proof_class(),
+            schema.legacy_compatibility().declared_proof_class(),
             StateMachineProofClassSchema::Finite
         );
         assert_eq!(schema.initial_state_name, "idle");
         assert_eq!(schema.deterministic_seed, 7);
         assert_eq!(
-            schema.bounded_effect_contract,
+            schema.legacy_compatibility().bounded_effect_contract,
             StateMachineBoundedEffectContractSchema::default()
         );
-        assert!(schema.finite_domain_abstractions().is_empty());
-        assert!(schema.proof_assertions().is_empty());
+        assert!(
+            schema
+                .legacy_compatibility()
+                .finite_domain_abstractions()
+                .is_empty()
+        );
+        assert!(schema.legacy_compatibility().proof_assertions().is_empty());
         assert_eq!(
-            schema.synchronous_invocation_contract,
+            schema
+                .legacy_compatibility()
+                .synchronous_invocation_contract,
             StateMachineSynchronousInvocationContractSchema::default()
         );
     }
@@ -324,12 +252,17 @@ mod tests {
         .expect("missing inline proof metadata should deserialize");
 
         assert_eq!(
-            schema.declared_proof_class(),
+            schema.legacy_compatibility().declared_proof_class(),
             StateMachineProofClassSchema::EffectfulOpen
         );
         assert!(schema.machine_owned_collection_capacities.is_empty());
-        assert!(schema.finite_domain_abstractions().is_empty());
-        assert!(schema.proof_assertions().is_empty());
+        assert!(
+            schema
+                .legacy_compatibility()
+                .finite_domain_abstractions()
+                .is_empty()
+        );
+        assert!(schema.legacy_compatibility().proof_assertions().is_empty());
     }
 
     #[test]
@@ -360,17 +293,24 @@ mod tests {
         .expect("schema should deserialize");
 
         assert_eq!(
-            schema.declared_proof_class(),
+            schema.legacy_compatibility().declared_proof_class(),
             StateMachineProofClassSchema::EffectfulOpen
         );
         assert_eq!(
-            schema.bounded_effect_contract,
+            schema.legacy_compatibility().bounded_effect_contract,
             StateMachineBoundedEffectContractSchema::default()
         );
-        assert!(schema.finite_domain_abstractions().is_empty());
-        assert!(schema.proof_assertions().is_empty());
+        assert!(
+            schema
+                .legacy_compatibility()
+                .finite_domain_abstractions()
+                .is_empty()
+        );
+        assert!(schema.legacy_compatibility().proof_assertions().is_empty());
         assert_eq!(
-            schema.synchronous_invocation_contract,
+            schema
+                .legacy_compatibility()
+                .synchronous_invocation_contract,
             StateMachineSynchronousInvocationContractSchema::default()
         );
     }
@@ -378,23 +318,31 @@ mod tests {
     #[test]
     fn set_bounded_effect_contract_replaces_contract_metadata() {
         let mut schema = StateMachineSchema::new("idle");
-        schema.set_bounded_effect_contract(StateMachineBoundedEffectContractSchema {
-            resource_creation: Some(StateMachineResourceCreationContractSchema {
-                total_creations_upper_bound: 4,
-            }),
-            persistence_key_registry: Some(StateMachinePersistenceKeyRegistrySchema {
-                members: vec!["profile/player-1".to_string()],
-            }),
-        });
+        schema
+            .legacy_compatibility_mut()
+            .set_bounded_effect_contract(StateMachineBoundedEffectContractSchema {
+                resource_creation: Some(StateMachineResourceCreationContractSchema {
+                    total_creations_upper_bound: 4,
+                }),
+                persistence_key_registry: Some(StateMachinePersistenceKeyRegistrySchema {
+                    members: vec!["profile/player-1".to_string()],
+                }),
+            });
 
         assert_eq!(
-            schema.bounded_effect_contract.resource_creation,
+            schema
+                .legacy_compatibility()
+                .bounded_effect_contract
+                .resource_creation,
             Some(StateMachineResourceCreationContractSchema {
                 total_creations_upper_bound: 4,
             })
         );
         assert_eq!(
-            schema.bounded_effect_contract.persistence_key_registry,
+            schema
+                .legacy_compatibility()
+                .bounded_effect_contract
+                .persistence_key_registry,
             Some(StateMachinePersistenceKeyRegistrySchema {
                 members: vec!["profile/player-1".to_string()],
             })
@@ -404,38 +352,49 @@ mod tests {
     #[test]
     fn register_finite_domain_abstraction_appends_declaration() {
         let mut schema = StateMachineSchema::new("idle");
-        schema.register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
-            target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                property_map_id: "runtime".to_string(),
-                property_id: "phase".to_string(),
-            },
-            domain: StateMachineFiniteDomainSchema::Enum {
-                values: vec!["idle".to_string(), "run".to_string()],
-            },
-            semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
-        });
+        schema
+            .legacy_compatibility_mut()
+            .register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
+                target: StateMachineFiniteDomainTargetSchema::PropertyField {
+                    property_map_id: "runtime".to_string(),
+                    property_id: "phase".to_string(),
+                },
+                domain: StateMachineFiniteDomainSchema::Enum {
+                    values: vec!["idle".to_string(), "run".to_string()],
+                },
+                semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
+            });
 
-        assert_eq!(schema.finite_domain_abstractions().len(), 1);
+        assert_eq!(
+            schema
+                .legacy_compatibility()
+                .finite_domain_abstractions()
+                .len(),
+            1
+        );
     }
 
     #[test]
     fn register_proof_assertion_appends_declaration() {
         let mut schema = StateMachineSchema::new("idle");
-        schema.register_proof_assertion(StateMachineProofAssertionSchema {
-            label: Some("idle_is_reachable".to_string()),
-            kind: StateMachineProofAssertionKindSchema::ReachableState {
-                state_name: "idle".to_string(),
+        schema.legacy_compatibility_mut().register_proof_assertion(
+            StateMachineProofAssertionSchema {
+                label: Some("idle_is_reachable".to_string()),
+                kind: StateMachineProofAssertionKindSchema::ReachableState {
+                    state_name: "idle".to_string(),
+                },
             },
-        });
+        );
 
-        assert_eq!(schema.proof_assertions().len(), 1);
+        assert_eq!(schema.legacy_compatibility().proof_assertions().len(), 1);
     }
 
     #[test]
     fn set_synchronous_invocation_contract_replaces_contract_metadata() {
         let mut schema = StateMachineSchema::new("idle");
-        schema.set_synchronous_invocation_contract(
-            StateMachineSynchronousInvocationContractSchema {
+        schema
+            .legacy_compatibility_mut()
+            .set_synchronous_invocation_contract(StateMachineSynchronousInvocationContractSchema {
                 machine_label: Some("combat:resolver".to_string()),
                 scheduler_capability: StateMachineSchedulerCapabilitySchema::SyncCall,
                 maximum_call_depth: Some(3),
@@ -443,11 +402,12 @@ mod tests {
                 mutable_resources: vec!["world:turn_state".to_string()],
                 receive_entrypoints: Vec::new(),
                 outgoing_calls: Vec::new(),
-            },
-        );
+            });
 
         assert_eq!(
-            schema.synchronous_invocation_contract,
+            schema
+                .legacy_compatibility()
+                .synchronous_invocation_contract,
             StateMachineSynchronousInvocationContractSchema {
                 machine_label: Some("combat:resolver".to_string()),
                 scheduler_capability: StateMachineSchedulerCapabilitySchema::SyncCall,
@@ -485,26 +445,56 @@ mod tests {
     fn serialization_omits_proof_only_metadata_from_runtime_schema() {
         let mut schema =
             StateMachineSchema::new_with_proof_class("idle", StateMachineProofClassSchema::Finite);
-        schema.register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
-            target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                property_map_id: "runtime".to_string(),
-                property_id: "phase".to_string(),
+        schema
+            .legacy_compatibility_mut()
+            .register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
+                target: StateMachineFiniteDomainTargetSchema::PropertyField {
+                    property_map_id: "runtime".to_string(),
+                    property_id: "phase".to_string(),
+                },
+                domain: StateMachineFiniteDomainSchema::Enum {
+                    values: vec!["idle".to_string(), "done".to_string()],
+                },
+                semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
+            });
+        schema.legacy_compatibility_mut().register_proof_assertion(
+            StateMachineProofAssertionSchema {
+                label: Some("idle_is_reachable".to_string()),
+                kind: StateMachineProofAssertionKindSchema::ReachableState {
+                    state_name: "idle".to_string(),
+                },
             },
-            domain: StateMachineFiniteDomainSchema::Enum {
-                values: vec!["idle".to_string(), "done".to_string()],
-            },
-            semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
-        });
-        schema.register_proof_assertion(StateMachineProofAssertionSchema {
-            label: Some("idle_is_reachable".to_string()),
-            kind: StateMachineProofAssertionKindSchema::ReachableState {
-                state_name: "idle".to_string(),
-            },
-        });
+        );
+        schema.legacy_compatibility_mut().register_property_map(
+            "runtime",
+            crate::properties::property_map::PropertyMap::new(),
+        );
+        schema
+            .legacy_compatibility_mut()
+            .set_bounded_effect_contract(StateMachineBoundedEffectContractSchema {
+                resource_creation: Some(StateMachineResourceCreationContractSchema {
+                    total_creations_upper_bound: 1,
+                }),
+                persistence_key_registry: None,
+            });
+        schema
+            .legacy_compatibility_mut()
+            .set_synchronous_invocation_contract(StateMachineSynchronousInvocationContractSchema {
+                machine_label: Some("compat".to_string()),
+                scheduler_capability: StateMachineSchedulerCapabilitySchema::QueuedOnly,
+                maximum_call_depth: None,
+                call_fuel_budget: None,
+                mutable_resources: Vec::new(),
+                receive_entrypoints: Vec::new(),
+                outgoing_calls: Vec::new(),
+            });
 
         let serialized = serde_json::to_value(&schema).expect("schema should serialize");
         assert!(serialized.get("proof_class").is_none());
         assert!(serialized.get("finite_domain_abstractions").is_none());
         assert!(serialized.get("proof_assertions").is_none());
+        assert!(serialized.get("property_maps").is_none());
+        assert!(serialized.get("bounded_effect_contract").is_none());
+        assert!(serialized.get("synchronous_invocation_contract").is_none());
     }
 }
