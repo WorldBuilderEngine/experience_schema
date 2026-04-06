@@ -9,15 +9,13 @@ use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use super::{
-    Animation2dStateMachineApiSchema, ExperienceStorageStateMachineApiSchema,
-    MathStateMachineApiSchema, Physics2dStateMachineApiSchema,
+    Animation2dStateMachineApiSchema, MathStateMachineApiSchema, Physics2dStateMachineApiSchema,
     RuntimeStateMachineApiSchema, WorldStateMachineApiSchema,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum StateMachineApiSchema {
     Animation2d(Animation2dStateMachineApiSchema),
-    ExperienceStorage(ExperienceStorageStateMachineApiSchema),
     Math(MathStateMachineApiSchema),
     Physics2d(Physics2dStateMachineApiSchema),
     Runtime(RuntimeStateMachineApiSchema),
@@ -37,15 +35,6 @@ impl StateMachineApiSchema {
             Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers) => {
                 "animation2d:step_players"
             }
-            Self::ExperienceStorage(
-                ExperienceStorageStateMachineApiSchema::LoadPropertyMapByKey,
-            ) => "experience_storage:load_property_map_by_key",
-            Self::ExperienceStorage(
-                ExperienceStorageStateMachineApiSchema::SavePropertyMapByKey,
-            ) => "experience_storage:save_property_map_by_key",
-            Self::ExperienceStorage(
-                ExperienceStorageStateMachineApiSchema::QueryPropertyMapByKey,
-            ) => "experience_storage:query_property_map_by_key",
             Self::Math(MathStateMachineApiSchema::Add) => "math:add",
             Self::Math(MathStateMachineApiSchema::Sub) => "math:sub",
             Self::Math(MathStateMachineApiSchema::Mul) => "math:mul",
@@ -133,15 +122,6 @@ impl StateMachineApiSchema {
             "animation2d:step_players" => {
                 Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers)
             }
-            "experience_storage:load_property_map_by_key" => Self::ExperienceStorage(
-                ExperienceStorageStateMachineApiSchema::LoadPropertyMapByKey,
-            ),
-            "experience_storage:save_property_map_by_key" => Self::ExperienceStorage(
-                ExperienceStorageStateMachineApiSchema::SavePropertyMapByKey,
-            ),
-            "experience_storage:query_property_map_by_key" => Self::ExperienceStorage(
-                ExperienceStorageStateMachineApiSchema::QueryPropertyMapByKey,
-            ),
             "math:add" => Self::Math(MathStateMachineApiSchema::Add),
             "math:sub" => Self::Math(MathStateMachineApiSchema::Sub),
             "math:mul" => Self::Math(MathStateMachineApiSchema::Mul),
@@ -335,12 +315,11 @@ mod tests {
     }
 
     #[test]
-    fn experience_storage_persistence_identifier_round_trips_as_canonical() {
+    fn deleted_experience_storage_identifier_stays_quarantined_as_custom() {
         let api = StateMachineApiSchema::from("experience_storage:save_property_map_by_key");
-        let serialized = serde_json::to_string(&api).expect("serialize");
         assert_eq!(
-            serialized,
-            "\"experience_storage:save_property_map_by_key\""
+            api,
+            StateMachineApiSchema::Custom("experience_storage:save_property_map_by_key".to_string())
         );
     }
 
