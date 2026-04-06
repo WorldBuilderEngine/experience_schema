@@ -6,8 +6,6 @@ pub enum WorldStateMachineApiSchema {
     SetNodePositionByTag,
     SetNodeVisibilityByTag,
     ReorderNodeByTag,
-    SpawnObjectTemplate,
     FollowActiveCameraByTag,
     RemoveStateMachine,
-    InsertStateMachineTemplate,
 }

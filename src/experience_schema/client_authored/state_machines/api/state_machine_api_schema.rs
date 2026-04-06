@@ -10,7 +10,7 @@ use serde::ser::{Serialize, Serializer};
 
 use super::{
     Animation2dStateMachineApiSchema, ExperienceStorageStateMachineApiSchema,
-    MathStateMachineApiSchema, Physics2dStateMachineApiSchema, PropertyMapStateMachineApiSchema,
+    MathStateMachineApiSchema, Physics2dStateMachineApiSchema,
     RuntimeStateMachineApiSchema, WorldStateMachineApiSchema,
 };
 
@@ -20,7 +20,6 @@ pub enum StateMachineApiSchema {
     ExperienceStorage(ExperienceStorageStateMachineApiSchema),
     Math(MathStateMachineApiSchema),
     Physics2d(Physics2dStateMachineApiSchema),
-    PropertyMap(PropertyMapStateMachineApiSchema),
     Runtime(RuntimeStateMachineApiSchema),
     World(WorldStateMachineApiSchema),
     Custom(String),
@@ -28,7 +27,7 @@ pub enum StateMachineApiSchema {
 
 impl Default for StateMachineApiSchema {
     fn default() -> Self {
-        Self::PropertyMap(PropertyMapStateMachineApiSchema::RemoveProperty)
+        Self::Runtime(RuntimeStateMachineApiSchema::NoOp)
     }
 }
 
@@ -99,12 +98,6 @@ impl StateMachineApiSchema {
             Self::Physics2d(Physics2dStateMachineApiSchema::StepAndEmitCollisionEvents) => {
                 "physics2d:step_and_emit_collision_events"
             }
-            Self::PropertyMap(PropertyMapStateMachineApiSchema::RemoveProperty) => {
-                "property_map:remove_property"
-            }
-            Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty) => {
-                "property_map:upsert_property"
-            }
             Self::Runtime(RuntimeStateMachineApiSchema::NoOp) => "runtime:no_op",
             Self::Runtime(RuntimeStateMachineApiSchema::QueryStepDeltaSeconds) => {
                 "runtime:query_step_delta_seconds"
@@ -124,17 +117,11 @@ impl StateMachineApiSchema {
             Self::World(WorldStateMachineApiSchema::ReorderNodeByTag) => {
                 "world:reorder_node_by_tag"
             }
-            Self::World(WorldStateMachineApiSchema::SpawnObjectTemplate) => {
-                "world:spawn_object_template"
-            }
             Self::World(WorldStateMachineApiSchema::FollowActiveCameraByTag) => {
                 "world:follow_active_camera_by_tag"
             }
             Self::World(WorldStateMachineApiSchema::RemoveStateMachine) => {
                 "world:remove_state_machine"
-            }
-            Self::World(WorldStateMachineApiSchema::InsertStateMachineTemplate) => {
-                "world:insert_state_machine_template"
             }
             Self::Custom(identifier) => identifier.as_str(),
         }
@@ -207,12 +194,6 @@ impl StateMachineApiSchema {
             "physics2d:step_and_emit_collision_events" => {
                 Self::Physics2d(Physics2dStateMachineApiSchema::StepAndEmitCollisionEvents)
             }
-            "property_map:remove_property" => {
-                Self::PropertyMap(PropertyMapStateMachineApiSchema::RemoveProperty)
-            }
-            "property_map:upsert_property" => {
-                Self::PropertyMap(PropertyMapStateMachineApiSchema::UpsertProperty)
-            }
             "runtime:no_op" => Self::Runtime(RuntimeStateMachineApiSchema::NoOp),
             "runtime:query_step_delta_seconds" => {
                 Self::Runtime(RuntimeStateMachineApiSchema::QueryStepDeltaSeconds)
@@ -238,17 +219,11 @@ impl StateMachineApiSchema {
             "world:reorder_node_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::ReorderNodeByTag)
             }
-            "world:spawn_object_template" => {
-                Self::World(WorldStateMachineApiSchema::SpawnObjectTemplate)
-            }
             "world:follow_active_camera_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::FollowActiveCameraByTag)
             }
             "world:remove_state_machine" => {
                 Self::World(WorldStateMachineApiSchema::RemoveStateMachine)
-            }
-            "world:insert_state_machine_template" => {
-                Self::World(WorldStateMachineApiSchema::InsertStateMachineTemplate)
             }
             _ => Self::Custom(identifier),
         }
