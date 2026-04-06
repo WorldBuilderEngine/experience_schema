@@ -76,26 +76,12 @@ impl StateMachineSchema {
         }
     }
 
-    pub fn compatibility(&self) -> &StateMachineCompatibilitySchema {
-        &self.compatibility
-    }
-
-    pub fn compatibility_mut(&mut self) -> &mut StateMachineCompatibilitySchema {
-        &mut self.compatibility
-    }
-
-    #[deprecated(note = "Use compatibility() instead.")]
-    pub fn legacy_compatibility(&self) -> &StateMachineCompatibilitySchema {
-        &self.compatibility
-    }
-
-    #[deprecated(note = "Use compatibility_mut() instead.")]
-    pub fn legacy_compatibility_mut(&mut self) -> &mut StateMachineCompatibilitySchema {
-        &mut self.compatibility
-    }
-
     pub fn declared_proof_class(&self) -> StateMachineProofClassSchema {
         self.compatibility.declared_proof_class()
+    }
+
+    pub fn set_proof_class(&mut self, proof_class: StateMachineProofClassSchema) {
+        self.compatibility.set_proof_class(proof_class);
     }
 
     pub fn proof_metadata(&self) -> &StateMachineProofMetadataSchema {
@@ -104,6 +90,14 @@ impl StateMachineSchema {
 
     pub fn set_proof_metadata(&mut self, proof_metadata: StateMachineProofMetadataSchema) {
         self.compatibility.set_proof_metadata(proof_metadata);
+    }
+
+    pub fn finite_domain_abstractions(&self) -> &[StateMachineFiniteDomainAbstractionSchema] {
+        self.compatibility.finite_domain_abstractions()
+    }
+
+    pub fn proof_assertions(&self) -> &[StateMachineProofAssertionSchema] {
+        self.compatibility.proof_assertions()
     }
 
     pub fn property_maps(&self) -> &[(String, PropertyMap)] {
@@ -259,11 +253,14 @@ mod tests {
             StateMachineProofClassSchema::Finite,
         );
 
-        assert_eq!(schema.declared_proof_class(), StateMachineProofClassSchema::Finite);
+        assert_eq!(
+            schema.declared_proof_class(),
+            StateMachineProofClassSchema::Finite
+        );
         assert_eq!(schema.initial_state_name, "idle");
         assert_eq!(schema.deterministic_seed, 7);
-        assert!(schema.compatibility().finite_domain_abstractions().is_empty());
-        assert!(schema.compatibility().proof_assertions().is_empty());
+        assert!(schema.finite_domain_abstractions().is_empty());
+        assert!(schema.proof_assertions().is_empty());
     }
 
     #[test]
@@ -281,8 +278,8 @@ mod tests {
             StateMachineProofClassSchema::EffectfulOpen
         );
         assert!(schema.machine_owned_collection_capacities.is_empty());
-        assert!(schema.compatibility().finite_domain_abstractions().is_empty());
-        assert!(schema.compatibility().proof_assertions().is_empty());
+        assert!(schema.finite_domain_abstractions().is_empty());
+        assert!(schema.proof_assertions().is_empty());
     }
 
     #[test]
@@ -316,8 +313,8 @@ mod tests {
             schema.declared_proof_class(),
             StateMachineProofClassSchema::EffectfulOpen
         );
-        assert!(schema.compatibility().finite_domain_abstractions().is_empty());
-        assert!(schema.compatibility().proof_assertions().is_empty());
+        assert!(schema.finite_domain_abstractions().is_empty());
+        assert!(schema.proof_assertions().is_empty());
     }
 
     #[test]
@@ -334,7 +331,7 @@ mod tests {
             semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
         });
 
-        assert_eq!(schema.compatibility().finite_domain_abstractions().len(), 1);
+        assert_eq!(schema.finite_domain_abstractions().len(), 1);
     }
 
     #[test]
@@ -347,7 +344,7 @@ mod tests {
             },
         });
 
-        assert_eq!(schema.compatibility().proof_assertions().len(), 1);
+        assert_eq!(schema.proof_assertions().len(), 1);
     }
 
     #[test]
@@ -363,7 +360,10 @@ mod tests {
 
         assert_eq!(schema.property_maps().len(), 1);
         assert_eq!(schema.property_maps()[0].0, "runtime");
-        assert_eq!(schema.property_maps()[0].1.get_bool("is_visible"), Some(false));
+        assert_eq!(
+            schema.property_maps()[0].1.get_bool("is_visible"),
+            Some(false)
+        );
     }
 
     #[test]
@@ -389,7 +389,10 @@ mod tests {
             }],
         });
 
-        assert_eq!(schema.declared_proof_class(), StateMachineProofClassSchema::BoundedExtended);
+        assert_eq!(
+            schema.declared_proof_class(),
+            StateMachineProofClassSchema::BoundedExtended
+        );
         assert_eq!(schema.proof_metadata().finite_domain_abstractions.len(), 1);
         assert_eq!(schema.proof_metadata().proof_assertions.len(), 1);
     }
@@ -450,17 +453,18 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_accessors_share_underlying_state() {
+    fn direct_helper_methods_share_underlying_state() {
         let mut schema = StateMachineSchema::new("idle");
-        schema
-            .compatibility_mut()
-            .set_proof_class(StateMachineProofClassSchema::Finite);
-        schema.compatibility_mut().register_property_map(
+        schema.set_proof_class(StateMachineProofClassSchema::Finite);
+        schema.register_property_map(
             "runtime",
             crate::properties::property_map::PropertyMap::new(),
         );
 
-        assert_eq!(schema.declared_proof_class(), StateMachineProofClassSchema::Finite);
-        assert_eq!(schema.compatibility().property_maps.len(), 1);
+        assert_eq!(
+            schema.declared_proof_class(),
+            StateMachineProofClassSchema::Finite
+        );
+        assert_eq!(schema.property_maps().len(), 1);
     }
 }

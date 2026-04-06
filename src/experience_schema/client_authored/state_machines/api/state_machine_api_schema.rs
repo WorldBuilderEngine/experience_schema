@@ -319,7 +319,9 @@ mod tests {
         let api = StateMachineApiSchema::from("experience_storage:save_property_map_by_key");
         assert_eq!(
             api,
-            StateMachineApiSchema::Custom("experience_storage:save_property_map_by_key".to_string())
+            StateMachineApiSchema::Custom(
+                "experience_storage:save_property_map_by_key".to_string()
+            )
         );
     }
 

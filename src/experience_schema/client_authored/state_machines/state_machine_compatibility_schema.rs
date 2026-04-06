@@ -24,7 +24,8 @@ impl StateMachineCompatibilitySchema {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.property_maps.is_empty() && self.proof_metadata == StateMachineProofMetadataSchema::default()
+        self.property_maps.is_empty()
+            && self.proof_metadata == StateMachineProofMetadataSchema::default()
     }
 
     pub fn set_proof_class(&mut self, proof_class: StateMachineProofClassSchema) {
