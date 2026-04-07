@@ -92,7 +92,9 @@ mod tests {
         let decoded = ExperienceSchema::decode_prost(&bytes).expect("decode");
 
         assert_eq!(
-            decoded.client_authored_schema.worlds[""].state_machines[0].declared_proof_class(),
+            decoded.client_authored_schema.worlds[""].state_machines[0]
+                .compatibility()
+                .declared_proof_class(),
             StateMachineProofClassSchema::EffectfulOpen
         );
         assert_eq!(

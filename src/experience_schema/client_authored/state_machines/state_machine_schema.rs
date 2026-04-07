@@ -1,15 +1,11 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
 use crate::client_authored::state_machines::state_machine_compatibility_schema::StateMachineCompatibilitySchema;
-use crate::client_authored::state_machines::state_machine_finite_domain_abstraction_schema::StateMachineFiniteDomainAbstractionSchema;
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
 use crate::client_authored::state_machines::state_machine_owned_collection_capacity_schema::StateMachineOwnedCollectionCapacitySchema;
-use crate::client_authored::state_machines::state_machine_proof_assertion_schema::StateMachineProofAssertionSchema;
 use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
-use crate::client_authored::state_machines::state_machine_proof_metadata_schema::StateMachineProofMetadataSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
-use crate::properties::property_map::PropertyMap;
 use crate::wire_compat::json_message::{
     encode_as_json_message, json_message_encoded_len, merge_from_json_message,
 };
@@ -76,53 +72,12 @@ impl StateMachineSchema {
         }
     }
 
-    pub fn declared_proof_class(&self) -> StateMachineProofClassSchema {
-        self.compatibility.declared_proof_class()
+    pub fn compatibility(&self) -> &StateMachineCompatibilitySchema {
+        &self.compatibility
     }
 
-    pub fn set_proof_class(&mut self, proof_class: StateMachineProofClassSchema) {
-        self.compatibility.set_proof_class(proof_class);
-    }
-
-    pub fn proof_metadata(&self) -> &StateMachineProofMetadataSchema {
-        self.compatibility.proof_metadata()
-    }
-
-    pub fn set_proof_metadata(&mut self, proof_metadata: StateMachineProofMetadataSchema) {
-        self.compatibility.set_proof_metadata(proof_metadata);
-    }
-
-    pub fn finite_domain_abstractions(&self) -> &[StateMachineFiniteDomainAbstractionSchema] {
-        self.compatibility.finite_domain_abstractions()
-    }
-
-    pub fn proof_assertions(&self) -> &[StateMachineProofAssertionSchema] {
-        self.compatibility.proof_assertions()
-    }
-
-    pub fn property_maps(&self) -> &[(String, PropertyMap)] {
-        self.compatibility.property_maps.as_slice()
-    }
-
-    pub fn register_property_map(
-        &mut self,
-        property_map_id: impl Into<String>,
-        property_map: PropertyMap,
-    ) {
-        self.compatibility
-            .register_property_map(property_map_id, property_map);
-    }
-
-    pub fn register_finite_domain_abstraction(
-        &mut self,
-        abstraction: StateMachineFiniteDomainAbstractionSchema,
-    ) {
-        self.compatibility
-            .register_finite_domain_abstraction(abstraction);
-    }
-
-    pub fn register_proof_assertion(&mut self, assertion: StateMachineProofAssertionSchema) {
-        self.compatibility.register_proof_assertion(assertion);
+    pub fn compatibility_mut(&mut self) -> &mut StateMachineCompatibilitySchema {
+        &mut self.compatibility
     }
 
     pub fn add_transition(
@@ -238,7 +193,7 @@ mod tests {
     fn constructor_populates_core_fields() {
         let schema = StateMachineSchema::new("idle");
         assert_eq!(
-            schema.declared_proof_class(),
+            schema.compatibility().declared_proof_class(),
             StateMachineProofClassSchema::EffectfulOpen
         );
         assert_eq!(schema.initial_state_name, "idle".to_string());
@@ -254,13 +209,18 @@ mod tests {
         );
 
         assert_eq!(
-            schema.declared_proof_class(),
+            schema.compatibility().declared_proof_class(),
             StateMachineProofClassSchema::Finite
         );
         assert_eq!(schema.initial_state_name, "idle");
         assert_eq!(schema.deterministic_seed, 7);
-        assert!(schema.finite_domain_abstractions().is_empty());
-        assert!(schema.proof_assertions().is_empty());
+        assert!(
+            schema
+                .compatibility()
+                .finite_domain_abstractions()
+                .is_empty()
+        );
+        assert!(schema.compatibility().proof_assertions().is_empty());
     }
 
     #[test]
@@ -274,12 +234,17 @@ mod tests {
         .expect("missing inline proof metadata should deserialize");
 
         assert_eq!(
-            schema.declared_proof_class(),
+            schema.compatibility().declared_proof_class(),
             StateMachineProofClassSchema::EffectfulOpen
         );
         assert!(schema.machine_owned_collection_capacities.is_empty());
-        assert!(schema.finite_domain_abstractions().is_empty());
-        assert!(schema.proof_assertions().is_empty());
+        assert!(
+            schema
+                .compatibility()
+                .finite_domain_abstractions()
+                .is_empty()
+        );
+        assert!(schema.compatibility().proof_assertions().is_empty());
     }
 
     #[test]
@@ -310,68 +275,24 @@ mod tests {
         .expect("schema should deserialize");
 
         assert_eq!(
-            schema.declared_proof_class(),
+            schema.compatibility().declared_proof_class(),
             StateMachineProofClassSchema::EffectfulOpen
         );
-        assert!(schema.finite_domain_abstractions().is_empty());
-        assert!(schema.proof_assertions().is_empty());
+        assert!(
+            schema
+                .compatibility()
+                .finite_domain_abstractions()
+                .is_empty()
+        );
+        assert!(schema.compatibility().proof_assertions().is_empty());
     }
 
     #[test]
     fn register_finite_domain_abstraction_appends_declaration() {
         let mut schema = StateMachineSchema::new("idle");
-        schema.register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
-            target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                property_map_id: "runtime".to_string(),
-                property_id: "phase".to_string(),
-            },
-            domain: StateMachineFiniteDomainSchema::Enum {
-                values: vec!["idle".to_string(), "run".to_string()],
-            },
-            semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
-        });
-
-        assert_eq!(schema.finite_domain_abstractions().len(), 1);
-    }
-
-    #[test]
-    fn register_proof_assertion_appends_declaration() {
-        let mut schema = StateMachineSchema::new("idle");
-        schema.register_proof_assertion(StateMachineProofAssertionSchema {
-            label: Some("idle_is_reachable".to_string()),
-            kind: StateMachineProofAssertionKindSchema::ReachableState {
-                state_name: "idle".to_string(),
-            },
-        });
-
-        assert_eq!(schema.proof_assertions().len(), 1);
-    }
-
-    #[test]
-    fn register_property_map_replaces_existing_declaration() {
-        let mut schema = StateMachineSchema::new("idle");
-        let mut initial = crate::properties::property_map::PropertyMap::new();
-        initial.insert_bool("is_visible", true);
-        schema.register_property_map("runtime", initial);
-
-        let mut replacement = crate::properties::property_map::PropertyMap::new();
-        replacement.insert_bool("is_visible", false);
-        schema.register_property_map("runtime", replacement);
-
-        assert_eq!(schema.property_maps().len(), 1);
-        assert_eq!(schema.property_maps()[0].0, "runtime");
-        assert_eq!(
-            schema.property_maps()[0].1.get_bool("is_visible"),
-            Some(false)
-        );
-    }
-
-    #[test]
-    fn set_proof_metadata_replaces_existing_metadata() {
-        let mut schema = StateMachineSchema::new("idle");
-        schema.set_proof_metadata(StateMachineProofMetadataSchema {
-            proof_class: StateMachineProofClassSchema::BoundedExtended,
-            finite_domain_abstractions: vec![StateMachineFiniteDomainAbstractionSchema {
+        schema
+            .compatibility_mut()
+            .register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
                 target: StateMachineFiniteDomainTargetSchema::PropertyField {
                     property_map_id: "runtime".to_string(),
                     property_id: "phase".to_string(),
@@ -380,21 +301,96 @@ mod tests {
                     values: vec!["idle".to_string(), "run".to_string()],
                 },
                 semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
-            }],
-            proof_assertions: vec![StateMachineProofAssertionSchema {
+            });
+
+        assert_eq!(schema.compatibility().finite_domain_abstractions().len(), 1);
+    }
+
+    #[test]
+    fn register_proof_assertion_appends_declaration() {
+        let mut schema = StateMachineSchema::new("idle");
+        schema
+            .compatibility_mut()
+            .register_proof_assertion(StateMachineProofAssertionSchema {
                 label: Some("idle_is_reachable".to_string()),
                 kind: StateMachineProofAssertionKindSchema::ReachableState {
                     state_name: "idle".to_string(),
                 },
-            }],
-        });
+            });
+
+        assert_eq!(schema.compatibility().proof_assertions().len(), 1);
+    }
+
+    #[test]
+    fn register_property_map_replaces_existing_declaration() {
+        let mut schema = StateMachineSchema::new("idle");
+        let mut initial = crate::properties::property_map::PropertyMap::new();
+        initial.insert_bool("is_visible", true);
+        schema
+            .compatibility_mut()
+            .register_property_map("runtime", initial);
+
+        let mut replacement = crate::properties::property_map::PropertyMap::new();
+        replacement.insert_bool("is_visible", false);
+        schema
+            .compatibility_mut()
+            .register_property_map("runtime", replacement);
+
+        assert_eq!(schema.compatibility().property_maps().len(), 1);
+        assert_eq!(schema.compatibility().property_maps()[0].0, "runtime");
+        assert_eq!(
+            schema.compatibility().property_maps()[0]
+                .1
+                .get_bool("is_visible"),
+            Some(false)
+        );
+    }
+
+    #[test]
+    fn set_proof_metadata_replaces_existing_metadata() {
+        let mut schema = StateMachineSchema::new("idle");
+        schema
+            .compatibility_mut()
+            .set_proof_metadata(StateMachineProofMetadataSchema {
+                proof_class: StateMachineProofClassSchema::BoundedExtended,
+                finite_domain_abstractions: vec![StateMachineFiniteDomainAbstractionSchema {
+                    target: StateMachineFiniteDomainTargetSchema::PropertyField {
+                        property_map_id: "runtime".to_string(),
+                        property_id: "phase".to_string(),
+                    },
+                    domain: StateMachineFiniteDomainSchema::Enum {
+                        values: vec!["idle".to_string(), "run".to_string()],
+                    },
+                    semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
+                }],
+                proof_assertions: vec![StateMachineProofAssertionSchema {
+                    label: Some("idle_is_reachable".to_string()),
+                    kind: StateMachineProofAssertionKindSchema::ReachableState {
+                        state_name: "idle".to_string(),
+                    },
+                }],
+            });
 
         assert_eq!(
-            schema.declared_proof_class(),
+            schema.compatibility().declared_proof_class(),
             StateMachineProofClassSchema::BoundedExtended
         );
-        assert_eq!(schema.proof_metadata().finite_domain_abstractions.len(), 1);
-        assert_eq!(schema.proof_metadata().proof_assertions.len(), 1);
+        assert_eq!(
+            schema
+                .compatibility()
+                .proof_metadata()
+                .finite_domain_abstractions
+                .len(),
+            1
+        );
+        assert_eq!(
+            schema
+                .compatibility()
+                .proof_metadata()
+                .proof_assertions
+                .len(),
+            1
+        );
     }
 
     #[test]
@@ -422,23 +418,27 @@ mod tests {
     fn serialization_omits_proof_only_metadata_from_runtime_schema() {
         let mut schema =
             StateMachineSchema::new_with_proof_class("idle", StateMachineProofClassSchema::Finite);
-        schema.register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
-            target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                property_map_id: "runtime".to_string(),
-                property_id: "phase".to_string(),
-            },
-            domain: StateMachineFiniteDomainSchema::Enum {
-                values: vec!["idle".to_string(), "done".to_string()],
-            },
-            semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
-        });
-        schema.register_proof_assertion(StateMachineProofAssertionSchema {
-            label: Some("idle_is_reachable".to_string()),
-            kind: StateMachineProofAssertionKindSchema::ReachableState {
-                state_name: "idle".to_string(),
-            },
-        });
-        schema.register_property_map(
+        schema
+            .compatibility_mut()
+            .register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
+                target: StateMachineFiniteDomainTargetSchema::PropertyField {
+                    property_map_id: "runtime".to_string(),
+                    property_id: "phase".to_string(),
+                },
+                domain: StateMachineFiniteDomainSchema::Enum {
+                    values: vec!["idle".to_string(), "done".to_string()],
+                },
+                semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
+            });
+        schema
+            .compatibility_mut()
+            .register_proof_assertion(StateMachineProofAssertionSchema {
+                label: Some("idle_is_reachable".to_string()),
+                kind: StateMachineProofAssertionKindSchema::ReachableState {
+                    state_name: "idle".to_string(),
+                },
+            });
+        schema.compatibility_mut().register_property_map(
             "runtime",
             crate::properties::property_map::PropertyMap::new(),
         );
@@ -453,18 +453,20 @@ mod tests {
     }
 
     #[test]
-    fn direct_helper_methods_share_underlying_state() {
+    fn explicit_compatibility_helpers_share_underlying_state() {
         let mut schema = StateMachineSchema::new("idle");
-        schema.set_proof_class(StateMachineProofClassSchema::Finite);
-        schema.register_property_map(
+        schema
+            .compatibility_mut()
+            .set_proof_class(StateMachineProofClassSchema::Finite);
+        schema.compatibility_mut().register_property_map(
             "runtime",
             crate::properties::property_map::PropertyMap::new(),
         );
 
         assert_eq!(
-            schema.declared_proof_class(),
+            schema.compatibility().declared_proof_class(),
             StateMachineProofClassSchema::Finite
         );
-        assert_eq!(schema.property_maps().len(), 1);
+        assert_eq!(schema.compatibility().property_maps().len(), 1);
     }
 }

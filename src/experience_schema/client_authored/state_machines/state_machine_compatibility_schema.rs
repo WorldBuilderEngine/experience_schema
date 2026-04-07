@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct StateMachineCompatibilitySchema {
     #[serde(default)]
-    pub property_maps: Vec<(String, PropertyMap)>,
+    property_maps: Vec<(String, PropertyMap)>,
     #[serde(default, flatten)]
     proof_metadata: StateMachineProofMetadataSchema,
 }
@@ -26,6 +26,10 @@ impl StateMachineCompatibilitySchema {
     pub fn is_empty(&self) -> bool {
         self.property_maps.is_empty()
             && self.proof_metadata == StateMachineProofMetadataSchema::default()
+    }
+
+    pub fn property_maps(&self) -> &[(String, PropertyMap)] {
+        self.property_maps.as_slice()
     }
 
     pub fn set_proof_class(&mut self, proof_class: StateMachineProofClassSchema) {
