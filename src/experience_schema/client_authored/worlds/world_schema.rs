@@ -3,12 +3,12 @@ use crate::client_authored::worlds::world_compatibility_schema::WorldCompatibili
 use crate::client_authored::worlds::world_object_schema::WorldObjectSchema;
 use crate::properties::property_map::PropertyMap;
 use crate::wire_compat::json_message::{
-    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
+    encode_as_json_message, json_message_encoded_len,
 };
 use prost::DecodeError;
 use prost::Message;
 use prost::bytes::{Buf, BufMut};
-use prost::encoding::{DecodeContext, WireType};
+use prost::encoding::{DecodeContext, WireType, bytes, message, skip_field, string};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -50,6 +50,11 @@ impl WorldSchema {
     }
 }
 
+#[allow(deprecated)]
+fn schema_json_decode_error(error: serde_json::Error) -> DecodeError {
+    DecodeError::new(format!("schema JSON message decode failed: {error}"))
+}
+
 impl Message for WorldSchema {
     fn encode_raw(&self, buf: &mut impl BufMut) {
         encode_as_json_message(self, buf);
@@ -62,7 +67,37 @@ impl Message for WorldSchema {
         buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError> {
-        merge_from_json_message(self, tag, wire_type, buf, ctx)
+        match tag {
+            1 => {
+                let mut payload = Vec::new();
+                bytes::merge(wire_type, &mut payload, buf, ctx)?;
+                let first_non_whitespace_byte = payload
+                    .iter()
+                    .copied()
+                    .find(|byte| !byte.is_ascii_whitespace());
+                if matches!(first_non_whitespace_byte, Some(b'{') | Some(b'[')) {
+                    *self = serde_json::from_slice::<WorldSchema>(&payload).map_err(schema_json_decode_error)?;
+                    return Ok(());
+                }
+
+                let world_object_schema = WorldObjectSchema::decode(payload.as_slice())?;
+                self.objects.push(world_object_schema);
+                Ok(())
+            }
+            2 => message::merge(wire_type, &mut self.properties, buf, ctx),
+            3 => message::merge_repeated(wire_type, &mut self.state_machines, buf, ctx),
+            4 => string::merge_repeated(wire_type, &mut self.asset_bundle_ids, buf, ctx),
+            5 => {
+                let mut object_template_entry = LegacyWorldObjectTemplateEntry::default();
+                message::merge(wire_type, &mut object_template_entry, buf, ctx)?;
+                if let Some(world_object_schema) = object_template_entry.value {
+                    self.compatibility
+                        .register_object_template(object_template_entry.key, world_object_schema);
+                }
+                Ok(())
+            }
+            _ => skip_field(wire_type, tag, buf, ctx),
+        }
     }
 
     fn encoded_len(&self) -> usize {
@@ -74,9 +109,21 @@ impl Message for WorldSchema {
     }
 }
 
+#[derive(Clone, PartialEq, Message)]
+struct LegacyWorldObjectTemplateEntry {
+    #[prost(string, tag = "1")]
+    key: String,
+    #[prost(message, optional, tag = "2")]
+    value: Option<WorldObjectSchema>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::WorldSchema;
+    use super::LegacyWorldObjectTemplateEntry;
+    use crate::client_authored::worlds::world_object_schema::WorldObjectSchema;
+    use crate::properties::property_map::PropertyMap;
+    use prost::Message;
 
     #[test]
     fn deserialization_routes_legacy_world_payloads_into_compatibility_boundary() {
@@ -144,5 +191,46 @@ mod tests {
         let serialized = serde_json::to_value(&world).expect("world should serialize");
         assert!(serialized.get("object_templates").is_none());
         assert!(serialized.get("protocol_proof_assertions").is_none());
+    }
+
+    #[test]
+    fn decode_supports_legacy_field_based_world_wire_shape() {
+        #[derive(Clone, PartialEq, Message)]
+        struct LegacyWorldSchema {
+            #[prost(message, repeated, tag = "1")]
+            objects: Vec<WorldObjectSchema>,
+            #[prost(message, required, tag = "2")]
+            properties: PropertyMap,
+            #[prost(message, repeated, tag = "3")]
+            state_machines: Vec<crate::client_authored::state_machines::state_machine_schema::StateMachineSchema>,
+            #[prost(string, repeated, tag = "4")]
+            asset_bundle_ids: Vec<String>,
+            #[prost(message, repeated, tag = "5")]
+            object_templates: Vec<LegacyWorldObjectTemplateEntry>,
+        }
+
+        let legacy_world = LegacyWorldSchema {
+            objects: vec![WorldObjectSchema {
+                properties: PropertyMap::default(),
+                state_machines: Vec::new(),
+            }],
+            properties: PropertyMap::default(),
+            state_machines: Vec::new(),
+            asset_bundle_ids: vec!["ui".to_string()],
+            object_templates: vec![LegacyWorldObjectTemplateEntry {
+                key: "template_button".to_string(),
+                value: Some(WorldObjectSchema {
+                    properties: PropertyMap::default(),
+                    state_machines: Vec::new(),
+                }),
+            }],
+        };
+
+        let decoded_world =
+            WorldSchema::decode(legacy_world.encode_to_vec().as_slice()).expect("legacy world wire shape should decode");
+
+        assert_eq!(decoded_world.objects.len(), 1);
+        assert_eq!(decoded_world.asset_bundle_ids, vec!["ui".to_string()]);
+        assert!(decoded_world.object_templates().contains_key("template_button"));
     }
 }
