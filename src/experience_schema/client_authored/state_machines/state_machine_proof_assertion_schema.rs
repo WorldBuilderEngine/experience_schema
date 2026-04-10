@@ -50,16 +50,16 @@ mod tests {
     fn deserializes_required_event_sequence_assertion() {
         let assertion = serde_json::from_str::<StateMachineProofAssertionSchema>(
             r#"{
-                "label": "bounce_returns",
+                "label": "paired_events",
                 "kind": {
                     "RequiredEventSequence": {
                         "first": {
                             "scope": "global",
-                            "identifier": "one_d_bouncer:hit_right_wall"
+                            "identifier": "custom:sample_story:dispatch_intro_started"
                         },
                         "then": {
                             "scope": "global",
-                            "identifier": "one_d_bouncer:hit_left_wall"
+                            "identifier": "custom:sample_story:dispatch_intro_completed"
                         }
                     }
                 }
@@ -70,15 +70,15 @@ mod tests {
         assert_eq!(
             assertion,
             StateMachineProofAssertionSchema {
-                label: Some("bounce_returns".to_string()),
+                label: Some("paired_events".to_string()),
                 kind: StateMachineProofAssertionKindSchema::RequiredEventSequence {
                     first: StateMachineProofAssertionEventSchema {
                         scope: StateMachineProofAssertionEventScopeSchema::Global,
-                        identifier: "one_d_bouncer:hit_right_wall".to_string(),
+                        identifier: "custom:sample_story:dispatch_intro_started".to_string(),
                     },
                     then: StateMachineProofAssertionEventSchema {
                         scope: StateMachineProofAssertionEventScopeSchema::Global,
-                        identifier: "one_d_bouncer:hit_left_wall".to_string(),
+                        identifier: "custom:sample_story:dispatch_intro_completed".to_string(),
                     },
                 },
             }
