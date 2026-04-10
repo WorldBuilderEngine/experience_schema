@@ -53,6 +53,9 @@ pub enum StateMachineFiniteDomainSchema {
         minimum: i64,
         maximum: i64,
     },
+    BoundedIntVector {
+        components: Vec<StateMachineFiniteIntRangeSchema>,
+    },
     FiniteRegistry {
         members: Vec<String>,
     },
@@ -67,10 +70,18 @@ pub struct StateMachineFloatBucketSchema {
     pub max_exclusive: Option<f64>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct StateMachineFiniteIntRangeSchema {
+    pub label: String,
+    pub minimum: i64,
+    pub maximum: i64,
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         StateMachineFiniteDomainAbstractionSchema, StateMachineFiniteDomainSchema,
+        StateMachineFiniteIntRangeSchema,
         StateMachineFiniteDomainSemanticsSchema, StateMachineFiniteDomainTargetSchema,
         StateMachineFloatBucketSchema,
     };
@@ -202,6 +213,55 @@ mod tests {
                 },
                 domain: StateMachineFiniteDomainSchema::Enum {
                     values: vec!["boot".to_string(), "run".to_string(), "done".to_string()],
+                },
+                semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
+            }
+        );
+    }
+
+    #[test]
+    fn deserializes_bounded_int_vector_abstraction() {
+        let abstraction = serde_json::from_str::<StateMachineFiniteDomainAbstractionSchema>(
+            r#"{
+                "target": {
+                    "PropertyField": {
+                        "property_map_id": "runtime",
+                        "property_id": "ball_position"
+                    }
+                },
+                "domain": {
+                    "BoundedIntVector": {
+                        "components": [
+                            { "label": "x", "minimum": 0, "maximum": 11 },
+                            { "label": "y", "minimum": 0, "maximum": 7 }
+                        ]
+                    }
+                },
+                "semantics": "exact"
+            }"#,
+        )
+        .expect("bounded-int-vector abstraction should deserialize");
+
+        assert_eq!(
+            abstraction,
+            StateMachineFiniteDomainAbstractionSchema {
+                target: StateMachineFiniteDomainTargetSchema::PropertyField {
+                    property_map_id: "runtime".to_string(),
+                    property_id: "ball_position".to_string(),
+                },
+                domain: StateMachineFiniteDomainSchema::BoundedIntVector {
+                    components: vec![
+                        StateMachineFiniteIntRangeSchema {
+                            label: "x".to_string(),
+                            minimum: 0,
+                            maximum: 11,
+                        },
+                        StateMachineFiniteIntRangeSchema {
+                            label: "y".to_string(),
+                            minimum: 0,
+                            maximum: 7,
+                        },
+                    ],
                 },
                 semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
             }
