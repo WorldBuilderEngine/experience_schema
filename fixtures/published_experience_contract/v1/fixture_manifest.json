@@ -11,7 +11,7 @@
   },
   "runtime_smoke": {
     "service_base_url": "https://api.worldbuilder.gg",
-    "dedicated_route": "/experience/1/dungeon-crawler"
+    "dedicated_route": "/experience/819377031945600682/stripped-core-boot-load-canary"
   },
   "owners": {
     "schema": "experience_schema",
