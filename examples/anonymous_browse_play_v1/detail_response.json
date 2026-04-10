@@ -1,18 +1,18 @@
 {
   "contract_version": "experience_schema.anonymous_browse_play.v1",
   "experience": {
-    "experience_id": "exp_dungeon_crawler",
+    "experience_id": "exp_example",
     "publish_id": "pub_20260221_001",
     "publish_version": 12,
     "published_at_unix_seconds": 1771622400,
-    "display_name": "Dungeon Crawler",
-    "short_description": "Traverse a compact single-player dungeon run.",
-    "long_description": "A deterministic dungeon run built for anonymous quick play.",
+    "display_name": "Example Experience",
+    "short_description": "Browse a compact sample experience for anonymous quick play.",
+    "long_description": "A deterministic sample experience built for anonymous browse-and-play flows.",
     "tile_color_hex": "#2E4A7D",
-    "tile_icon_image": "https://cdn.worldbuilder.dev/tiles/dungeon.png",
+    "tile_icon_image": "https://cdn.worldbuilder.dev/tiles/example.png",
     "screenshot_gallery_image_urls": [
-      "https://cdn.worldbuilder.dev/screenshots/dungeon_1.png",
-      "https://cdn.worldbuilder.dev/screenshots/dungeon_2.png"
+      "https://cdn.worldbuilder.dev/screenshots/example_1.png",
+      "https://cdn.worldbuilder.dev/screenshots/example_2.png"
     ],
     "genre": "adventure",
     "tags": [
