@@ -1,4 +1,4 @@
-use crate::service_authored::assets::asset_bundle_manifest_schema::AssetBundleManifestSchema;
+use crate::service_authored::assets::AssetBundleManifestSchema;
 use crate::service_authored::meta_data::publisher_info_schema::PublisherInfoSchema;
 use prost::Message;
 use serde::{Deserialize, Serialize};
