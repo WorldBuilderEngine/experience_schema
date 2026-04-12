@@ -4,7 +4,7 @@ use prost::Message;
 use serde::{Deserialize, Serialize};
 
 /// Describes privileged data that must come from a trustworthy server-side source.
-#[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Message)]
+#[derive(Deserialize, Serialize, Clone, PartialEq, Message)]
 pub struct ServiceAuthoredSchema {
     #[prost(message, required, tag = "1")]
     pub publisher_info: PublisherInfoSchema,
