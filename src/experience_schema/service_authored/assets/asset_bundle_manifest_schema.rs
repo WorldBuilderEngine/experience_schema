@@ -30,6 +30,35 @@ pub struct AssetBundleManifestEntrySchema {
 /// Trusted intrinsic asset metadata for a single runtime-visible asset.
 #[derive(Deserialize, Serialize, Clone, PartialEq, Message)]
 pub struct AssetBundleManifestAssetMetadataSchema {
+    /// Kinded service-authored asset metadata.
+    #[serde(flatten)]
+    #[prost(oneof = "asset_bundle_manifest_asset_metadata_schema::Metadata", tags = "1, 2")]
+    pub metadata: Option<asset_bundle_manifest_asset_metadata_schema::Metadata>,
+}
+
+pub mod asset_bundle_manifest_asset_metadata_schema {
+    use super::{
+        AssetBundleManifestImageMetadataSchema, AssetBundleManifestStaticTextFontMetadataSchema,
+    };
+    use prost::Oneof;
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Deserialize, Serialize, Clone, PartialEq, Oneof)]
+    #[serde(tag = "kind", content = "value")]
+    pub enum Metadata {
+        #[serde(rename = "image")]
+        #[prost(message, tag = "1")]
+        Image(AssetBundleManifestImageMetadataSchema),
+
+        #[serde(rename = "static_text_font")]
+        #[prost(message, tag = "2")]
+        StaticTextFont(AssetBundleManifestStaticTextFontMetadataSchema),
+    }
+}
+
+/// Trusted intrinsic image metadata for runtime sizing.
+#[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Message)]
+pub struct AssetBundleManifestImageMetadataSchema {
     /// Trusted intrinsic asset width in pixels for runtime sizing.
     #[serde(default)]
     #[prost(uint32, tag = "1")]
@@ -39,29 +68,11 @@ pub struct AssetBundleManifestAssetMetadataSchema {
     #[serde(default)]
     #[prost(uint32, tag = "2")]
     pub height_px: u32,
-
-    /// Trusted static-text font metrics derived during publish/build flows so runtimes can
-    /// measure authored strings without loading raw font bytes.
-    #[serde(default)]
-    #[prost(message, optional, tag = "3")]
-    pub static_text_font_metrics: Option<AssetBundleManifestStaticTextFontMetricsSchema>,
 }
 
-impl AssetBundleManifestAssetMetadataSchema {
-    pub fn has_intrinsic_dimensions(&self) -> bool {
-        self.width_px > 0 && self.height_px > 0
-    }
-
-    pub fn has_static_text_font_metrics(&self) -> bool {
-        self.static_text_font_metrics
-            .as_ref()
-            .is_some_and(AssetBundleManifestStaticTextFontMetricsSchema::is_bound)
-    }
-}
-
-/// Trusted static-text font metrics derived from a font asset for the glyphs an experience uses.
+/// Trusted static-text font metadata derived from a font asset for the glyphs an experience uses.
 #[derive(Deserialize, Serialize, Clone, PartialEq, Message)]
-pub struct AssetBundleManifestStaticTextFontMetricsSchema {
+pub struct AssetBundleManifestStaticTextFontMetadataSchema {
     /// Canonical glyph scale used when deriving these metrics.
     #[serde(default)]
     #[prost(float, tag = "1")]
@@ -82,12 +93,6 @@ pub struct AssetBundleManifestStaticTextFontMetricsSchema {
     #[serde(default)]
     #[prost(map = "string, message", tag = "4")]
     pub authored_text_layouts: HashMap<String, AssetBundleManifestStaticTextLayoutSchema>,
-}
-
-impl AssetBundleManifestStaticTextFontMetricsSchema {
-    pub fn is_bound(&self) -> bool {
-        self.glyph_scale_px > 0.0 && (!self.glyphs.is_empty() || !self.authored_text_layouts.is_empty())
-    }
 }
 
 /// Trusted per-glyph metrics sufficient to reconstruct current stripped-runtime text bounds.
