@@ -208,6 +208,7 @@ mod tests {
 
         let legacy_world = LegacyWorldSchema {
             objects: vec![WorldObjectSchema {
+                kinded: None,
                 properties: PropertyMap::default(),
                 state_machines: Vec::new(),
             }],
@@ -217,6 +218,7 @@ mod tests {
             object_templates: vec![LegacyWorldObjectTemplateEntry {
                 key: "template_button".to_string(),
                 value: Some(WorldObjectSchema {
+                    kinded: None,
                     properties: PropertyMap::default(),
                     state_machines: Vec::new(),
                 }),

@@ -1,3 +1,4 @@
+use super::kinded_world_object_schema::KindedWorldObjectSchema;
 use super::world_object_schema::WorldObjectSchema;
 use crate::{
     assets::asset_ref::AssetRef,
@@ -17,27 +18,32 @@ pub enum AuthoredWorldObjectKind {
 #[derive(Clone, Copy, Debug)]
 pub struct AuthoredWorldObjectView<'a> {
     world_object_schema: &'a WorldObjectSchema,
-    property_view: AuthoredPropertyView<'a>,
+    property_view: Option<AuthoredPropertyView<'a>>,
 }
 
 impl<'a> AuthoredWorldObjectView<'a> {
     pub fn new(world_object_schema: &'a WorldObjectSchema) -> Self {
         Self {
             world_object_schema,
-            property_view: AuthoredPropertyView::new(&world_object_schema.properties),
+            property_view: (!world_object_schema.properties.is_empty())
+                .then(|| AuthoredPropertyView::new(&world_object_schema.properties)),
         }
     }
 
-    pub fn properties(&self) -> &'a PropertyMap {
-        &self.world_object_schema.properties
+    pub fn properties(&self) -> Option<&'a PropertyMap> {
+        self.property_view.map(|property_view| property_view.properties())
     }
 
-    pub fn property_view(&self) -> AuthoredPropertyView<'a> {
+    pub fn property_view(&self) -> Option<AuthoredPropertyView<'a>> {
         self.property_view
     }
 
     pub fn kind_name(&self) -> Option<&'a str> {
-        self.string("object_type").map(|value| value.as_str())
+        self.world_object_schema
+            .kinded
+            .as_ref()
+            .map(KindedWorldObjectSchema::canonical_object_type_name)
+            .or_else(|| self.string("object_type").map(|value| value.as_str()))
     }
 
     pub fn object_type(&self) -> Option<&'a str> {
@@ -91,31 +97,163 @@ impl<'a> AuthoredWorldObjectView<'a> {
     }
 
     pub fn bool(&self, property_name: &str) -> Option<bool> {
-        self.property_view.bool(property_name)
+        match self.world_object_schema.kinded.as_ref() {
+            Some(KindedWorldObjectSchema::Camera(camera)) => match property_name {
+                "is_active_camera" => Some(camera.is_active_camera),
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::StaticSprite(static_sprite)) => match property_name {
+                "is_visible" => Some(static_sprite.is_visible),
+                "visible_when_scene_active" => static_sprite.visible_when_scene_active,
+                "repeat_x" => static_sprite.repeat_x,
+                "repeat_y" => static_sprite.repeat_y,
+                "interaction_enabled" => Some(static_sprite.interaction_enabled),
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::StaticText(static_text)) => match property_name {
+                "is_visible" => Some(static_text.is_visible),
+                "interaction_enabled" => Some(static_text.interaction_enabled),
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker)) => match property_name {
+                "is_visible" => Some(hotspot_marker.is_visible),
+                "interaction_enabled" => Some(hotspot_marker.interaction_enabled),
+                _ => None,
+            },
+            _ => self.property_view.and_then(|property_view| property_view.bool(property_name)),
+        }
     }
 
     pub fn float(&self, property_name: &str) -> Option<f64> {
-        self.property_view.float(property_name)
+        match self.world_object_schema.kinded.as_ref() {
+            Some(KindedWorldObjectSchema::Camera(camera)) => match property_name {
+                "pixels_per_unit" => match camera.projection {
+                    crate::client_authored::worlds::typed_object_schemas::CameraProjectionSchema::Orthographic2d { pixels_per_unit } => Some(pixels_per_unit),
+                    _ => None,
+                },
+                "focal_length" => match camera.projection {
+                    crate::client_authored::worlds::typed_object_schemas::CameraProjectionSchema::Perspective3d { focal_length, .. } => Some(focal_length),
+                    _ => None,
+                },
+                "debug_movement_units_per_second" => camera
+                    .debug_movement_units_per_second
+                    .is_finite()
+                    .then_some(camera.debug_movement_units_per_second),
+                "arm_distance" => camera.arm_distance,
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::StaticText(static_text)) => match property_name {
+                "outline_thickness_px" => static_text.outline_thickness_px,
+                _ => None,
+            },
+            _ => self.property_view.and_then(|property_view| property_view.float(property_name)),
+        }
     }
 
     pub fn int(&self, property_name: &str) -> Option<i64> {
-        self.property_view.int(property_name)
+        match self.world_object_schema.kinded.as_ref() {
+            Some(KindedWorldObjectSchema::StaticSprite(static_sprite)) => match property_name {
+                "tile_width_px" => static_sprite.tile_width_px.map(i64::from),
+                "tile_height_px" => static_sprite.tile_height_px.map(i64::from),
+                "intrinsic_width_px" => static_sprite.intrinsic_width_px.map(i64::from),
+                "intrinsic_height_px" => static_sprite.intrinsic_height_px.map(i64::from),
+                _ => None,
+            },
+            _ => self.property_view.and_then(|property_view| property_view.int(property_name)),
+        }
     }
 
     pub fn float_array(&self, property_name: &str) -> Option<&'a Vec<f64>> {
-        self.property_view.float_array(property_name)
+        self.property_view
+            .and_then(|property_view| property_view.float_array(property_name))
     }
 
     pub fn string(&self, property_name: &str) -> Option<&'a String> {
-        self.property_view.string(property_name)
+        match self.world_object_schema.kinded.as_ref() {
+            Some(KindedWorldObjectSchema::Camera(camera)) => match property_name {
+                "node_tag" => camera.node_tag.as_ref(),
+                "follow_target_node_tag" => camera.follow_target_node_tag.as_ref(),
+                "follow_scroll_type" => camera.follow_scroll_type.as_ref(),
+                "camera_projection" => None,
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::StaticSprite(static_sprite)) => match property_name {
+                "node_tag" => static_sprite.node_tag.as_ref(),
+                "parent_node_tag" => static_sprite.parent_node_tag.as_ref(),
+                "scene_id" => static_sprite.scene_id.as_ref(),
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::StaticText(static_text)) => match property_name {
+                "text" => Some(&static_text.text),
+                "node_tag" => static_text.node_tag.as_ref(),
+                "parent_node_tag" => static_text.parent_node_tag.as_ref(),
+                "scene_id" => static_text.scene_id.as_ref(),
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::TransitionHotspot(transition_hotspot)) => match property_name {
+                "object_type" => Some(&transition_hotspot.object_type),
+                "hotspot_id" => Some(&transition_hotspot.hotspot_id),
+                "from_scene_id" => Some(&transition_hotspot.from_scene_id),
+                "to_scene_id" => Some(&transition_hotspot.to_scene_id),
+                "activation_event" => transition_hotspot.activation_event.as_ref(),
+                "transition_started_event" => transition_hotspot.transition_started_event.as_ref(),
+                "transition_completed_event" => transition_hotspot.transition_completed_event.as_ref(),
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::InteractableHotspot(interactable_hotspot)) => match property_name {
+                "object_type" => Some(&interactable_hotspot.object_type),
+                "scene_id" => Some(&interactable_hotspot.scene_id),
+                "hotspot_id" => Some(&interactable_hotspot.hotspot_id),
+                "target_id" => Some(&interactable_hotspot.target_id),
+                "verb_id" => interactable_hotspot.verb_id.as_ref(),
+                "item_id" => interactable_hotspot.item_id.as_ref(),
+                "required_item_id" => interactable_hotspot.required_item_id.as_ref(),
+                "activation_event" => interactable_hotspot.activation_event.as_ref(),
+                "interaction_resolved_event" => interactable_hotspot.interaction_resolved_event.as_ref(),
+                "inventory_collected_event" => interactable_hotspot.inventory_collected_event.as_ref(),
+                "gate_blocked_event" => interactable_hotspot.gate_blocked_event.as_ref(),
+                "gate_unlocked_event" => interactable_hotspot.gate_unlocked_event.as_ref(),
+                "hover_entered_event" => interactable_hotspot.hover_entered_event.as_ref(),
+                "hover_exited_event" => interactable_hotspot.hover_exited_event.as_ref(),
+                "pressed_event" => interactable_hotspot.pressed_event.as_ref(),
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker)) => match property_name {
+                "scene_id" => Some(&hotspot_marker.scene_id),
+                "hotspot_id" => Some(&hotspot_marker.hotspot_id),
+                "marker_kind" => Some(&hotspot_marker.marker_kind),
+                "node_tag" => hotspot_marker.node_tag.as_ref(),
+                _ => None,
+            },
+            _ => self.property_view.and_then(|property_view| property_view.string(property_name)),
+        }
     }
 
     pub fn string_array(&self, property_name: &str) -> Option<&'a Vec<String>> {
-        self.properties().get_string_array(property_name)
+        self.properties().and_then(|properties| properties.get_string_array(property_name))
     }
 
     pub fn asset_ref(&self, property_name: &str) -> Option<&'a AssetRef> {
-        self.property_view.asset_ref(property_name)
+        match self.world_object_schema.kinded.as_ref() {
+            Some(KindedWorldObjectSchema::StaticSprite(static_sprite)) => match property_name {
+                "asset_ref" => Some(&static_sprite.asset_ref),
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::StaticText(static_text)) => match property_name {
+                "font_asset_ref" => Some(&static_text.font_asset_ref),
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::InteractableHotspot(interactable_hotspot)) => match property_name {
+                "default_asset_ref" => interactable_hotspot.default_asset_ref.as_ref(),
+                "hover_asset_ref" => interactable_hotspot.hover_asset_ref.as_ref(),
+                _ => None,
+            },
+            Some(KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker)) => match property_name {
+                "asset_ref" => Some(&hotspot_marker.asset_ref),
+                _ => None,
+            },
+            _ => self.property_view.and_then(|property_view| property_view.asset_ref(property_name)),
+        }
     }
 
     pub fn asset_refs(&self) -> std::vec::IntoIter<&'a AssetRef> {
@@ -130,13 +268,19 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 .and_then(|text| text.font_asset_ref())
                 .into_iter()
                 .collect(),
-            _ => self.property_view.asset_refs().collect(),
+            _ => self
+                .property_view
+                .map(|property_view| property_view.asset_refs().collect())
+                .unwrap_or_default(),
         };
         asset_refs.into_iter()
     }
 
     pub fn sanitized_string(&self, property_name: &str) -> Option<String> {
-        self.property_view.sanitized_string(property_name)
+        self.string(property_name)
+            .map(|raw_value| raw_value.trim())
+            .filter(|sanitized_property_value| !sanitized_property_value.is_empty())
+            .map(|sanitized_property_value| sanitized_property_value.to_string())
     }
 
     pub fn node_tag(&self) -> Option<String> {
@@ -148,7 +292,14 @@ impl<'a> AuthoredWorldObjectView<'a> {
     }
 
     pub fn positive_dimension(&self, property_name: &str) -> u32 {
-        self.property_view.positive_dimension(property_name)
+        if let Some(raw_dimension) = self.int(property_name)
+            && raw_dimension > 0
+            && let Ok(dimension) = u32::try_from(raw_dimension)
+        {
+            return dimension;
+        }
+
+        0
     }
 }
 
@@ -158,7 +309,7 @@ pub struct AuthoredCameraObjectView<'a> {
 }
 
 impl<'a> AuthoredCameraObjectView<'a> {
-    pub fn property_view(&self) -> AuthoredPropertyView<'a> {
+    pub fn property_view(&self) -> Option<AuthoredPropertyView<'a>> {
         self.world_object_view.property_view()
     }
 
@@ -290,6 +441,7 @@ mod tests {
         );
 
         let world_object_schema = WorldObjectSchema {
+            kinded: None,
             properties,
             state_machines: Vec::new(),
         };
@@ -317,6 +469,7 @@ mod tests {
         );
 
         let world_object_schema = WorldObjectSchema {
+            kinded: None,
             properties,
             state_machines: Vec::new(),
         };
@@ -340,6 +493,7 @@ mod tests {
         properties.insert_int("tile_width_px", 0);
 
         let world_object_schema = WorldObjectSchema {
+            kinded: None,
             properties,
             state_machines: Vec::new(),
         };

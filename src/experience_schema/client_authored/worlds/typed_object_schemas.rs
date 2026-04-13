@@ -1,6 +1,7 @@
 use crate::assets::asset_ref::AssetRef;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CameraProjectionSchema {
     Orthographic2d {
         pixels_per_unit: f64,
@@ -12,7 +13,7 @@ pub enum CameraProjectionSchema {
     },
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CameraObjectSchema {
     pub position_xyz: [f64; 3],
     pub projection: CameraProjectionSchema,
@@ -70,7 +71,7 @@ impl CameraObjectSchema {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StaticSpriteObjectSchema {
     pub asset_ref: AssetRef,
     pub position_xyz: [f64; 3],
@@ -117,7 +118,7 @@ impl StaticSpriteObjectSchema {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StaticTextObjectSchema {
     pub font_asset_ref: AssetRef,
     pub text: String,

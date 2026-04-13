@@ -1,6 +1,7 @@
 use crate::assets::asset_ref::AssetRef;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HotspotBoundsPx {
     pub x: u32,
     pub y: u32,
@@ -33,7 +34,7 @@ impl HotspotBoundsPx {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransitionHotspotObjectSchema {
     pub object_type: String,
     pub hotspot_id: String,
@@ -45,7 +46,7 @@ pub struct TransitionHotspotObjectSchema {
     pub transition_completed_event: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InteractableHotspotObjectSchema {
     pub object_type: String,
     pub scene_id: String,
@@ -68,7 +69,7 @@ pub struct InteractableHotspotObjectSchema {
     pub pressed_event: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HotspotMarkerSpriteObjectSchema {
     pub scene_id: String,
     pub hotspot_id: String,

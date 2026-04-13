@@ -1,28 +1,38 @@
 use crate::client_authored::worlds::hotspot_object_schemas::{
     HotspotMarkerSpriteObjectSchema, InteractableHotspotObjectSchema, TransitionHotspotObjectSchema,
 };
+use crate::client_authored::worlds::kinded_world_object_schema::KindedWorldObjectSchema;
 use crate::client_authored::state_machines::state_machine_schema::StateMachineSchema;
 use crate::client_authored::worlds::typed_object_schemas::{
     CameraObjectSchema, CameraProjectionSchema, StaticSpriteObjectSchema, StaticTextObjectSchema,
 };
 use crate::properties::property_map::PropertyMap;
-use prost::Message;
+use crate::wire_compat::json_message::{
+    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
+};
+use prost::bytes::{Buf, BufMut};
+use prost::encoding::{DecodeContext, WireType};
+use prost::{DecodeError, Message};
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Clone, PartialEq, Message)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default, PartialEq)]
 pub struct WorldObjectSchema {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kinded: Option<KindedWorldObjectSchema>,
+
     /// The custom properties (data) for this object.
-    #[prost(message, required, tag = "1")]
+    #[serde(default, skip_serializing_if = "PropertyMap::is_empty")]
     pub properties: PropertyMap,
 
     /// State machines (code) for this object.
-    #[prost(message, repeated, tag = "2")]
+    #[serde(default)]
     pub state_machines: Vec<StateMachineSchema>,
 }
 
 impl WorldObjectSchema {
     pub fn from_custom_properties(properties: PropertyMap) -> Self {
         Self {
+            kinded: None,
             properties,
             state_machines: Vec::new(),
         }
@@ -37,6 +47,7 @@ impl WorldObjectSchema {
     }
 
     pub fn camera(camera: CameraObjectSchema) -> Self {
+        let kinded = KindedWorldObjectSchema::Camera(camera.clone());
         let mut properties = PropertyMap::new();
         properties.insert_string("object_type", "camera");
         match camera.projection {
@@ -89,10 +100,15 @@ impl WorldObjectSchema {
             properties.insert_string("follow_scroll_type", follow_scroll_type);
         }
 
-        Self::from_custom_properties(properties)
+        Self {
+            kinded: Some(kinded),
+            properties,
+            state_machines: Vec::new(),
+        }
     }
 
     pub fn static_sprite(static_sprite: StaticSpriteObjectSchema) -> Self {
+        let kinded = KindedWorldObjectSchema::StaticSprite(static_sprite.clone());
         let mut properties = PropertyMap::new();
         properties.insert_string("object_type", "static_sprite");
         properties.insert_asset_ref("asset_ref", static_sprite.asset_ref);
@@ -140,10 +156,15 @@ impl WorldObjectSchema {
             properties.insert_bool("interaction_enabled", true);
         }
 
-        Self::from_custom_properties(properties)
+        Self {
+            kinded: Some(kinded),
+            properties,
+            state_machines: Vec::new(),
+        }
     }
 
     pub fn static_text(static_text: StaticTextObjectSchema) -> Self {
+        let kinded = KindedWorldObjectSchema::StaticText(static_text.clone());
         let mut properties = PropertyMap::new();
         properties.insert_string("object_type", "static_text");
         properties.insert_asset_ref("font_asset_ref", static_text.font_asset_ref);
@@ -174,10 +195,15 @@ impl WorldObjectSchema {
             properties.insert_float("outline_thickness_px", outline_thickness_px);
         }
 
-        Self::from_custom_properties(properties)
+        Self {
+            kinded: Some(kinded),
+            properties,
+            state_machines: Vec::new(),
+        }
     }
 
     pub fn transition_hotspot(transition_hotspot: TransitionHotspotObjectSchema) -> Self {
+        let kinded = KindedWorldObjectSchema::TransitionHotspot(transition_hotspot.clone());
         let mut properties = PropertyMap::new();
         properties.insert_string("object_type", transition_hotspot.object_type);
         properties.insert_string("hotspot_id", transition_hotspot.hotspot_id);
@@ -194,10 +220,15 @@ impl WorldObjectSchema {
         }
         properties.insert_float_array("bounds_px", transition_hotspot.bounds_px.as_vec());
 
-        Self::from_custom_properties(properties)
+        Self {
+            kinded: Some(kinded),
+            properties,
+            state_machines: Vec::new(),
+        }
     }
 
     pub fn interactable_hotspot(interactable_hotspot: InteractableHotspotObjectSchema) -> Self {
+        let kinded = KindedWorldObjectSchema::InteractableHotspot(interactable_hotspot.clone());
         let mut properties = PropertyMap::new();
         properties.insert_string("object_type", interactable_hotspot.object_type);
         properties.insert_string("scene_id", interactable_hotspot.scene_id);
@@ -247,10 +278,15 @@ impl WorldObjectSchema {
             properties.insert_string("pressed_event", pressed_event);
         }
 
-        Self::from_custom_properties(properties)
+        Self {
+            kinded: Some(kinded),
+            properties,
+            state_machines: Vec::new(),
+        }
     }
 
     pub fn hotspot_marker_sprite(hotspot_marker: HotspotMarkerSpriteObjectSchema) -> Self {
+        let kinded = KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker.clone());
         let mut properties = PropertyMap::new();
         properties.insert_string("object_type", "static_sprite");
         properties.insert_asset_ref("asset_ref", hotspot_marker.asset_ref);
@@ -268,7 +304,35 @@ impl WorldObjectSchema {
             properties.insert_bool("interaction_enabled", true);
         }
 
-        Self::from_custom_properties(properties)
+        Self {
+            kinded: Some(kinded),
+            properties,
+            state_machines: Vec::new(),
+        }
+    }
+}
+
+impl Message for WorldObjectSchema {
+    fn encode_raw(&self, buf: &mut impl BufMut) {
+        encode_as_json_message(self, buf);
+    }
+
+    fn merge_field(
+        &mut self,
+        tag: u32,
+        wire_type: WireType,
+        buf: &mut impl Buf,
+        ctx: DecodeContext,
+    ) -> Result<(), DecodeError> {
+        merge_from_json_message(self, tag, wire_type, buf, ctx)
+    }
+
+    fn encoded_len(&self) -> usize {
+        json_message_encoded_len(self)
+    }
+
+    fn clear(&mut self) {
+        *self = Self::default();
     }
 }
 
@@ -288,6 +352,7 @@ mod tests {
     use crate::client_authored::worlds::hotspot_object_schemas::{
         HotspotBoundsPx, InteractableHotspotObjectSchema,
     };
+    use crate::client_authored::worlds::kinded_world_object_schema::KindedWorldObjectSchema;
     use crate::client_authored::worlds::typed_object_schemas::{
         CameraObjectSchema, CameraProjectionSchema, StaticSpriteObjectSchema,
     };
@@ -326,6 +391,7 @@ mod tests {
             world_object.properties.get_float("pixels_per_unit"),
             Some(96.0)
         );
+        assert!(matches!(world_object.kinded, Some(KindedWorldObjectSchema::Camera(_))));
     }
 
     #[test]
@@ -351,6 +417,7 @@ mod tests {
             world_object.properties.get_bool("interaction_enabled"),
             Some(true)
         );
+        assert!(matches!(world_object.kinded, Some(KindedWorldObjectSchema::StaticSprite(_))));
     }
 
     #[test]
@@ -402,5 +469,9 @@ mod tests {
                 .and_then(|asset_ref| asset_ref.get_bundle_id()),
             Some("embedded")
         );
+        assert!(matches!(
+            world_object.kinded,
+            Some(KindedWorldObjectSchema::InteractableHotspot(_))
+        ));
     }
 }
