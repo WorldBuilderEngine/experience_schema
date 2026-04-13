@@ -154,7 +154,7 @@ impl StateMachineSchema {
                 transition.from_state_name.clone(),
                 StateMachineNodeTypeSchema::ApiDispatch {
                     api: api.into(),
-                    args_property_map_id: None,
+                    args_local_id: None,
                 },
                 vec![transition],
             ));
@@ -164,13 +164,13 @@ impl StateMachineSchema {
         &mut self,
         state_name: impl Into<String>,
         api: impl Into<StateMachineApiSchema>,
-        args_property_map_id: Option<String>,
+        args_local_id: Option<String>,
     ) {
         self.nodes.push(StateMachineNodeSchema::new(
             state_name,
             StateMachineNodeTypeSchema::ApiDispatch {
                 api: api.into(),
-                args_property_map_id,
+                args_local_id,
             },
         ));
     }

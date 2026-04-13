@@ -15,7 +15,8 @@ pub enum StateMachineNodeTypeSchema {
     ApiDispatch {
         #[serde(alias = "api_identifier")]
         api: StateMachineApiSchema,
-        args_property_map_id: Option<String>,
+        #[serde(alias = "args_property_map_id")]
+        args_local_id: Option<String>,
     },
 }
 
@@ -47,7 +48,7 @@ impl Default for StateMachineNodeTypeSchema {
     fn default() -> Self {
         Self::ApiDispatch {
             api: StateMachineApiSchema::default(),
-            args_property_map_id: None,
+            args_local_id: None,
         }
     }
 }
@@ -97,7 +98,7 @@ mod tests {
         let node_type_json = r#"{
             "ApiDispatch": {
                 "api_identifier": "world:set_node_visibility_by_tag",
-                "args_property_map_id": "args_visibility"
+                "args_local_id": "args_visibility"
             }
         }"#;
 
@@ -108,7 +109,7 @@ mod tests {
             parsed_node_type,
             StateMachineNodeTypeSchema::ApiDispatch {
                 api: StateMachineApiSchema::from("world:set_node_visibility_by_tag"),
-                args_property_map_id: Some("args_visibility".to_string()),
+                args_local_id: Some("args_visibility".to_string()),
             }
         );
     }

@@ -82,7 +82,7 @@ mod tests {
                         api: StateMachineApiSchema::from(
                             "custom:sample_story:dispatch_progression_complete",
                         ),
-                        args_property_map_id: Some("args".to_string()),
+                        args_local_id: Some("args".to_string()),
                     },
                 )];
                 state_machine
@@ -103,7 +103,7 @@ mod tests {
                 api: StateMachineApiSchema::Custom(
                     "custom:sample_story:dispatch_progression_complete".to_string()
                 ),
-                args_property_map_id: Some("args".to_string()),
+                args_local_id: Some("args".to_string()),
             }
         );
     }
