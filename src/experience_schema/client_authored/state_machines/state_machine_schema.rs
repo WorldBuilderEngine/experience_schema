@@ -1,5 +1,6 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
 use crate::client_authored::state_machines::state_machine_compatibility_schema::StateMachineCompatibilitySchema;
+use crate::client_authored::state_machines::state_machine_local_field_schema::StateMachineLocalFieldSchema;
 use crate::client_authored::state_machines::state_machine_local_schema::StateMachineLocalSchema;
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
@@ -100,23 +101,51 @@ impl StateMachineSchema {
             .iter()
             .position(|existing_local| existing_local.local_id == local_id_string)
         {
-            self.machine_locals[existing_local_index].properties = properties;
+            self.machine_locals[existing_local_index].fields =
+                StateMachineLocalSchema::from_property_map("", properties).fields;
             return;
         }
 
         self.machine_locals
-            .push(StateMachineLocalSchema::new(local_id_string, properties));
+            .push(StateMachineLocalSchema::from_property_map(local_id_string, properties));
     }
 
-    pub fn machine_local_properties(
+    pub fn register_machine_local_fields(
+        &mut self,
+        local_id: impl Into<String>,
+        fields: Vec<StateMachineLocalFieldSchema>,
+    ) {
+        let local_id_string = local_id.into().trim().to_string();
+        if let Some(existing_local_index) = self
+            .machine_locals
+            .iter()
+            .position(|existing_local| existing_local.local_id == local_id_string)
+        {
+            self.machine_locals[existing_local_index].fields = fields;
+            return;
+        }
+
+        self.machine_locals
+            .push(StateMachineLocalSchema::new(local_id_string, fields));
+    }
+
+    pub fn machine_local(
         &self,
         local_id: &str,
-    ) -> Option<&PropertyMap> {
+    ) -> Option<&StateMachineLocalSchema> {
         let normalized_local_id = local_id.trim();
         self.machine_locals
             .iter()
             .find(|local| local.local_id == normalized_local_id)
-            .map(|local| &local.properties)
+    }
+
+    pub fn machine_local_property(
+        &self,
+        local_id: &str,
+        field_id: &str,
+    ) -> Option<&crate::properties::property::Property> {
+        self.machine_local(local_id)
+            .and_then(|machine_local| machine_local.field_value(field_id))
     }
 
     pub fn add_transition(
@@ -374,8 +403,8 @@ mod tests {
         assert_eq!(schema.machine_locals().len(), 1);
         assert_eq!(schema.machine_locals()[0].local_id, "runtime");
         assert_eq!(
-            schema.machine_locals()[0].properties.get_bool("is_visible"),
-            Some(false)
+            schema.machine_local_property("runtime", "is_visible"),
+            Some(&crate::properties::property::Property::Bool(false))
         );
     }
 
