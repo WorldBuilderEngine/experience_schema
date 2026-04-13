@@ -189,7 +189,11 @@ impl CompiledPropertyLayoutSchema {
         declared_capacity: u32,
         default_value: Option<Property>,
     ) {
-        let mut field = CompiledPropertyOwnedCollectionFieldSchema::new(identifier, value_type, declared_capacity);
+        let mut field = CompiledPropertyOwnedCollectionFieldSchema::new(
+            identifier,
+            value_type,
+            declared_capacity,
+        );
         field.default_value = default_value;
         self.owned_collection_fields.push(field);
     }
@@ -314,7 +318,10 @@ mod tests {
             "inventory",
             CompiledPropertyValueTypeSchema::StringArray,
             4,
-            Some(Property::StringArray(vec!["key".to_string(), "map".to_string()])),
+            Some(Property::StringArray(vec![
+                "key".to_string(),
+                "map".to_string(),
+            ])),
         );
 
         assert_eq!(layout.owned_collection_fields.len(), 1);
@@ -322,7 +329,10 @@ mod tests {
         assert_eq!(layout.owned_collection_fields[0].declared_capacity, 4);
         assert_eq!(
             layout.owned_collection_fields[0].default_value,
-            Some(Property::StringArray(vec!["key".to_string(), "map".to_string()]))
+            Some(Property::StringArray(vec![
+                "key".to_string(),
+                "map".to_string()
+            ]))
         );
     }
 

@@ -90,11 +90,7 @@ impl StateMachineSchema {
         self.machine_locals.as_slice()
     }
 
-    pub fn register_machine_local(
-        &mut self,
-        local_id: impl Into<String>,
-        properties: PropertyMap,
-    ) {
+    pub fn register_machine_local(&mut self, local_id: impl Into<String>, properties: PropertyMap) {
         let local_id_string = local_id.into().trim().to_string();
         if let Some(existing_local_index) = self
             .machine_locals
@@ -107,7 +103,10 @@ impl StateMachineSchema {
         }
 
         self.machine_locals
-            .push(StateMachineLocalSchema::from_property_map(local_id_string, properties));
+            .push(StateMachineLocalSchema::from_property_map(
+                local_id_string,
+                properties,
+            ));
     }
 
     pub fn register_machine_local_fields(
@@ -129,10 +128,7 @@ impl StateMachineSchema {
             .push(StateMachineLocalSchema::new(local_id_string, fields));
     }
 
-    pub fn machine_local(
-        &self,
-        local_id: &str,
-    ) -> Option<&StateMachineLocalSchema> {
+    pub fn machine_local(&self, local_id: &str) -> Option<&StateMachineLocalSchema> {
         let normalized_local_id = local_id.trim();
         self.machine_locals
             .iter()
@@ -500,7 +496,10 @@ mod tests {
                     state_name: "idle".to_string(),
                 },
             });
-        schema.register_machine_local("runtime", crate::properties::property_map::PropertyMap::new());
+        schema.register_machine_local(
+            "runtime",
+            crate::properties::property_map::PropertyMap::new(),
+        );
 
         let serialized = serde_json::to_value(&schema).expect("schema should serialize");
         assert!(serialized.get("proof_class").is_none());
@@ -517,7 +516,10 @@ mod tests {
         schema
             .compatibility_mut()
             .set_proof_class(StateMachineProofClassSchema::Finite);
-        schema.register_machine_local("runtime", crate::properties::property_map::PropertyMap::new());
+        schema.register_machine_local(
+            "runtime",
+            crate::properties::property_map::PropertyMap::new(),
+        );
 
         assert_eq!(
             schema.compatibility().declared_proof_class(),

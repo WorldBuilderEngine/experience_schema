@@ -1,14 +1,21 @@
 use super::world_object_schema::WorldObjectSchema;
-use crate::{assets::asset_ref::AssetRef, properties::property_map::PropertyMap};
+use crate::{
+    assets::asset_ref::AssetRef, properties::authored_property_view::AuthoredPropertyView,
+    properties::property_map::PropertyMap,
+};
 
 #[derive(Clone, Copy, Debug)]
 pub struct AuthoredWorldObjectView<'a> {
     world_object_schema: &'a WorldObjectSchema,
+    property_view: AuthoredPropertyView<'a>,
 }
 
 impl<'a> AuthoredWorldObjectView<'a> {
     pub fn new(world_object_schema: &'a WorldObjectSchema) -> Self {
-        Self { world_object_schema }
+        Self {
+            world_object_schema,
+            property_view: AuthoredPropertyView::new(&world_object_schema.properties),
+        }
     }
 
     pub fn properties(&self) -> &'a PropertyMap {
@@ -19,66 +26,40 @@ impl<'a> AuthoredWorldObjectView<'a> {
         self.string("object_type").map(|value| value.as_str())
     }
 
-    pub fn is_object_type(
-        &self,
-        expected_object_type: &str,
-    ) -> bool {
+    pub fn is_object_type(&self, expected_object_type: &str) -> bool {
         matches!(self.object_type(), Some(actual_object_type) if actual_object_type == expected_object_type)
     }
 
-    pub fn bool(
-        &self,
-        property_name: &str,
-    ) -> Option<bool> {
-        self.properties().get_bool(property_name)
+    pub fn bool(&self, property_name: &str) -> Option<bool> {
+        self.property_view.bool(property_name)
     }
 
-    pub fn float(
-        &self,
-        property_name: &str,
-    ) -> Option<f64> {
-        self.properties().get_float(property_name)
+    pub fn float(&self, property_name: &str) -> Option<f64> {
+        self.property_view.float(property_name)
     }
 
-    pub fn int(
-        &self,
-        property_name: &str,
-    ) -> Option<i64> {
-        self.properties().get_int(property_name)
+    pub fn int(&self, property_name: &str) -> Option<i64> {
+        self.property_view.int(property_name)
     }
 
-    pub fn float_array(
-        &self,
-        property_name: &str,
-    ) -> Option<&'a Vec<f64>> {
-        self.properties().get_float_array(property_name)
+    pub fn float_array(&self, property_name: &str) -> Option<&'a Vec<f64>> {
+        self.property_view.float_array(property_name)
     }
 
-    pub fn string(
-        &self,
-        property_name: &str,
-    ) -> Option<&'a String> {
-        self.properties().get_string(property_name)
+    pub fn string(&self, property_name: &str) -> Option<&'a String> {
+        self.property_view.string(property_name)
     }
 
-    pub fn asset_ref(
-        &self,
-        property_name: &str,
-    ) -> Option<&'a AssetRef> {
-        self.properties().get_asset_ref(property_name)
+    pub fn asset_ref(&self, property_name: &str) -> Option<&'a AssetRef> {
+        self.property_view.asset_ref(property_name)
     }
 
-    pub fn sanitized_string(
-        &self,
-        property_name: &str,
-    ) -> Option<String> {
-        let raw_property_value = self.string(property_name)?;
-        let sanitized_property_value = raw_property_value.trim();
-        if sanitized_property_value.is_empty() {
-            return None;
-        }
+    pub fn asset_refs(&self) -> impl Iterator<Item = &'a AssetRef> {
+        self.property_view.asset_refs()
+    }
 
-        Some(sanitized_property_value.to_string())
+    pub fn sanitized_string(&self, property_name: &str) -> Option<String> {
+        self.property_view.sanitized_string(property_name)
     }
 
     pub fn node_tag(&self) -> Option<String> {
@@ -89,18 +70,8 @@ impl<'a> AuthoredWorldObjectView<'a> {
         self.sanitized_string("parent_node_tag")
     }
 
-    pub fn positive_dimension(
-        &self,
-        property_name: &str,
-    ) -> u32 {
-        if let Some(raw_dimension) = self.int(property_name)
-            && raw_dimension > 0
-            && let Ok(dimension) = u32::try_from(raw_dimension)
-        {
-            return dimension;
-        }
-
-        0
+    pub fn positive_dimension(&self, property_name: &str) -> u32 {
+        self.property_view.positive_dimension(property_name)
     }
 }
 
@@ -120,7 +91,10 @@ mod tests {
         properties.insert_string("object_type", "static_sprite");
         properties.insert_string("node_tag", " sprite:tag ");
         properties.insert_int("tile_width_px", 12);
-        properties.insert_asset_ref("asset_ref", AssetRef::new_with_bundle_id("embedded", PathBuf::from("sprite.png")));
+        properties.insert_asset_ref(
+            "asset_ref",
+            AssetRef::new_with_bundle_id("embedded", PathBuf::from("sprite.png")),
+        );
 
         let world_object_schema = WorldObjectSchema {
             properties,
@@ -132,7 +106,8 @@ mod tests {
         assert_eq!(view.node_tag().as_deref(), Some("sprite:tag"));
         assert_eq!(view.positive_dimension("tile_width_px"), 12);
         assert_eq!(
-            view.asset_ref("asset_ref").and_then(|asset_ref| asset_ref.get_bundle_id()),
+            view.asset_ref("asset_ref")
+                .and_then(|asset_ref| asset_ref.get_bundle_id()),
             Some("embedded")
         );
     }

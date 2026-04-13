@@ -81,9 +81,8 @@ pub struct StateMachineFiniteIntRangeSchema {
 mod tests {
     use super::{
         StateMachineFiniteDomainAbstractionSchema, StateMachineFiniteDomainSchema,
-        StateMachineFiniteIntRangeSchema,
         StateMachineFiniteDomainSemanticsSchema, StateMachineFiniteDomainTargetSchema,
-        StateMachineFloatBucketSchema,
+        StateMachineFiniteIntRangeSchema, StateMachineFloatBucketSchema,
     };
     use crate::client_authored::state_machines::api::{
         RuntimeStateMachineApiSchema, StateMachineApiSchema,

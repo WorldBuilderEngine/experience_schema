@@ -12,6 +12,5 @@ pub use asset_metadata_schema::{
 pub use image_metadata_schema::AssetBundleManifestImageMetadataSchema;
 pub use static_text_font_metadata_schema::{
     AssetBundleManifestStaticTextFontMetadataSchema,
-    AssetBundleManifestStaticTextGlyphMetricsSchema,
-    AssetBundleManifestStaticTextLayoutSchema,
+    AssetBundleManifestStaticTextGlyphMetricsSchema, AssetBundleManifestStaticTextLayoutSchema,
 };

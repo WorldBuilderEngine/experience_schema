@@ -2,9 +2,7 @@ use crate::client_authored::state_machines::state_machine_schema::StateMachineSc
 use crate::client_authored::worlds::world_compatibility_schema::WorldCompatibilitySchema;
 use crate::client_authored::worlds::world_object_schema::WorldObjectSchema;
 use crate::properties::property_map::PropertyMap;
-use crate::wire_compat::json_message::{
-    encode_as_json_message, json_message_encoded_len,
-};
+use crate::wire_compat::json_message::{encode_as_json_message, json_message_encoded_len};
 use prost::DecodeError;
 use prost::Message;
 use prost::bytes::{Buf, BufMut};
@@ -76,7 +74,8 @@ impl Message for WorldSchema {
                     .copied()
                     .find(|byte| !byte.is_ascii_whitespace());
                 if matches!(first_non_whitespace_byte, Some(b'{') | Some(b'[')) {
-                    *self = serde_json::from_slice::<WorldSchema>(&payload).map_err(schema_json_decode_error)?;
+                    *self = serde_json::from_slice::<WorldSchema>(&payload)
+                        .map_err(schema_json_decode_error)?;
                     return Ok(());
                 }
 
@@ -119,8 +118,8 @@ struct LegacyWorldObjectTemplateEntry {
 
 #[cfg(test)]
 mod tests {
-    use super::WorldSchema;
     use super::LegacyWorldObjectTemplateEntry;
+    use super::WorldSchema;
     use crate::client_authored::worlds::world_object_schema::WorldObjectSchema;
     use crate::properties::property_map::PropertyMap;
     use prost::Message;
@@ -160,11 +159,7 @@ mod tests {
         assert!(world.objects.is_empty());
         assert!(world.state_machines.is_empty());
         assert_eq!(world.object_templates().len(), 1);
-        assert!(
-            world
-                .compatibility()
-                .has_legacy_protocol_proof_assertions()
-        );
+        assert!(world.compatibility().has_legacy_protocol_proof_assertions());
     }
 
     #[test]
@@ -202,7 +197,9 @@ mod tests {
             #[prost(message, required, tag = "2")]
             properties: PropertyMap,
             #[prost(message, repeated, tag = "3")]
-            state_machines: Vec<crate::client_authored::state_machines::state_machine_schema::StateMachineSchema>,
+            state_machines: Vec<
+                crate::client_authored::state_machines::state_machine_schema::StateMachineSchema,
+            >,
             #[prost(string, repeated, tag = "4")]
             asset_bundle_ids: Vec<String>,
             #[prost(message, repeated, tag = "5")]
@@ -226,11 +223,15 @@ mod tests {
             }],
         };
 
-        let decoded_world =
-            WorldSchema::decode(legacy_world.encode_to_vec().as_slice()).expect("legacy world wire shape should decode");
+        let decoded_world = WorldSchema::decode(legacy_world.encode_to_vec().as_slice())
+            .expect("legacy world wire shape should decode");
 
         assert_eq!(decoded_world.objects.len(), 1);
         assert_eq!(decoded_world.asset_bundle_ids, vec!["ui".to_string()]);
-        assert!(decoded_world.object_templates().contains_key("template_button"));
+        assert!(
+            decoded_world
+                .object_templates()
+                .contains_key("template_button")
+        );
     }
 }

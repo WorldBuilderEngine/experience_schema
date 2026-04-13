@@ -9,7 +9,10 @@ use serde::{Deserialize, Serialize};
 pub struct AssetBundleManifestAssetMetadataSchema {
     /// Kinded service-authored asset metadata.
     #[serde(flatten)]
-    #[prost(oneof = "asset_bundle_manifest_asset_metadata_schema::Metadata", tags = "1, 2")]
+    #[prost(
+        oneof = "asset_bundle_manifest_asset_metadata_schema::Metadata",
+        tags = "1, 2"
+    )]
     pub metadata: Option<asset_bundle_manifest_asset_metadata_schema::Metadata>,
 }
 
