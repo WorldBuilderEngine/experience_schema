@@ -177,17 +177,17 @@ impl StateMachineSchema {
 
     pub fn register_machine_owned_collection_capacity(
         &mut self,
-        property_map_id: impl Into<String>,
+        local_id: impl Into<String>,
         property_id: impl Into<String>,
         capacity: u32,
     ) {
         let declaration =
-            StateMachineOwnedCollectionCapacitySchema::new(property_map_id, property_id, capacity);
+            StateMachineOwnedCollectionCapacitySchema::new(local_id, property_id, capacity);
         if let Some(existing_declaration_index) = self
             .machine_owned_collection_capacities
             .iter()
             .position(|existing_declaration| {
-                existing_declaration.property_map_id == declaration.property_map_id
+                existing_declaration.local_id == declaration.local_id
                     && existing_declaration.property_id == declaration.property_id
             })
         {
@@ -200,15 +200,15 @@ impl StateMachineSchema {
 
     pub fn machine_owned_collection_capacity(
         &self,
-        property_map_id: &str,
+        local_id: &str,
         property_id: &str,
     ) -> Option<u32> {
-        let normalized_property_map_id = property_map_id.trim();
+        let normalized_local_id = local_id.trim();
         let normalized_property_id = property_id.trim();
         self.machine_owned_collection_capacities
             .iter()
             .find(|declaration| {
-                declaration.property_map_id == normalized_property_map_id
+                declaration.local_id == normalized_local_id
                     && declaration.property_id == normalized_property_id
             })
             .map(|declaration| declaration.capacity)
