@@ -97,6 +97,43 @@ impl CompiledPropertyFieldSchema {
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+pub struct CompiledPropertyOwnedCollectionFieldSchema {
+    #[prost(string, tag = "1")]
+    pub identifier: String,
+    #[prost(uint64, tag = "2")]
+    pub compiled_field_id: u64,
+    #[prost(enumeration = "CompiledPropertyValueTypeSchema", tag = "3")]
+    pub value_type: i32,
+    #[serde(default)]
+    #[prost(message, optional, tag = "4")]
+    pub default_value: Option<Property>,
+    #[prost(uint32, tag = "5")]
+    pub declared_capacity: u32,
+}
+
+impl CompiledPropertyOwnedCollectionFieldSchema {
+    pub fn new(
+        identifier: impl Into<String>,
+        value_type: CompiledPropertyValueTypeSchema,
+        declared_capacity: u32,
+    ) -> Self {
+        let identifier = identifier.into();
+        Self {
+            compiled_field_id: canonical_compiled_identifier(identifier.as_str()),
+            identifier,
+            value_type: value_type as i32,
+            default_value: None,
+            declared_capacity,
+        }
+    }
+
+    pub fn with_default_value(mut self, default_value: Property) -> Self {
+        self.default_value = Some(default_value);
+        self
+    }
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
 pub struct CompiledPropertyLayoutSchema {
     #[prost(string, tag = "1")]
     pub layout_id: String,
@@ -111,6 +148,9 @@ pub struct CompiledPropertyLayoutSchema {
     #[serde(default)]
     #[prost(message, repeated, tag = "5")]
     pub fields: Vec<CompiledPropertyFieldSchema>,
+    #[serde(default)]
+    #[prost(message, repeated, tag = "6")]
+    pub owned_collection_fields: Vec<CompiledPropertyOwnedCollectionFieldSchema>,
 }
 
 impl CompiledPropertyLayoutSchema {
@@ -125,6 +165,7 @@ impl CompiledPropertyLayoutSchema {
             layout_version: CURRENT_COMPILED_PROPERTY_LAYOUT_VERSION,
             storage_class: storage_class as i32,
             fields: Vec::new(),
+            owned_collection_fields: Vec::new(),
         }
     }
 
@@ -139,6 +180,18 @@ impl CompiledPropertyLayoutSchema {
         field.default_value = default_value;
         self.fields.push(field);
         slot_index
+    }
+
+    pub fn register_owned_collection_field(
+        &mut self,
+        identifier: impl Into<String>,
+        value_type: CompiledPropertyValueTypeSchema,
+        declared_capacity: u32,
+        default_value: Option<Property>,
+    ) {
+        let mut field = CompiledPropertyOwnedCollectionFieldSchema::new(identifier, value_type, declared_capacity);
+        field.default_value = default_value;
+        self.owned_collection_fields.push(field);
     }
 
     pub fn compile_property_map_defaults(
@@ -248,6 +301,28 @@ mod tests {
         assert_eq!(
             layout.fields[1].value_type,
             CompiledPropertyValueTypeSchema::String as i32
+        );
+    }
+
+    #[test]
+    fn register_owned_collection_field_captures_default_and_capacity() {
+        let mut layout = CompiledPropertyLayoutSchema::new(
+            "inventory_runtime",
+            CompiledPropertyStorageClassSchema::WarmFixedRecord,
+        );
+        layout.register_owned_collection_field(
+            "inventory",
+            CompiledPropertyValueTypeSchema::StringArray,
+            4,
+            Some(Property::StringArray(vec!["key".to_string(), "map".to_string()])),
+        );
+
+        assert_eq!(layout.owned_collection_fields.len(), 1);
+        assert_eq!(layout.owned_collection_fields[0].identifier, "inventory");
+        assert_eq!(layout.owned_collection_fields[0].declared_capacity, 4);
+        assert_eq!(
+            layout.owned_collection_fields[0].default_value,
+            Some(Property::StringArray(vec!["key".to_string(), "map".to_string()]))
         );
     }
 
