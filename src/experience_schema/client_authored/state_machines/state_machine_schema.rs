@@ -1,11 +1,13 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
 use crate::client_authored::state_machines::state_machine_compatibility_schema::StateMachineCompatibilitySchema;
+use crate::client_authored::state_machines::state_machine_local_schema::StateMachineLocalSchema;
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
 use crate::client_authored::state_machines::state_machine_owned_collection_capacity_schema::StateMachineOwnedCollectionCapacitySchema;
 use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
+use crate::properties::property_map::PropertyMap;
 use crate::wire_compat::json_message::{
     encode_as_json_message, json_message_encoded_len, merge_from_json_message,
 };
@@ -21,6 +23,8 @@ pub struct StateMachineSchema {
     pub initial_state_name: String,
     #[serde(default)]
     pub deterministic_seed: u64,
+    #[serde(default)]
+    pub machine_locals: Vec<StateMachineLocalSchema>,
     #[serde(default)]
     pub machine_owned_collection_capacities: Vec<StateMachineOwnedCollectionCapacitySchema>,
     #[serde(default)]
@@ -66,6 +70,7 @@ impl StateMachineSchema {
         Self {
             initial_state_name: initial_state_name.into(),
             deterministic_seed,
+            machine_locals: Vec::new(),
             machine_owned_collection_capacities: Vec::new(),
             nodes: Vec::new(),
             compatibility: StateMachineCompatibilitySchema::with_proof_class(proof_class),
@@ -78,6 +83,40 @@ impl StateMachineSchema {
 
     pub fn compatibility_mut(&mut self) -> &mut StateMachineCompatibilitySchema {
         &mut self.compatibility
+    }
+
+    pub fn machine_locals(&self) -> &[StateMachineLocalSchema] {
+        self.machine_locals.as_slice()
+    }
+
+    pub fn register_machine_local(
+        &mut self,
+        local_id: impl Into<String>,
+        properties: PropertyMap,
+    ) {
+        let local_id_string = local_id.into().trim().to_string();
+        if let Some(existing_local_index) = self
+            .machine_locals
+            .iter()
+            .position(|existing_local| existing_local.local_id == local_id_string)
+        {
+            self.machine_locals[existing_local_index].properties = properties;
+            return;
+        }
+
+        self.machine_locals
+            .push(StateMachineLocalSchema::new(local_id_string, properties));
+    }
+
+    pub fn machine_local_properties(
+        &self,
+        local_id: &str,
+    ) -> Option<&PropertyMap> {
+        let normalized_local_id = local_id.trim();
+        self.machine_locals
+            .iter()
+            .find(|local| local.local_id == normalized_local_id)
+            .map(|local| &local.properties)
     }
 
     pub fn add_transition(
@@ -322,26 +361,20 @@ mod tests {
     }
 
     #[test]
-    fn register_property_map_replaces_existing_declaration() {
+    fn register_machine_local_replaces_existing_declaration() {
         let mut schema = StateMachineSchema::new("idle");
         let mut initial = crate::properties::property_map::PropertyMap::new();
         initial.insert_bool("is_visible", true);
-        schema
-            .compatibility_mut()
-            .register_property_map("runtime", initial);
+        schema.register_machine_local("runtime", initial);
 
         let mut replacement = crate::properties::property_map::PropertyMap::new();
         replacement.insert_bool("is_visible", false);
-        schema
-            .compatibility_mut()
-            .register_property_map("runtime", replacement);
+        schema.register_machine_local("runtime", replacement);
 
-        assert_eq!(schema.compatibility().property_maps().len(), 1);
-        assert_eq!(schema.compatibility().property_maps()[0].0, "runtime");
+        assert_eq!(schema.machine_locals().len(), 1);
+        assert_eq!(schema.machine_locals()[0].local_id, "runtime");
         assert_eq!(
-            schema.compatibility().property_maps()[0]
-                .1
-                .get_bool("is_visible"),
+            schema.machine_locals()[0].properties.get_bool("is_visible"),
             Some(false)
         );
     }
@@ -438,10 +471,7 @@ mod tests {
                     state_name: "idle".to_string(),
                 },
             });
-        schema.compatibility_mut().register_property_map(
-            "runtime",
-            crate::properties::property_map::PropertyMap::new(),
-        );
+        schema.register_machine_local("runtime", crate::properties::property_map::PropertyMap::new());
 
         let serialized = serde_json::to_value(&schema).expect("schema should serialize");
         assert!(serialized.get("proof_class").is_none());
@@ -458,15 +488,12 @@ mod tests {
         schema
             .compatibility_mut()
             .set_proof_class(StateMachineProofClassSchema::Finite);
-        schema.compatibility_mut().register_property_map(
-            "runtime",
-            crate::properties::property_map::PropertyMap::new(),
-        );
+        schema.register_machine_local("runtime", crate::properties::property_map::PropertyMap::new());
 
         assert_eq!(
             schema.compatibility().declared_proof_class(),
             StateMachineProofClassSchema::Finite
         );
-        assert_eq!(schema.compatibility().property_maps().len(), 1);
+        assert_eq!(schema.machine_locals().len(), 1);
     }
 }
