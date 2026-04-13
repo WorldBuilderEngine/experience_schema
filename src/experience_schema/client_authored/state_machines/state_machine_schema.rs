@@ -358,7 +358,7 @@ mod tests {
             .compatibility_mut()
             .register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
                 target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                    property_map_id: "runtime".to_string(),
+                    local_id: "runtime".to_string(),
                     property_id: "phase".to_string(),
                 },
                 domain: StateMachineFiniteDomainSchema::Enum {
@@ -413,7 +413,7 @@ mod tests {
                 proof_class: StateMachineProofClassSchema::BoundedExtended,
                 finite_domain_abstractions: vec![StateMachineFiniteDomainAbstractionSchema {
                     target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                        property_map_id: "runtime".to_string(),
+                        local_id: "runtime".to_string(),
                         property_id: "phase".to_string(),
                     },
                     domain: StateMachineFiniteDomainSchema::Enum {
@@ -480,7 +480,7 @@ mod tests {
             .compatibility_mut()
             .register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
                 target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                    property_map_id: "runtime".to_string(),
+                    local_id: "runtime".to_string(),
                     property_id: "phase".to_string(),
                 },
                 domain: StateMachineFiniteDomainSchema::Enum {

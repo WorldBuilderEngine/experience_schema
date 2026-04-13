@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StateMachineOwnedCollectionCapacitySchema {
-    #[serde(alias = "property_map_id")]
     pub local_id: String,
     pub property_id: String,
     pub capacity: u32,

@@ -15,7 +15,6 @@ pub enum StateMachineNodeTypeSchema {
     ApiDispatch {
         #[serde(alias = "api_identifier")]
         api: StateMachineApiSchema,
-        #[serde(alias = "args_property_map_id")]
         args_local_id: Option<String>,
     },
 }

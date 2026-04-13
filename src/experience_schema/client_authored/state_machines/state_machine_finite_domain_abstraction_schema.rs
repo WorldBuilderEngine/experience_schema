@@ -22,7 +22,7 @@ pub enum StateMachineFiniteDomainSemanticsSchema {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StateMachineFiniteDomainTargetSchema {
     PropertyField {
-        property_map_id: String,
+        local_id: String,
         property_id: String,
     },
     RuntimeTarget {
@@ -31,7 +31,7 @@ pub enum StateMachineFiniteDomainTargetSchema {
     ApiOutput {
         #[serde(alias = "api_identifier")]
         api: StateMachineApiSchema,
-        property_map_id: String,
+        local_id: String,
         property_id: String,
     },
     ApiOutputSelector {
@@ -95,7 +95,7 @@ mod tests {
             r#"{
                 "target": {
                     "PropertyField": {
-                        "property_map_id": "runtime",
+                        "local_id": "runtime",
                         "property_id": "phase"
                     }
                 },
@@ -113,7 +113,7 @@ mod tests {
             abstraction,
             StateMachineFiniteDomainAbstractionSchema {
                 target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                    property_map_id: "runtime".to_string(),
+                    local_id: "runtime".to_string(),
                     property_id: "phase".to_string(),
                 },
                 domain: StateMachineFiniteDomainSchema::Enum {
@@ -131,7 +131,7 @@ mod tests {
                 "target": {
                     "ApiOutput": {
                         "api_identifier": "runtime:query_step_delta_seconds",
-                        "property_map_id": "runtime",
+                        "local_id": "runtime",
                         "property_id": "step_delta_seconds"
                     }
                 },
@@ -155,7 +155,7 @@ mod tests {
                     api: StateMachineApiSchema::Runtime(
                         RuntimeStateMachineApiSchema::QueryStepDeltaSeconds
                     ),
-                    property_map_id: "runtime".to_string(),
+                    local_id: "runtime".to_string(),
                     property_id: "step_delta_seconds".to_string(),
                 },
                 domain: StateMachineFiniteDomainSchema::FloatBuckets {
@@ -224,7 +224,7 @@ mod tests {
             r#"{
                 "target": {
                     "PropertyField": {
-                        "property_map_id": "runtime",
+                        "local_id": "runtime",
                         "property_id": "ball_position"
                     }
                 },
@@ -245,7 +245,7 @@ mod tests {
             abstraction,
             StateMachineFiniteDomainAbstractionSchema {
                 target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                    property_map_id: "runtime".to_string(),
+                    local_id: "runtime".to_string(),
                     property_id: "ball_position".to_string(),
                 },
                 domain: StateMachineFiniteDomainSchema::BoundedIntVector {
