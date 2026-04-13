@@ -1,3 +1,6 @@
+use crate::client_authored::worlds::hotspot_object_schemas::{
+    HotspotMarkerSpriteObjectSchema, InteractableHotspotObjectSchema, TransitionHotspotObjectSchema,
+};
 use crate::client_authored::state_machines::state_machine_schema::StateMachineSchema;
 use crate::client_authored::worlds::typed_object_schemas::{
     CameraObjectSchema, CameraProjectionSchema, StaticSpriteObjectSchema, StaticTextObjectSchema,
@@ -173,6 +176,100 @@ impl WorldObjectSchema {
 
         Self::from_custom_properties(properties)
     }
+
+    pub fn transition_hotspot(transition_hotspot: TransitionHotspotObjectSchema) -> Self {
+        let mut properties = PropertyMap::new();
+        properties.insert_string("object_type", transition_hotspot.object_type);
+        properties.insert_string("hotspot_id", transition_hotspot.hotspot_id);
+        properties.insert_string("from_scene_id", transition_hotspot.from_scene_id);
+        properties.insert_string("to_scene_id", transition_hotspot.to_scene_id);
+        if let Some(activation_event) = transition_hotspot.activation_event {
+            properties.insert_string("activation_event", activation_event);
+        }
+        if let Some(transition_started_event) = transition_hotspot.transition_started_event {
+            properties.insert_string("transition_started_event", transition_started_event);
+        }
+        if let Some(transition_completed_event) = transition_hotspot.transition_completed_event {
+            properties.insert_string("transition_completed_event", transition_completed_event);
+        }
+        properties.insert_float_array("bounds_px", transition_hotspot.bounds_px.as_vec());
+
+        Self::from_custom_properties(properties)
+    }
+
+    pub fn interactable_hotspot(interactable_hotspot: InteractableHotspotObjectSchema) -> Self {
+        let mut properties = PropertyMap::new();
+        properties.insert_string("object_type", interactable_hotspot.object_type);
+        properties.insert_string("scene_id", interactable_hotspot.scene_id);
+        properties.insert_string("hotspot_id", interactable_hotspot.hotspot_id);
+        properties.insert_string("target_id", interactable_hotspot.target_id);
+        if let Some(verb_id) = interactable_hotspot.verb_id {
+            properties.insert_string("verb_id", verb_id);
+        }
+        if let Some(item_id) = interactable_hotspot.item_id {
+            properties.insert_string("item_id", item_id);
+        }
+        if let Some(required_item_id) = interactable_hotspot.required_item_id {
+            properties.insert_string("required_item_id", required_item_id);
+        }
+        if let Some(consumes_required_item) = interactable_hotspot.consumes_required_item {
+            properties.insert_bool("consumes_required_item", consumes_required_item);
+        }
+        if let Some(activation_event) = interactable_hotspot.activation_event {
+            properties.insert_string("activation_event", activation_event);
+        }
+        if let Some(interaction_resolved_event) = interactable_hotspot.interaction_resolved_event {
+            properties.insert_string("interaction_resolved_event", interaction_resolved_event);
+        }
+        if let Some(inventory_collected_event) = interactable_hotspot.inventory_collected_event {
+            properties.insert_string("inventory_collected_event", inventory_collected_event);
+        }
+        if let Some(gate_blocked_event) = interactable_hotspot.gate_blocked_event {
+            properties.insert_string("gate_blocked_event", gate_blocked_event);
+        }
+        if let Some(gate_unlocked_event) = interactable_hotspot.gate_unlocked_event {
+            properties.insert_string("gate_unlocked_event", gate_unlocked_event);
+        }
+        properties.insert_float_array("bounds_px", interactable_hotspot.bounds_px.as_vec());
+        if let Some(default_asset_ref) = interactable_hotspot.default_asset_ref {
+            properties.insert_asset_ref("default_asset_ref", default_asset_ref);
+        }
+        if let Some(hover_asset_ref) = interactable_hotspot.hover_asset_ref {
+            properties.insert_asset_ref("hover_asset_ref", hover_asset_ref);
+        }
+        if let Some(hover_entered_event) = interactable_hotspot.hover_entered_event {
+            properties.insert_string("hover_entered_event", hover_entered_event);
+        }
+        if let Some(hover_exited_event) = interactable_hotspot.hover_exited_event {
+            properties.insert_string("hover_exited_event", hover_exited_event);
+        }
+        if let Some(pressed_event) = interactable_hotspot.pressed_event {
+            properties.insert_string("pressed_event", pressed_event);
+        }
+
+        Self::from_custom_properties(properties)
+    }
+
+    pub fn hotspot_marker_sprite(hotspot_marker: HotspotMarkerSpriteObjectSchema) -> Self {
+        let mut properties = PropertyMap::new();
+        properties.insert_string("object_type", "static_sprite");
+        properties.insert_asset_ref("asset_ref", hotspot_marker.asset_ref);
+        properties.insert_float_array("position", hotspot_marker.position_xyz.to_vec());
+        properties.insert_float_array("scale", hotspot_marker.scale_xy.to_vec());
+        properties.insert_float_array("rotation_deg", hotspot_marker.rotation_deg_xyz.to_vec());
+        properties.insert_bool("is_visible", hotspot_marker.is_visible);
+        properties.insert_string("scene_id", hotspot_marker.scene_id);
+        if let Some(node_tag) = normalize_optional_string(hotspot_marker.node_tag) {
+            properties.insert_string("node_tag", node_tag);
+        }
+        properties.insert_string("marker_kind", hotspot_marker.marker_kind);
+        properties.insert_string("hotspot_id", hotspot_marker.hotspot_id);
+        if hotspot_marker.interaction_enabled {
+            properties.insert_bool("interaction_enabled", true);
+        }
+
+        Self::from_custom_properties(properties)
+    }
 }
 
 fn normalize_optional_string(raw_value: Option<String>) -> Option<String> {
@@ -188,6 +285,9 @@ fn normalize_optional_string(raw_value: Option<String>) -> Option<String> {
 mod tests {
     use super::WorldObjectSchema;
     use crate::assets::asset_ref::AssetRef;
+    use crate::client_authored::worlds::hotspot_object_schemas::{
+        HotspotBoundsPx, InteractableHotspotObjectSchema,
+    };
     use crate::client_authored::worlds::typed_object_schemas::{
         CameraObjectSchema, CameraProjectionSchema, StaticSpriteObjectSchema,
     };
@@ -250,6 +350,57 @@ mod tests {
         assert_eq!(
             world_object.properties.get_bool("interaction_enabled"),
             Some(true)
+        );
+    }
+
+    #[test]
+    fn interactable_hotspot_constructor_emits_canonical_property_bag() {
+        let world_object = WorldObjectSchema::interactable_hotspot(InteractableHotspotObjectSchema {
+            object_type: "sample_hotspot_interaction".to_string(),
+            scene_id: "courtyard".to_string(),
+            hotspot_id: "string_totem".to_string(),
+            target_id: "memory_totem".to_string(),
+            bounds_px: HotspotBoundsPx::new(640, 220, 280, 460),
+            verb_id: Some("inspect".to_string()),
+            item_id: None,
+            required_item_id: None,
+            consumes_required_item: None,
+            activation_event: Some("activate".to_string()),
+            interaction_resolved_event: Some("resolved".to_string()),
+            inventory_collected_event: None,
+            gate_blocked_event: None,
+            gate_unlocked_event: None,
+            default_asset_ref: Some(AssetRef::new_with_bundle_id(
+                "embedded",
+                PathBuf::from("default.png"),
+            )),
+            hover_asset_ref: Some(AssetRef::new_with_bundle_id(
+                "embedded",
+                PathBuf::from("hover.png"),
+            )),
+            hover_entered_event: Some("hovered".to_string()),
+            hover_exited_event: Some("idle".to_string()),
+            pressed_event: Some("pressed".to_string()),
+        });
+
+        assert_eq!(
+            world_object.properties.get_string("object_type").map(String::as_str),
+            Some("sample_hotspot_interaction")
+        );
+        assert_eq!(
+            world_object.properties.get_string("target_id").map(String::as_str),
+            Some("memory_totem")
+        );
+        assert_eq!(
+            world_object.properties.get_float_array("bounds_px"),
+            Some(&vec![640.0, 220.0, 280.0, 460.0])
+        );
+        assert_eq!(
+            world_object
+                .properties
+                .get_asset_ref("default_asset_ref")
+                .and_then(|asset_ref| asset_ref.get_bundle_id()),
+            Some("embedded")
         );
     }
 }
