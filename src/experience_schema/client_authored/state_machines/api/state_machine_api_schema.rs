@@ -39,7 +39,11 @@ impl StateMachineApiSchema {
             }
             Self::ByteBuffer(ByteBufferStateMachineApiSchema::Copy) => "byte_buffer:copy",
             Self::ByteBuffer(ByteBufferStateMachineApiSchema::Concat) => "byte_buffer:concat",
+            Self::ByteBuffer(ByteBufferStateMachineApiSchema::CopySlice) => "byte_buffer:copy_slice",
             Self::ByteBuffer(ByteBufferStateMachineApiSchema::Length) => "byte_buffer:length",
+            Self::ByteBuffer(ByteBufferStateMachineApiSchema::ReadU8) => "byte_buffer:read_u8",
+            Self::ByteBuffer(ByteBufferStateMachineApiSchema::ValidateSlice) => "byte_buffer:validate_slice",
+            Self::ByteBuffer(ByteBufferStateMachineApiSchema::WriteU8) => "byte_buffer:write_u8",
             Self::Math(MathStateMachineApiSchema::Add) => "math:add",
             Self::Math(MathStateMachineApiSchema::Sub) => "math:sub",
             Self::Math(MathStateMachineApiSchema::Mul) => "math:mul",
@@ -146,7 +150,11 @@ impl StateMachineApiSchema {
             }
             "byte_buffer:copy" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::Copy),
             "byte_buffer:concat" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::Concat),
+            "byte_buffer:copy_slice" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::CopySlice),
             "byte_buffer:length" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::Length),
+            "byte_buffer:read_u8" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::ReadU8),
+            "byte_buffer:validate_slice" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::ValidateSlice),
+            "byte_buffer:write_u8" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::WriteU8),
             "math:add" => Self::Math(MathStateMachineApiSchema::Add),
             "math:sub" => Self::Math(MathStateMachineApiSchema::Sub),
             "math:mul" => Self::Math(MathStateMachineApiSchema::Mul),
@@ -444,5 +452,40 @@ mod tests {
         let deserialized: StateMachineApiSchema =
             serde_json::from_str(&serialized).expect("deserialize");
         assert_eq!(deserialized, api);
+    }
+
+    #[test]
+    fn byte_buffer_validate_slice_identifier_round_trips_as_string() {
+        let api = StateMachineApiSchema::ByteBuffer(ByteBufferStateMachineApiSchema::ValidateSlice);
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"byte_buffer:validate_slice\"");
+
+        let deserialized: StateMachineApiSchema =
+            serde_json::from_str(&serialized).expect("deserialize");
+        assert_eq!(deserialized, api);
+    }
+
+    #[test]
+    fn byte_buffer_indexed_identifiers_round_trip_as_strings() {
+        let copy_slice = StateMachineApiSchema::ByteBuffer(ByteBufferStateMachineApiSchema::CopySlice);
+        let read_u8 = StateMachineApiSchema::ByteBuffer(ByteBufferStateMachineApiSchema::ReadU8);
+        let write_u8 = StateMachineApiSchema::ByteBuffer(ByteBufferStateMachineApiSchema::WriteU8);
+
+        assert_eq!(serde_json::to_string(&copy_slice).expect("serialize"), "\"byte_buffer:copy_slice\"");
+        assert_eq!(serde_json::to_string(&read_u8).expect("serialize"), "\"byte_buffer:read_u8\"");
+        assert_eq!(serde_json::to_string(&write_u8).expect("serialize"), "\"byte_buffer:write_u8\"");
+
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"byte_buffer:copy_slice\"").expect("deserialize"),
+            copy_slice
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"byte_buffer:read_u8\"").expect("deserialize"),
+            read_u8
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"byte_buffer:write_u8\"").expect("deserialize"),
+            write_u8
+        );
     }
 }

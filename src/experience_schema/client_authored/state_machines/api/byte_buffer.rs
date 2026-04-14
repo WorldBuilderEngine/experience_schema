@@ -5,5 +5,9 @@ use serde::{Deserialize, Serialize};
 pub enum ByteBufferStateMachineApiSchema {
     Copy,
     Concat,
+    CopySlice,
     Length,
+    ReadU8,
+    ValidateSlice,
+    WriteU8,
 }

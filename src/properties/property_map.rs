@@ -7,12 +7,72 @@ use prost::DecodeError;
 use prost::Message;
 use prost::bytes::{Buf, BufMut};
 use prost::encoding::{DecodeContext, WireType};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::slice::Iter;
 
-#[derive(Deserialize, Serialize, Clone, Default, Debug, PartialEq)]
+#[derive(Clone, Default, Debug, PartialEq)]
 pub struct PropertyMap {
     pub properties: Vec<(String, Property)>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
+pub struct KeyedByteBufferWrite {
+    pub key: String,
+    pub bytes: Vec<u8>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Default, Debug, PartialEq, Eq)]
+pub struct KeyedByteBufferWrites {
+    pub writes: Vec<KeyedByteBufferWrite>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct SerializedPropertyMap {
+    #[serde(default)]
+    properties: Vec<(String, Property)>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    byte_buffer_writes: Vec<KeyedByteBufferWrite>,
+}
+
+impl Serialize for PropertyMap {
+    fn serialize<S>(
+        &self,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        SerializedPropertyMap {
+            properties: self
+                .properties
+                .iter()
+                .filter(|(_, property)| !matches!(property, Property::ByteBuffer(_)))
+                .cloned()
+                .collect(),
+            byte_buffer_writes: self.keyed_byte_buffer_writes().writes,
+        }
+        .serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for PropertyMap {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let serialized_property_map = SerializedPropertyMap::deserialize(deserializer)?;
+        let mut property_map = Self::new();
+
+        for (key, property) in serialized_property_map.properties {
+            property_map.insert(key, property);
+        }
+
+        property_map.apply_keyed_byte_buffer_writes(&KeyedByteBufferWrites {
+            writes: serialized_property_map.byte_buffer_writes,
+        });
+
+        Ok(property_map)
+    }
 }
 
 impl PropertyMap {
@@ -21,6 +81,37 @@ impl PropertyMap {
         Self {
             properties: Vec::new(),
         }
+    }
+
+    pub fn keyed_byte_buffer_writes(&self) -> KeyedByteBufferWrites {
+        KeyedByteBufferWrites {
+            writes: self
+                .properties
+                .iter()
+                .filter_map(|(key, property)| match property {
+                    Property::ByteBuffer(bytes) => Some(KeyedByteBufferWrite {
+                        key: key.clone(),
+                        bytes: bytes.clone(),
+                    }),
+                    _ => None,
+                })
+                .collect(),
+        }
+    }
+
+    pub fn apply_keyed_byte_buffer_writes(
+        &mut self,
+        writes: &KeyedByteBufferWrites,
+    ) {
+        for write in &writes.writes {
+            self.insert_byte_buffer(write.key.clone(), write.bytes.clone());
+        }
+    }
+
+    pub fn from_keyed_byte_buffer_writes(writes: &KeyedByteBufferWrites) -> Self {
+        let mut property_map = Self::new();
+        property_map.apply_keyed_byte_buffer_writes(writes);
+        property_map
     }
 
     /// Checks whether a key exists.
@@ -251,6 +342,79 @@ impl Message for PropertyMap {
 
     fn clear(&mut self) {
         *self = Self::default();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{KeyedByteBufferWrites, PropertyMap};
+    use crate::properties::property::Property;
+
+    #[test]
+    fn serde_emits_keyed_byte_buffer_writes_for_publish_contract_consumers() {
+        let mut property_map = PropertyMap::new();
+        property_map.insert_string("title", "hello");
+        property_map.insert_byte_buffer("payload_bytes", vec![1, 2, 3]);
+
+        let serialized = serde_json::to_value(&property_map).expect("property map should serialize");
+
+        assert_eq!(
+            serialized
+                .get("byte_buffer_writes")
+                .and_then(|value| value.as_array())
+                .map(|writes| writes.len()),
+            Some(1)
+        );
+        assert_eq!(
+            serialized
+                .get("byte_buffer_writes")
+                .and_then(|value| value.get(0))
+                .and_then(|value| value.get("key"))
+                .and_then(|value| value.as_str()),
+            Some("payload_bytes")
+        );
+        assert_eq!(
+            serialized
+                .get("properties")
+                .and_then(|value| value.as_array())
+                .map(|properties| properties.len()),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn serde_accepts_keyed_byte_buffer_writes_without_generic_property_entries() {
+        let serialized = serde_json::json!({
+            "properties": [
+                ["title", {"String":"hello"}]
+            ],
+            "byte_buffer_writes": [
+                {
+                    "key": "payload_bytes",
+                    "bytes": [1, 2, 3]
+                }
+            ]
+        });
+
+        let property_map: PropertyMap =
+            serde_json::from_value(serialized).expect("property map should deserialize");
+
+        assert_eq!(property_map.get("title"), Some(&Property::String("hello".to_string())));
+        assert_eq!(property_map.get_byte_buffer("payload_bytes"), Some(&vec![1, 2, 3]));
+    }
+
+    #[test]
+    fn keyed_byte_buffer_write_batches_round_trip_as_whole_buffer_updates() {
+        let writes = KeyedByteBufferWrites {
+            writes: vec![super::KeyedByteBufferWrite {
+                key: "payload_bytes".to_string(),
+                bytes: vec![4, 5, 6],
+            }],
+        };
+
+        let property_map = PropertyMap::from_keyed_byte_buffer_writes(&writes);
+
+        assert_eq!(property_map.get_byte_buffer("payload_bytes"), Some(&vec![4, 5, 6]));
     }
 }
 
