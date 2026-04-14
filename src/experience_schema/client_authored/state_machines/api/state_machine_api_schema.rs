@@ -100,9 +100,17 @@ impl StateMachineApiSchema {
             }
             Self::String(StringStateMachineApiSchema::Copy) => "string:copy",
             Self::String(StringStateMachineApiSchema::Concat) => "string:concat",
+            Self::String(StringStateMachineApiSchema::ConcatBytes) => "string:concat_bytes",
+            Self::String(StringStateMachineApiSchema::DecodeUtf8Bytes) => "string:decode_utf8_bytes",
             Self::String(StringStateMachineApiSchema::Length) => "string:length",
             Self::String(StringStateMachineApiSchema::FormatInt) => "string:format_int",
+            Self::String(StringStateMachineApiSchema::FormatIntBytes) => {
+                "string:format_int_bytes"
+            }
             Self::String(StringStateMachineApiSchema::FormatFloat) => "string:format_float",
+            Self::String(StringStateMachineApiSchema::FormatFloatBytes) => {
+                "string:format_float_bytes"
+            }
             Self::String(StringStateMachineApiSchema::ArrayLength) => "string:array_length",
             Self::World(WorldStateMachineApiSchema::SetNodePositionByTag) => {
                 "world:set_node_position_by_tag"
@@ -196,9 +204,19 @@ impl StateMachineApiSchema {
             }
             "string:copy" => Self::String(StringStateMachineApiSchema::Copy),
             "string:concat" => Self::String(StringStateMachineApiSchema::Concat),
+            "string:concat_bytes" => Self::String(StringStateMachineApiSchema::ConcatBytes),
+            "string:decode_utf8_bytes" => {
+                Self::String(StringStateMachineApiSchema::DecodeUtf8Bytes)
+            }
             "string:length" => Self::String(StringStateMachineApiSchema::Length),
             "string:format_int" => Self::String(StringStateMachineApiSchema::FormatInt),
+            "string:format_int_bytes" => {
+                Self::String(StringStateMachineApiSchema::FormatIntBytes)
+            }
             "string:format_float" => Self::String(StringStateMachineApiSchema::FormatFloat),
+            "string:format_float_bytes" => {
+                Self::String(StringStateMachineApiSchema::FormatFloatBytes)
+            }
             "string:array_length" => Self::String(StringStateMachineApiSchema::ArrayLength),
             "world:set_node_position" => {
                 Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)

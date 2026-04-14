@@ -101,6 +101,11 @@ impl PropertyMap {
         self.insert(key, Property::BoolArray(values));
     }
 
+    /// Inserts a uint8 array value.
+    pub fn insert_uint8_array(&mut self, key: impl Into<String>, values: Vec<u8>) {
+        self.insert(key, Property::UInt8Array(values));
+    }
+
     /// Inserts an integer array value.
     pub fn insert_int_array(&mut self, key: impl Into<String>, values: Vec<i64>) {
         self.insert(key, Property::Int64Array(values));
@@ -160,6 +165,14 @@ impl PropertyMap {
     pub fn get_bool_array(&self, key: &str) -> Option<&Vec<bool>> {
         match self.get(key) {
             Some(Property::BoolArray(values)) => Some(values),
+            _ => None,
+        }
+    }
+
+    /// Gets a uint8 array value by key.
+    pub fn get_uint8_array(&self, key: &str) -> Option<&Vec<u8>> {
+        match self.get(key) {
+            Some(Property::UInt8Array(values)) => Some(values),
             _ => None,
         }
     }

@@ -27,20 +27,21 @@ pub enum CompiledPropertyStorageClassSchema {
 pub enum CompiledPropertyValueTypeSchema {
     Bool = 0,
     BoolArray = 1,
-    Int64 = 2,
-    Int64Array = 3,
-    Float64 = 4,
-    Float64Array = 5,
-    String = 6,
-    StringArray = 7,
-    AssetRef = 8,
-    UInt8 = 9,
-    UInt16 = 10,
-    UInt32 = 11,
-    Int8 = 12,
-    Int16 = 13,
-    Int32 = 14,
-    Float32 = 15,
+    UInt8Array = 2,
+    Int64 = 3,
+    Int64Array = 4,
+    Float64 = 5,
+    Float64Array = 6,
+    String = 7,
+    StringArray = 8,
+    AssetRef = 9,
+    UInt8 = 10,
+    UInt16 = 11,
+    UInt32 = 12,
+    Int8 = 13,
+    Int16 = 14,
+    Int32 = 15,
+    Float32 = 16,
 }
 
 impl CompiledPropertyValueTypeSchema {
@@ -48,6 +49,7 @@ impl CompiledPropertyValueTypeSchema {
         match property {
             Property::Bool(_) => Self::Bool,
             Property::BoolArray(_) => Self::BoolArray,
+            Property::UInt8Array(_) => Self::UInt8Array,
             Property::Int64(_) => Self::Int64,
             Property::Int64Array(_) => Self::Int64Array,
             Property::Float64(_) => Self::Float64,
@@ -348,12 +350,13 @@ mod tests {
 
     #[test]
     fn packed_narrow_value_types_have_stable_schema_discriminants() {
-        assert_eq!(CompiledPropertyValueTypeSchema::UInt8 as i32, 9);
-        assert_eq!(CompiledPropertyValueTypeSchema::UInt16 as i32, 10);
-        assert_eq!(CompiledPropertyValueTypeSchema::UInt32 as i32, 11);
-        assert_eq!(CompiledPropertyValueTypeSchema::Int8 as i32, 12);
-        assert_eq!(CompiledPropertyValueTypeSchema::Int16 as i32, 13);
-        assert_eq!(CompiledPropertyValueTypeSchema::Int32 as i32, 14);
-        assert_eq!(CompiledPropertyValueTypeSchema::Float32 as i32, 15);
+        assert_eq!(CompiledPropertyValueTypeSchema::UInt8Array as i32, 2);
+        assert_eq!(CompiledPropertyValueTypeSchema::UInt8 as i32, 10);
+        assert_eq!(CompiledPropertyValueTypeSchema::UInt16 as i32, 11);
+        assert_eq!(CompiledPropertyValueTypeSchema::UInt32 as i32, 12);
+        assert_eq!(CompiledPropertyValueTypeSchema::Int8 as i32, 13);
+        assert_eq!(CompiledPropertyValueTypeSchema::Int16 as i32, 14);
+        assert_eq!(CompiledPropertyValueTypeSchema::Int32 as i32, 15);
+        assert_eq!(CompiledPropertyValueTypeSchema::Float32 as i32, 16);
     }
 }

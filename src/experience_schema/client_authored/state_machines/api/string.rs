@@ -5,8 +5,12 @@ use serde::{Deserialize, Serialize};
 pub enum StringStateMachineApiSchema {
     Copy,
     Concat,
+    ConcatBytes,
+    DecodeUtf8Bytes,
     Length,
     FormatInt,
+    FormatIntBytes,
     FormatFloat,
+    FormatFloatBytes,
     ArrayLength,
 }
