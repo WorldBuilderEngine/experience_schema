@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub enum WorldStateMachineApiSchema {
     SetNodePositionByTag,
     SetNodeVisibilityByTag,
+    SetNodeTextByTag,
     ReorderNodeByTag,
     FollowActiveCameraByTag,
     RemoveStateMachine,

@@ -10,7 +10,7 @@ use serde::ser::{Serialize, Serializer};
 
 use super::{
     Animation2dStateMachineApiSchema, MathStateMachineApiSchema, Physics2dStateMachineApiSchema,
-    RuntimeStateMachineApiSchema, WorldStateMachineApiSchema,
+    RuntimeStateMachineApiSchema, StringStateMachineApiSchema, WorldStateMachineApiSchema,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -19,6 +19,7 @@ pub enum StateMachineApiSchema {
     Math(MathStateMachineApiSchema),
     Physics2d(Physics2dStateMachineApiSchema),
     Runtime(RuntimeStateMachineApiSchema),
+    String(StringStateMachineApiSchema),
     World(WorldStateMachineApiSchema),
     Custom(String),
 }
@@ -97,11 +98,20 @@ impl StateMachineApiSchema {
             Self::Runtime(RuntimeStateMachineApiSchema::QuerySimulatedElapsedSeconds) => {
                 "runtime:query_simulated_elapsed_seconds"
             }
+            Self::String(StringStateMachineApiSchema::Copy) => "string:copy",
+            Self::String(StringStateMachineApiSchema::Concat) => "string:concat",
+            Self::String(StringStateMachineApiSchema::Length) => "string:length",
+            Self::String(StringStateMachineApiSchema::FormatInt) => "string:format_int",
+            Self::String(StringStateMachineApiSchema::FormatFloat) => "string:format_float",
+            Self::String(StringStateMachineApiSchema::ArrayLength) => "string:array_length",
             Self::World(WorldStateMachineApiSchema::SetNodePositionByTag) => {
                 "world:set_node_position_by_tag"
             }
             Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag) => {
                 "world:set_node_visibility_by_tag"
+            }
+            Self::World(WorldStateMachineApiSchema::SetNodeTextByTag) => {
+                "world:set_node_text_by_tag"
             }
             Self::World(WorldStateMachineApiSchema::ReorderNodeByTag) => {
                 "world:reorder_node_by_tag"
@@ -184,6 +194,12 @@ impl StateMachineApiSchema {
             "runtime:query_simulated_elapsed_seconds" => {
                 Self::Runtime(RuntimeStateMachineApiSchema::QuerySimulatedElapsedSeconds)
             }
+            "string:copy" => Self::String(StringStateMachineApiSchema::Copy),
+            "string:concat" => Self::String(StringStateMachineApiSchema::Concat),
+            "string:length" => Self::String(StringStateMachineApiSchema::Length),
+            "string:format_int" => Self::String(StringStateMachineApiSchema::FormatInt),
+            "string:format_float" => Self::String(StringStateMachineApiSchema::FormatFloat),
+            "string:array_length" => Self::String(StringStateMachineApiSchema::ArrayLength),
             "world:set_node_position" => {
                 Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)
             }
@@ -195,6 +211,9 @@ impl StateMachineApiSchema {
             }
             "world:set_node_visibility_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
+            }
+            "world:set_node_text_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::SetNodeTextByTag)
             }
             "world:reorder_node_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::ReorderNodeByTag)
@@ -267,7 +286,7 @@ impl Message for StateMachineApiSchema {
 
 #[cfg(test)]
 mod tests {
-    use super::{RuntimeStateMachineApiSchema, StateMachineApiSchema, WorldStateMachineApiSchema};
+    use super::{RuntimeStateMachineApiSchema, StateMachineApiSchema, StringStateMachineApiSchema, WorldStateMachineApiSchema};
 
     #[test]
     fn canonical_identifier_round_trips_as_string() {
@@ -374,6 +393,20 @@ mod tests {
         assert_eq!(
             deserialized,
             StateMachineApiSchema::Runtime(RuntimeStateMachineApiSchema::NoOp)
+        );
+    }
+
+    #[test]
+    fn string_identifier_round_trips_as_canonical() {
+        let api = StateMachineApiSchema::from("string:concat");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"string:concat\"");
+
+        let deserialized: StateMachineApiSchema =
+            serde_json::from_str(&serialized).expect("deserialize");
+        assert_eq!(
+            deserialized,
+            StateMachineApiSchema::String(StringStateMachineApiSchema::Concat)
         );
     }
 }
