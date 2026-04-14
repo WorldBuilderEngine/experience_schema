@@ -1,8 +1,7 @@
 use super::kinded_world_object_schema::KindedWorldObjectSchema;
 use super::world_object_schema::WorldObjectSchema;
 use crate::{
-    assets::asset_ref::AssetRef,
-    properties::authored_property_view::AuthoredPropertyView,
+    assets::asset_ref::AssetRef, properties::authored_property_view::AuthoredPropertyView,
     properties::property_map::PropertyMap,
 };
 
@@ -31,7 +30,8 @@ impl<'a> AuthoredWorldObjectView<'a> {
     }
 
     pub fn properties(&self) -> Option<&'a PropertyMap> {
-        self.property_view.map(|property_view| property_view.properties())
+        self.property_view
+            .map(|property_view| property_view.properties())
     }
 
     pub fn property_view(&self) -> Option<AuthoredPropertyView<'a>> {
@@ -115,12 +115,16 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 "interaction_enabled" => Some(static_text.interaction_enabled),
                 _ => None,
             },
-            Some(KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker)) => match property_name {
-                "is_visible" => Some(hotspot_marker.is_visible),
-                "interaction_enabled" => Some(hotspot_marker.interaction_enabled),
-                _ => None,
-            },
-            _ => self.property_view.and_then(|property_view| property_view.bool(property_name)),
+            Some(KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker)) => {
+                match property_name {
+                    "is_visible" => Some(hotspot_marker.is_visible),
+                    "interaction_enabled" => Some(hotspot_marker.interaction_enabled),
+                    _ => None,
+                }
+            }
+            _ => self
+                .property_view
+                .and_then(|property_view| property_view.bool(property_name)),
         }
     }
 
@@ -159,13 +163,71 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 "intrinsic_height_px" => static_sprite.intrinsic_height_px.map(i64::from),
                 _ => None,
             },
-            _ => self.property_view.and_then(|property_view| property_view.int(property_name)),
+            _ => self
+                .property_view
+                .and_then(|property_view| property_view.int(property_name)),
         }
     }
 
-    pub fn float_array(&self, property_name: &str) -> Option<&'a Vec<f64>> {
-        self.property_view
-            .and_then(|property_view| property_view.float_array(property_name))
+    pub fn float_array(&self, property_name: &str) -> Option<Vec<f64>> {
+        match self.world_object_schema.kinded.as_ref() {
+            Some(KindedWorldObjectSchema::Camera(camera)) => match property_name {
+                "position" => Some(camera.position_xyz.to_vec()),
+                "camera_forward" => match &camera.projection {
+                    crate::client_authored::worlds::typed_object_schemas::CameraProjectionSchema::Perspective3d {
+                        camera_forward_xyz,
+                        ..
+                    } => Some(camera_forward_xyz.to_vec()),
+                    _ => None,
+                },
+                "camera_up" => match &camera.projection {
+                    crate::client_authored::worlds::typed_object_schemas::CameraProjectionSchema::Perspective3d {
+                        camera_up_xyz,
+                        ..
+                    } => Some(camera_up_xyz.to_vec()),
+                    _ => None,
+                },
+                "follow_target_distance" => camera
+                    .follow_target_distance_xyz
+                    .map(|value| value.to_vec()),
+                "follow_units_per_second" => camera
+                    .follow_units_per_second_xyz
+                    .map(|value| value.to_vec()),
+                _ => self.property_view.and_then(|property_view| property_view.float_array(property_name).cloned()),
+            },
+            Some(KindedWorldObjectSchema::StaticSprite(static_sprite)) => match property_name {
+                "position" => Some(static_sprite.position_xyz.to_vec()),
+                "scale" => Some(static_sprite.scale_xy.to_vec()),
+                "rotation_deg" => Some(static_sprite.rotation_deg_xyz.to_vec()),
+                _ => self.property_view.and_then(|property_view| property_view.float_array(property_name).cloned()),
+            },
+            Some(KindedWorldObjectSchema::StaticText(static_text)) => match property_name {
+                "position" => Some(static_text.position_xyz.to_vec()),
+                "scale" => Some(static_text.scale_xy.to_vec()),
+                "rotation_deg" => Some(static_text.rotation_deg_xyz.to_vec()),
+                "outline_color_rgba" => static_text
+                    .outline_color_rgba
+                    .map(|value| value.to_vec()),
+                _ => self.property_view.and_then(|property_view| property_view.float_array(property_name).cloned()),
+            },
+            Some(KindedWorldObjectSchema::TransitionHotspot(transition_hotspot)) => match property_name {
+                "bounds_px" => Some(transition_hotspot.bounds_px.as_vec()),
+                _ => self.property_view.and_then(|property_view| property_view.float_array(property_name).cloned()),
+            },
+            Some(KindedWorldObjectSchema::InteractableHotspot(interactable_hotspot)) => match property_name {
+                "bounds_px" => Some(interactable_hotspot.bounds_px.as_vec()),
+                _ => self.property_view.and_then(|property_view| property_view.float_array(property_name).cloned()),
+            },
+            Some(KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker)) => match property_name {
+                "position" => Some(hotspot_marker.position_xyz.to_vec()),
+                "scale" => Some(hotspot_marker.scale_xy.to_vec()),
+                "rotation_deg" => Some(hotspot_marker.rotation_deg_xyz.to_vec()),
+                _ => self.property_view.and_then(|property_view| property_view.float_array(property_name).cloned()),
+            },
+            None => self
+                .property_view
+                .and_then(|property_view| property_view.float_array(property_name).cloned()),
+        }
     }
 
     pub fn string(&self, property_name: &str) -> Option<&'a String> {
@@ -190,47 +252,64 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 "scene_id" => static_text.scene_id.as_ref(),
                 _ => None,
             },
-            Some(KindedWorldObjectSchema::TransitionHotspot(transition_hotspot)) => match property_name {
-                "object_type" => Some(&transition_hotspot.object_type),
-                "hotspot_id" => Some(&transition_hotspot.hotspot_id),
-                "from_scene_id" => Some(&transition_hotspot.from_scene_id),
-                "to_scene_id" => Some(&transition_hotspot.to_scene_id),
-                "activation_event" => transition_hotspot.activation_event.as_ref(),
-                "transition_started_event" => transition_hotspot.transition_started_event.as_ref(),
-                "transition_completed_event" => transition_hotspot.transition_completed_event.as_ref(),
-                _ => None,
-            },
-            Some(KindedWorldObjectSchema::InteractableHotspot(interactable_hotspot)) => match property_name {
-                "object_type" => Some(&interactable_hotspot.object_type),
-                "scene_id" => Some(&interactable_hotspot.scene_id),
-                "hotspot_id" => Some(&interactable_hotspot.hotspot_id),
-                "target_id" => Some(&interactable_hotspot.target_id),
-                "verb_id" => interactable_hotspot.verb_id.as_ref(),
-                "item_id" => interactable_hotspot.item_id.as_ref(),
-                "required_item_id" => interactable_hotspot.required_item_id.as_ref(),
-                "activation_event" => interactable_hotspot.activation_event.as_ref(),
-                "interaction_resolved_event" => interactable_hotspot.interaction_resolved_event.as_ref(),
-                "inventory_collected_event" => interactable_hotspot.inventory_collected_event.as_ref(),
-                "gate_blocked_event" => interactable_hotspot.gate_blocked_event.as_ref(),
-                "gate_unlocked_event" => interactable_hotspot.gate_unlocked_event.as_ref(),
-                "hover_entered_event" => interactable_hotspot.hover_entered_event.as_ref(),
-                "hover_exited_event" => interactable_hotspot.hover_exited_event.as_ref(),
-                "pressed_event" => interactable_hotspot.pressed_event.as_ref(),
-                _ => None,
-            },
-            Some(KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker)) => match property_name {
-                "scene_id" => Some(&hotspot_marker.scene_id),
-                "hotspot_id" => Some(&hotspot_marker.hotspot_id),
-                "marker_kind" => Some(&hotspot_marker.marker_kind),
-                "node_tag" => hotspot_marker.node_tag.as_ref(),
-                _ => None,
-            },
-            _ => self.property_view.and_then(|property_view| property_view.string(property_name)),
+            Some(KindedWorldObjectSchema::TransitionHotspot(transition_hotspot)) => {
+                match property_name {
+                    "object_type" => Some(&transition_hotspot.object_type),
+                    "hotspot_id" => Some(&transition_hotspot.hotspot_id),
+                    "from_scene_id" => Some(&transition_hotspot.from_scene_id),
+                    "to_scene_id" => Some(&transition_hotspot.to_scene_id),
+                    "activation_event" => transition_hotspot.activation_event.as_ref(),
+                    "transition_started_event" => {
+                        transition_hotspot.transition_started_event.as_ref()
+                    }
+                    "transition_completed_event" => {
+                        transition_hotspot.transition_completed_event.as_ref()
+                    }
+                    _ => None,
+                }
+            }
+            Some(KindedWorldObjectSchema::InteractableHotspot(interactable_hotspot)) => {
+                match property_name {
+                    "object_type" => Some(&interactable_hotspot.object_type),
+                    "scene_id" => Some(&interactable_hotspot.scene_id),
+                    "hotspot_id" => Some(&interactable_hotspot.hotspot_id),
+                    "target_id" => Some(&interactable_hotspot.target_id),
+                    "verb_id" => interactable_hotspot.verb_id.as_ref(),
+                    "item_id" => interactable_hotspot.item_id.as_ref(),
+                    "required_item_id" => interactable_hotspot.required_item_id.as_ref(),
+                    "activation_event" => interactable_hotspot.activation_event.as_ref(),
+                    "interaction_resolved_event" => {
+                        interactable_hotspot.interaction_resolved_event.as_ref()
+                    }
+                    "inventory_collected_event" => {
+                        interactable_hotspot.inventory_collected_event.as_ref()
+                    }
+                    "gate_blocked_event" => interactable_hotspot.gate_blocked_event.as_ref(),
+                    "gate_unlocked_event" => interactable_hotspot.gate_unlocked_event.as_ref(),
+                    "hover_entered_event" => interactable_hotspot.hover_entered_event.as_ref(),
+                    "hover_exited_event" => interactable_hotspot.hover_exited_event.as_ref(),
+                    "pressed_event" => interactable_hotspot.pressed_event.as_ref(),
+                    _ => None,
+                }
+            }
+            Some(KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker)) => {
+                match property_name {
+                    "scene_id" => Some(&hotspot_marker.scene_id),
+                    "hotspot_id" => Some(&hotspot_marker.hotspot_id),
+                    "marker_kind" => Some(&hotspot_marker.marker_kind),
+                    "node_tag" => hotspot_marker.node_tag.as_ref(),
+                    _ => None,
+                }
+            }
+            _ => self
+                .property_view
+                .and_then(|property_view| property_view.string(property_name)),
         }
     }
 
     pub fn string_array(&self, property_name: &str) -> Option<&'a Vec<String>> {
-        self.properties().and_then(|properties| properties.get_string_array(property_name))
+        self.properties()
+            .and_then(|properties| properties.get_string_array(property_name))
     }
 
     pub fn asset_ref(&self, property_name: &str) -> Option<&'a AssetRef> {
@@ -243,16 +322,22 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 "font_asset_ref" => Some(&static_text.font_asset_ref),
                 _ => None,
             },
-            Some(KindedWorldObjectSchema::InteractableHotspot(interactable_hotspot)) => match property_name {
-                "default_asset_ref" => interactable_hotspot.default_asset_ref.as_ref(),
-                "hover_asset_ref" => interactable_hotspot.hover_asset_ref.as_ref(),
-                _ => None,
-            },
-            Some(KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker)) => match property_name {
-                "asset_ref" => Some(&hotspot_marker.asset_ref),
-                _ => None,
-            },
-            _ => self.property_view.and_then(|property_view| property_view.asset_ref(property_name)),
+            Some(KindedWorldObjectSchema::InteractableHotspot(interactable_hotspot)) => {
+                match property_name {
+                    "default_asset_ref" => interactable_hotspot.default_asset_ref.as_ref(),
+                    "hover_asset_ref" => interactable_hotspot.hover_asset_ref.as_ref(),
+                    _ => None,
+                }
+            }
+            Some(KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker)) => {
+                match property_name {
+                    "asset_ref" => Some(&hotspot_marker.asset_ref),
+                    _ => None,
+                }
+            }
+            _ => self
+                .property_view
+                .and_then(|property_view| property_view.asset_ref(property_name)),
         }
     }
 
@@ -268,9 +353,37 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 .and_then(|text| text.font_asset_ref())
                 .into_iter()
                 .collect(),
-            _ => self
+            None => self
                 .property_view
                 .map(|property_view| property_view.asset_refs().collect())
+                .unwrap_or_default(),
+            Some(AuthoredWorldObjectKind::Custom) => self
+                .property_view
+                .map(|property_view| property_view.asset_refs().collect())
+                .unwrap_or_default(),
+            _ => self
+                .world_object_schema
+                .kinded
+                .as_ref()
+                .map(|kinded| match kinded {
+                    KindedWorldObjectSchema::InteractableHotspot(interactable_hotspot) => {
+                        let mut asset_refs = Vec::new();
+                        if let Some(default_asset_ref) =
+                            interactable_hotspot.default_asset_ref.as_ref()
+                        {
+                            asset_refs.push(default_asset_ref);
+                        }
+                        if let Some(hover_asset_ref) = interactable_hotspot.hover_asset_ref.as_ref()
+                        {
+                            asset_refs.push(hover_asset_ref);
+                        }
+                        asset_refs
+                    }
+                    KindedWorldObjectSchema::HotspotMarkerSprite(hotspot_marker) => {
+                        vec![&hotspot_marker.asset_ref]
+                    }
+                    _ => Vec::new(),
+                })
                 .unwrap_or_default(),
         };
         asset_refs.into_iter()
@@ -325,7 +438,7 @@ impl<'a> AuthoredCameraObjectView<'a> {
         self.world_object_view.float(property_name)
     }
 
-    pub fn float_array(&self, property_name: &str) -> Option<&'a Vec<f64>> {
+    pub fn float_array(&self, property_name: &str) -> Option<Vec<f64>> {
         self.world_object_view.float_array(property_name)
     }
 
@@ -356,7 +469,7 @@ impl<'a> AuthoredStaticSpriteObjectView<'a> {
         self.world_object_view.bool(property_name)
     }
 
-    pub fn float_array(&self, property_name: &str) -> Option<&'a Vec<f64>> {
+    pub fn float_array(&self, property_name: &str) -> Option<Vec<f64>> {
         self.world_object_view.float_array(property_name)
     }
 
@@ -395,7 +508,7 @@ impl<'a> AuthoredStaticTextObjectView<'a> {
         self.world_object_view.float(property_name)
     }
 
-    pub fn float_array(&self, property_name: &str) -> Option<&'a Vec<f64>> {
+    pub fn float_array(&self, property_name: &str) -> Option<Vec<f64>> {
         self.world_object_view.float_array(property_name)
     }
 }
@@ -410,7 +523,7 @@ impl<'a> AuthoredPhysics2dPolygonObjectView<'a> {
         self.world_object_view.int(property_name)
     }
 
-    pub fn float_array(&self, property_name: &str) -> Option<&'a Vec<f64>> {
+    pub fn float_array(&self, property_name: &str) -> Option<Vec<f64>> {
         self.world_object_view.float_array(property_name)
     }
 

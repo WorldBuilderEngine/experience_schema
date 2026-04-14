@@ -8,11 +8,7 @@ pub struct StateMachineOwnedCollectionCapacitySchema {
 }
 
 impl StateMachineOwnedCollectionCapacitySchema {
-    pub fn new(
-        local_id: impl Into<String>,
-        property_id: impl Into<String>,
-        capacity: u32,
-    ) -> Self {
+    pub fn new(local_id: impl Into<String>, property_id: impl Into<String>, capacity: u32) -> Self {
         Self {
             local_id: local_id.into().trim().to_string(),
             property_id: property_id.into().trim().to_string(),

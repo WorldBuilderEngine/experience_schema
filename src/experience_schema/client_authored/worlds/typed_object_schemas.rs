@@ -28,15 +28,10 @@ pub struct CameraObjectSchema {
 }
 
 impl CameraObjectSchema {
-    pub fn orthographic_2d(
-        position_xyz: [f64; 3],
-        pixels_per_unit: f64,
-    ) -> Self {
+    pub fn orthographic_2d(position_xyz: [f64; 3], pixels_per_unit: f64) -> Self {
         Self {
             position_xyz,
-            projection: CameraProjectionSchema::Orthographic2d {
-                pixels_per_unit,
-            },
+            projection: CameraProjectionSchema::Orthographic2d { pixels_per_unit },
             is_active_camera: false,
             debug_movement_units_per_second: 0.0,
             node_tag: None,
@@ -48,10 +43,7 @@ impl CameraObjectSchema {
         }
     }
 
-    pub fn perspective_3d(
-        position_xyz: [f64; 3],
-        focal_length: f64,
-    ) -> Self {
+    pub fn perspective_3d(position_xyz: [f64; 3], focal_length: f64) -> Self {
         Self {
             position_xyz,
             projection: CameraProjectionSchema::Perspective3d {
@@ -92,11 +84,7 @@ pub struct StaticSpriteObjectSchema {
 }
 
 impl StaticSpriteObjectSchema {
-    pub fn new(
-        asset_ref: AssetRef,
-        position_xyz: [f64; 3],
-        scale_xy: [f64; 2],
-    ) -> Self {
+    pub fn new(asset_ref: AssetRef, position_xyz: [f64; 3], scale_xy: [f64; 2]) -> Self {
         Self {
             asset_ref,
             position_xyz,
