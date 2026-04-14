@@ -9,13 +9,14 @@ use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use super::{
-    Animation2dStateMachineApiSchema, MathStateMachineApiSchema, Physics2dStateMachineApiSchema,
+    Animation2dStateMachineApiSchema, ByteBufferStateMachineApiSchema, MathStateMachineApiSchema, Physics2dStateMachineApiSchema,
     RuntimeStateMachineApiSchema, StringStateMachineApiSchema, WorldStateMachineApiSchema,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum StateMachineApiSchema {
     Animation2d(Animation2dStateMachineApiSchema),
+    ByteBuffer(ByteBufferStateMachineApiSchema),
     Math(MathStateMachineApiSchema),
     Physics2d(Physics2dStateMachineApiSchema),
     Runtime(RuntimeStateMachineApiSchema),
@@ -36,6 +37,9 @@ impl StateMachineApiSchema {
             Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers) => {
                 "animation2d:step_players"
             }
+            Self::ByteBuffer(ByteBufferStateMachineApiSchema::Copy) => "byte_buffer:copy",
+            Self::ByteBuffer(ByteBufferStateMachineApiSchema::Concat) => "byte_buffer:concat",
+            Self::ByteBuffer(ByteBufferStateMachineApiSchema::Length) => "byte_buffer:length",
             Self::Math(MathStateMachineApiSchema::Add) => "math:add",
             Self::Math(MathStateMachineApiSchema::Sub) => "math:sub",
             Self::Math(MathStateMachineApiSchema::Mul) => "math:mul",
@@ -140,6 +144,9 @@ impl StateMachineApiSchema {
             "animation2d:step_players" => {
                 Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers)
             }
+            "byte_buffer:copy" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::Copy),
+            "byte_buffer:concat" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::Concat),
+            "byte_buffer:length" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::Length),
             "math:add" => Self::Math(MathStateMachineApiSchema::Add),
             "math:sub" => Self::Math(MathStateMachineApiSchema::Sub),
             "math:mul" => Self::Math(MathStateMachineApiSchema::Mul),
@@ -304,7 +311,7 @@ impl Message for StateMachineApiSchema {
 
 #[cfg(test)]
 mod tests {
-    use super::{RuntimeStateMachineApiSchema, StateMachineApiSchema, StringStateMachineApiSchema, WorldStateMachineApiSchema};
+    use super::{ByteBufferStateMachineApiSchema, RuntimeStateMachineApiSchema, StateMachineApiSchema, StringStateMachineApiSchema, WorldStateMachineApiSchema};
 
     #[test]
     fn canonical_identifier_round_trips_as_string() {
@@ -426,5 +433,16 @@ mod tests {
             deserialized,
             StateMachineApiSchema::String(StringStateMachineApiSchema::Concat)
         );
+    }
+
+    #[test]
+    fn byte_buffer_identifier_round_trips_as_string() {
+        let api = StateMachineApiSchema::ByteBuffer(ByteBufferStateMachineApiSchema::Concat);
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"byte_buffer:concat\"");
+
+        let deserialized: StateMachineApiSchema =
+            serde_json::from_str(&serialized).expect("deserialize");
+        assert_eq!(deserialized, api);
     }
 }

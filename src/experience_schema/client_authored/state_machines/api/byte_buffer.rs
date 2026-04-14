@@ -2,15 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum StringStateMachineApiSchema {
+pub enum ByteBufferStateMachineApiSchema {
     Copy,
     Concat,
-    ConcatBytes,
     Length,
-    FormatInt,
-    FormatFloat,
-    ArrayLength,
-    DecodeUtf8Bytes,
-    FormatIntBytes,
-    FormatFloatBytes,
 }
