@@ -27,7 +27,7 @@ pub enum CompiledPropertyStorageClassSchema {
 pub enum CompiledPropertyValueTypeSchema {
     Bool = 0,
     BoolArray = 1,
-    UInt8Array = 2,
+    ByteBuffer = 2,
     Int64 = 3,
     Int64Array = 4,
     Float64 = 5,
@@ -49,7 +49,7 @@ impl CompiledPropertyValueTypeSchema {
         match property {
             Property::Bool(_) => Self::Bool,
             Property::BoolArray(_) => Self::BoolArray,
-            Property::UInt8Array(_) => Self::UInt8Array,
+            Property::ByteBuffer(_) => Self::ByteBuffer,
             Property::Int64(_) => Self::Int64,
             Property::Int64Array(_) => Self::Int64Array,
             Property::Float64(_) => Self::Float64,
@@ -350,7 +350,7 @@ mod tests {
 
     #[test]
     fn packed_narrow_value_types_have_stable_schema_discriminants() {
-        assert_eq!(CompiledPropertyValueTypeSchema::UInt8Array as i32, 2);
+        assert_eq!(CompiledPropertyValueTypeSchema::ByteBuffer as i32, 2);
         assert_eq!(CompiledPropertyValueTypeSchema::UInt8 as i32, 10);
         assert_eq!(CompiledPropertyValueTypeSchema::UInt16 as i32, 11);
         assert_eq!(CompiledPropertyValueTypeSchema::UInt32 as i32, 12);
@@ -360,3 +360,4 @@ mod tests {
         assert_eq!(CompiledPropertyValueTypeSchema::Float32 as i32, 16);
     }
 }
+

@@ -102,8 +102,8 @@ impl PropertyMap {
     }
 
     /// Inserts a uint8 array value.
-    pub fn insert_uint8_array(&mut self, key: impl Into<String>, values: Vec<u8>) {
-        self.insert(key, Property::UInt8Array(values));
+    pub fn insert_byte_buffer(&mut self, key: impl Into<String>, values: Vec<u8>) {
+        self.insert(key, Property::ByteBuffer(values));
     }
 
     /// Inserts an integer array value.
@@ -170,9 +170,9 @@ impl PropertyMap {
     }
 
     /// Gets a uint8 array value by key.
-    pub fn get_uint8_array(&self, key: &str) -> Option<&Vec<u8>> {
+    pub fn get_byte_buffer(&self, key: &str) -> Option<&Vec<u8>> {
         match self.get(key) {
-            Some(Property::UInt8Array(values)) => Some(values),
+            Some(Property::ByteBuffer(values)) => Some(values),
             _ => None,
         }
     }
@@ -253,3 +253,4 @@ impl Message for PropertyMap {
         *self = Self::default();
     }
 }
+

@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub enum Property {
     Bool(bool),
     BoolArray(Vec<bool>),
-    UInt8Array(Vec<u8>),
+    ByteBuffer(Vec<u8>),
     Int64(i64),
     Int64Array(Vec<i64>),
     Float64(f64),
@@ -53,3 +53,4 @@ impl Message for Property {
         *self = Self::Bool(false);
     }
 }
+
