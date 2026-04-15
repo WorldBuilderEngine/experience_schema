@@ -1,9 +1,13 @@
+use prost::Message;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Message)]
 pub struct StateMachineOwnedCollectionCapacitySchema {
+    #[prost(string, tag = "1")]
     pub local_id: String,
+    #[prost(string, tag = "2")]
     pub property_id: String,
+    #[prost(uint32, tag = "3")]
     pub capacity: u32,
 }
 

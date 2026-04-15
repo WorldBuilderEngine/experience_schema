@@ -113,7 +113,7 @@ mod tests {
                                 "identifier": "viewport_width_px",
                                 "compiled_field_id": 0,
                                 "slot_index": 0,
-                                "value_type": 4,
+                                "value_type": 5,
                                 "default_value": {"Float64": 960.0}
                             }
                         ]

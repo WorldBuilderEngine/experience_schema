@@ -1,6 +1,3 @@
-use crate::wire_compat::json_message::{
-    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
-};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use prost::DecodeError;
 use prost::Message;
@@ -15,15 +12,20 @@ fn normalize_bundle_identifier(bundle_identifier: impl Into<String>) -> String {
 }
 
 /// The high-level source type for an asset bundle.
-#[derive(Deserialize, Serialize, Clone, Default, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
 pub enum AssetBundleKind {
     /// Authored content loaded from loose files.
-    Unpacked,
+    Unpacked = 0,
     /// Runtime-ready content loaded from packed bytes.
-    #[default]
-    Packed,
+    Packed = 1,
     /// Runtime-generated content (for tests or procedural content).
-    Generated,
+    Generated = 2,
+}
+
+impl Default for AssetBundleKind {
+    fn default() -> Self {
+        Self::Packed
+    }
 }
 
 /// A single serialized asset entry.
@@ -47,7 +49,7 @@ impl StoredAssetSchema {
 
 impl Message for StoredAssetSchema {
     fn encode_raw(&self, buf: &mut impl BufMut) {
-        encode_as_json_message(self, buf);
+        StoredAssetSchemaBinaryWire::from(self.clone()).encode_raw(buf);
     }
 
     fn merge_field(
@@ -57,11 +59,14 @@ impl Message for StoredAssetSchema {
         buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError> {
-        merge_from_json_message(self, tag, wire_type, buf, ctx)
+        let mut wire = StoredAssetSchemaBinaryWire::from(self.clone());
+        wire.merge_field(tag, wire_type, buf, ctx)?;
+        *self = wire.into_schema();
+        Ok(())
     }
 
     fn encoded_len(&self) -> usize {
-        json_message_encoded_len(self)
+        StoredAssetSchemaBinaryWire::from(self.clone()).encoded_len()
     }
 
     fn clear(&mut self) {
@@ -111,7 +116,7 @@ impl AssetBundleSchema {
 
 impl Message for AssetBundleSchema {
     fn encode_raw(&self, buf: &mut impl BufMut) {
-        encode_as_json_message(self, buf);
+        AssetBundleSchemaBinaryWire::from(self.clone()).encode_raw(buf);
     }
 
     fn merge_field(
@@ -121,15 +126,78 @@ impl Message for AssetBundleSchema {
         buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError> {
-        merge_from_json_message(self, tag, wire_type, buf, ctx)
+        let mut wire = AssetBundleSchemaBinaryWire::from(self.clone());
+        wire.merge_field(tag, wire_type, buf, ctx)?;
+        *self = wire.into_schema();
+        Ok(())
     }
 
     fn encoded_len(&self) -> usize {
-        json_message_encoded_len(self)
+        AssetBundleSchemaBinaryWire::from(self.clone()).encoded_len()
     }
 
     fn clear(&mut self) {
         *self = Self::default();
+    }
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct StoredAssetSchemaBinaryWire {
+    #[prost(string, tag = "16")]
+    asset_path: String,
+    #[prost(bytes, tag = "17")]
+    asset_data: Vec<u8>,
+}
+
+impl From<StoredAssetSchema> for StoredAssetSchemaBinaryWire {
+    fn from(value: StoredAssetSchema) -> Self {
+        Self {
+            asset_path: value.asset_path.to_string_lossy().to_string(),
+            asset_data: value.asset_data,
+        }
+    }
+}
+
+impl StoredAssetSchemaBinaryWire {
+    fn into_schema(self) -> StoredAssetSchema {
+        StoredAssetSchema {
+            asset_path: PathBuf::from(self.asset_path),
+            asset_data: self.asset_data,
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct AssetBundleSchemaBinaryWire {
+    #[prost(string, tag = "16")]
+    bundle_id: String,
+    #[prost(int32, tag = "17")]
+    bundle_kind: i32,
+    #[prost(message, repeated, tag = "18")]
+    assets: Vec<StoredAssetSchema>,
+}
+
+impl From<AssetBundleSchema> for AssetBundleSchemaBinaryWire {
+    fn from(value: AssetBundleSchema) -> Self {
+        Self {
+            bundle_id: value.bundle_id,
+            bundle_kind: value.bundle_kind as i32,
+            assets: value.assets,
+        }
+    }
+}
+
+impl AssetBundleSchemaBinaryWire {
+    fn into_schema(self) -> AssetBundleSchema {
+        AssetBundleSchema {
+            bundle_id: self.bundle_id,
+            bundle_kind: match self.bundle_kind {
+                0 => AssetBundleKind::Unpacked,
+                2 => AssetBundleKind::Generated,
+                _ => AssetBundleKind::Packed,
+            },
+            assets: self.assets,
+        }
     }
 }
 
@@ -195,7 +263,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::StoredAssetSchema;
+    use super::{AssetBundleKind, AssetBundleSchema, StoredAssetSchema};
+    use prost::Message;
     use std::path::PathBuf;
 
     #[test]
@@ -207,4 +276,16 @@ mod tests {
         assert_eq!(parsed.asset_path, PathBuf::from("sprites/example.png"));
         assert_eq!(parsed.asset_data, vec![0, 255, 127]);
     }
+
+    #[test]
+    fn prost_round_trips_asset_bundle_schema_as_binary_message() {
+        let mut bundle = AssetBundleSchema::new("ui", AssetBundleKind::Packed);
+        bundle.upsert_asset(PathBuf::from("sprites/example.png"), vec![1, 2, 3]);
+
+        let encoded = bundle.encode_to_vec();
+        let decoded = AssetBundleSchema::decode(encoded.as_slice()).expect("asset bundle should decode");
+
+        assert_eq!(decoded, bundle);
+    }
+
 }

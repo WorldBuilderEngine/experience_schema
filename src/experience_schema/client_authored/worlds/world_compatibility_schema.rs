@@ -11,13 +11,11 @@ use std::collections::HashMap;
 pub struct WorldCompatibilitySchema {
     #[serde(default)]
     object_templates: HashMap<String, WorldObjectSchema>,
-    #[serde(default, rename = "protocol_proof_assertions", skip_serializing)]
-    legacy_protocol_proof_assertions: Vec<serde_json::Value>,
 }
 
 impl WorldCompatibilitySchema {
     pub fn is_empty(&self) -> bool {
-        self.object_templates.is_empty() && self.legacy_protocol_proof_assertions.is_empty()
+        self.object_templates.is_empty()
     }
 
     pub fn object_templates(&self) -> &HashMap<String, WorldObjectSchema> {
@@ -35,9 +33,5 @@ impl WorldCompatibilitySchema {
     ) {
         self.object_templates
             .insert(template_name.into().trim().to_string(), world_object_schema);
-    }
-
-    pub fn has_legacy_protocol_proof_assertions(&self) -> bool {
-        !self.legacy_protocol_proof_assertions.is_empty()
     }
 }

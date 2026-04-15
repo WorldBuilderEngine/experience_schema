@@ -1,6 +1,3 @@
-use crate::wire_compat::json_message::{
-    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
-};
 use prost::DecodeError;
 use prost::Message;
 use prost::bytes::{Buf, BufMut};
@@ -58,7 +55,7 @@ impl AssetRef {
 
 impl Message for AssetRef {
     fn encode_raw(&self, buf: &mut impl BufMut) {
-        encode_as_json_message(self, buf);
+        AssetRefBinaryWire::from(self.clone()).encode_raw(buf);
     }
 
     fn merge_field(
@@ -68,14 +65,60 @@ impl Message for AssetRef {
         buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError> {
-        merge_from_json_message(self, tag, wire_type, buf, ctx)
+        let mut wire = AssetRefBinaryWire::from(self.clone());
+        wire.merge_field(tag, wire_type, buf, ctx)?;
+        *self = wire.into_asset_ref();
+        Ok(())
     }
 
     fn encoded_len(&self) -> usize {
-        json_message_encoded_len(self)
+        AssetRefBinaryWire::from(self.clone()).encoded_len()
     }
 
     fn clear(&mut self) {
         *self = Self::default();
+    }
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct AssetRefBinaryWire {
+    #[prost(string, optional, tag = "16")]
+    bundle_id: Option<String>,
+    #[prost(string, tag = "17")]
+    asset_path: String,
+}
+
+impl From<AssetRef> for AssetRefBinaryWire {
+    fn from(value: AssetRef) -> Self {
+        Self {
+            bundle_id: value.bundle_id,
+            asset_path: value.asset_path.to_string_lossy().to_string(),
+        }
+    }
+}
+
+impl AssetRefBinaryWire {
+    fn into_asset_ref(self) -> AssetRef {
+        AssetRef {
+            bundle_id: self.bundle_id.map(normalize_bundle_identifier),
+            asset_path: PathBuf::from(self.asset_path),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AssetRef;
+    use prost::Message;
+    use std::path::PathBuf;
+
+    #[test]
+    fn prost_round_trips_asset_ref_as_binary_message() {
+        let asset_ref = AssetRef::new_with_bundle_id("core", PathBuf::from("sprites/player.png"));
+
+        let encoded = asset_ref.encode_to_vec();
+        let decoded = AssetRef::decode(encoded.as_slice()).expect("asset ref should decode");
+
+        assert_eq!(decoded, asset_ref);
     }
 }

@@ -9,9 +9,6 @@ use crate::client_authored::state_machines::state_machine_owned_collection_capac
 use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
 use crate::properties::property_map::PropertyMap;
-use crate::wire_compat::json_message::{
-    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
-};
 use prost::DecodeError;
 use prost::Message;
 use prost::bytes::{Buf, BufMut};
@@ -217,7 +214,7 @@ impl StateMachineSchema {
 
 impl Message for StateMachineSchema {
     fn encode_raw(&self, buf: &mut impl BufMut) {
-        encode_as_json_message(self, buf);
+        StateMachineSchemaBinaryWire::from(self.clone()).encode_raw(buf);
     }
 
     fn merge_field(
@@ -227,15 +224,65 @@ impl Message for StateMachineSchema {
         buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError> {
-        merge_from_json_message(self, tag, wire_type, buf, ctx)
+        let mut wire = StateMachineSchemaBinaryWire::from(self.clone());
+        wire.merge_field(tag, wire_type, buf, ctx)?;
+        *self = wire.into_schema()?;
+        Ok(())
     }
 
     fn encoded_len(&self) -> usize {
-        json_message_encoded_len(self)
+        StateMachineSchemaBinaryWire::from(self.clone()).encoded_len()
     }
 
     fn clear(&mut self) {
         *self = Self::default();
+    }
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct StateMachineSchemaBinaryWire {
+    #[prost(string, tag = "16")]
+    initial_state_name: String,
+    #[prost(uint64, tag = "17")]
+    deterministic_seed: u64,
+    #[prost(message, repeated, tag = "18")]
+    machine_locals: Vec<StateMachineLocalSchema>,
+    #[prost(message, repeated, tag = "19")]
+    machine_owned_collection_capacities: Vec<StateMachineOwnedCollectionCapacitySchema>,
+    #[prost(message, repeated, tag = "20")]
+    nodes: Vec<StateMachineNodeSchema>,
+}
+
+impl From<StateMachineSchema> for StateMachineSchemaBinaryWire {
+    fn from(value: StateMachineSchema) -> Self {
+        let StateMachineSchema {
+            initial_state_name,
+            deterministic_seed,
+            machine_locals,
+            machine_owned_collection_capacities,
+            nodes,
+            compatibility: _,
+        } = value;
+        Self {
+            initial_state_name,
+            deterministic_seed,
+            machine_locals,
+            machine_owned_collection_capacities,
+            nodes,
+        }
+    }
+}
+
+impl StateMachineSchemaBinaryWire {
+    fn into_schema(self) -> Result<StateMachineSchema, DecodeError> {
+        Ok(StateMachineSchema {
+            initial_state_name: self.initial_state_name,
+            deterministic_seed: self.deterministic_seed,
+            machine_locals: self.machine_locals,
+            machine_owned_collection_capacities: self.machine_owned_collection_capacities,
+            nodes: self.nodes,
+            compatibility: StateMachineCompatibilitySchema::default(),
+        })
     }
 }
 
@@ -252,6 +299,7 @@ mod tests {
     };
     use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
     use crate::client_authored::state_machines::state_machine_proof_metadata_schema::StateMachineProofMetadataSchema;
+    use prost::Message;
 
     #[test]
     fn constructor_populates_core_fields() {
@@ -527,4 +575,38 @@ mod tests {
         );
         assert_eq!(schema.machine_locals().len(), 1);
     }
+
+    #[test]
+    fn prost_round_trips_state_machine_schema_as_binary_message() {
+        let mut schema = StateMachineSchema::new("idle");
+        schema.deterministic_seed = 7;
+        schema.register_machine_local(
+            "runtime",
+            crate::properties::property_map::PropertyMap::new(),
+        );
+        schema.register_machine_owned_collection_capacity("runtime", "scratch", 16);
+
+        let encoded = schema.encode_to_vec();
+        let decoded = StateMachineSchema::decode(encoded.as_slice()).expect("state machine schema should decode");
+
+        assert_eq!(decoded, schema);
+    }
+
+    #[test]
+    fn prost_state_machine_schema_omits_proof_only_metadata_from_runtime_wire() {
+        let schema = StateMachineSchema::new_with_seed_and_proof_class(
+            "idle",
+            7,
+            StateMachineProofClassSchema::Finite,
+        );
+
+        let decoded = StateMachineSchema::decode(schema.encode_to_vec().as_slice())
+            .expect("state machine schema should decode");
+
+        assert_eq!(
+            decoded.compatibility().declared_proof_class(),
+            StateMachineProofClassSchema::EffectfulOpen
+        );
+    }
+
 }

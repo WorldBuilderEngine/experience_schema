@@ -1,12 +1,10 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
-use crate::wire_compat::json_message::{
-    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
-};
 use prost::DecodeError;
 use prost::Message;
 use prost::bytes::{Buf, BufMut};
 use prost::encoding::{DecodeContext, WireType};
+use prost::Oneof;
 use serde::{Deserialize, Serialize};
 
 /// Node action metadata that executes on state entry.
@@ -21,7 +19,7 @@ pub enum StateMachineNodeTypeSchema {
 
 impl Message for StateMachineNodeTypeSchema {
     fn encode_raw(&self, buf: &mut impl BufMut) {
-        encode_as_json_message(self, buf);
+        StateMachineNodeTypeBinaryWire::from(self.clone()).encode_raw(buf);
     }
 
     fn merge_field(
@@ -31,15 +29,70 @@ impl Message for StateMachineNodeTypeSchema {
         buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError> {
-        merge_from_json_message(self, tag, wire_type, buf, ctx)
+        let mut wire = StateMachineNodeTypeBinaryWire::from(self.clone());
+        wire.merge_field(tag, wire_type, buf, ctx)?;
+        *self = wire.into_node_type();
+        Ok(())
     }
 
     fn encoded_len(&self) -> usize {
-        json_message_encoded_len(self)
+        StateMachineNodeTypeBinaryWire::from(self.clone()).encoded_len()
     }
 
     fn clear(&mut self) {
         *self = Self::default();
+    }
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct ApiDispatchNodeTypeBinaryWire {
+    #[prost(message, optional, tag = "1")]
+    api: Option<StateMachineApiSchema>,
+    #[prost(string, optional, tag = "2")]
+    args_local_id: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct StateMachineNodeTypeBinaryWire {
+    #[prost(oneof = "state_machine_node_type_binary_wire::NodeType", tags = "16")]
+    node_type: Option<state_machine_node_type_binary_wire::NodeType>,
+}
+
+mod state_machine_node_type_binary_wire {
+    use super::*;
+
+    #[derive(Clone, PartialEq, Oneof)]
+    pub enum NodeType {
+        #[prost(message, tag = "16")]
+        ApiDispatch(ApiDispatchNodeTypeBinaryWire),
+    }
+}
+
+impl From<StateMachineNodeTypeSchema> for StateMachineNodeTypeBinaryWire {
+    fn from(value: StateMachineNodeTypeSchema) -> Self {
+        let node_type = Some(match value {
+            StateMachineNodeTypeSchema::ApiDispatch { api, args_local_id } => {
+                state_machine_node_type_binary_wire::NodeType::ApiDispatch(ApiDispatchNodeTypeBinaryWire {
+                    api: Some(api),
+                    args_local_id,
+                })
+            }
+        });
+        Self { node_type }
+    }
+}
+
+impl StateMachineNodeTypeBinaryWire {
+    fn into_node_type(self) -> StateMachineNodeTypeSchema {
+        match self.node_type {
+            Some(state_machine_node_type_binary_wire::NodeType::ApiDispatch(value)) => {
+                StateMachineNodeTypeSchema::ApiDispatch {
+                    api: value.api.unwrap_or_default(),
+                    args_local_id: value.args_local_id,
+                }
+            }
+            None => StateMachineNodeTypeSchema::default(),
+        }
     }
 }
 
@@ -91,6 +144,7 @@ impl StateMachineNodeSchema {
 mod tests {
     use super::StateMachineNodeTypeSchema;
     use crate::client_authored::state_machines::api::StateMachineApiSchema;
+    use prost::Message;
 
     #[test]
     fn deserializes_api_dispatch_from_api_identifier_field() {
@@ -112,4 +166,18 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn prost_round_trips_node_type_as_binary_message() {
+        let node_type = StateMachineNodeTypeSchema::ApiDispatch {
+            api: StateMachineApiSchema::from("runtime:no_op"),
+            args_local_id: Some("runtime_args".to_string()),
+        };
+
+        let encoded = node_type.encode_to_vec();
+        let decoded = StateMachineNodeTypeSchema::decode(encoded.as_slice()).expect("node type should decode");
+
+        assert_eq!(decoded, node_type);
+    }
+
 }

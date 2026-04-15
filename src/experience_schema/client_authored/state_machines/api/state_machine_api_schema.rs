@@ -1,6 +1,3 @@
-use crate::wire_compat::json_message::{
-    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
-};
 use prost::DecodeError;
 use prost::Message;
 use prost::bytes::{Buf, BufMut};
@@ -9,14 +6,15 @@ use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use super::{
-    Animation2dStateMachineApiSchema, ByteBufferStateMachineApiSchema, MathStateMachineApiSchema, Physics2dStateMachineApiSchema,
-    RuntimeStateMachineApiSchema, StringStateMachineApiSchema, WorldStateMachineApiSchema,
+    Animation2dStateMachineApiSchema, DataBufferStateMachineApiSchema, MathStateMachineApiSchema,
+    Physics2dStateMachineApiSchema, RuntimeStateMachineApiSchema, StringStateMachineApiSchema,
+    WorldStateMachineApiSchema,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum StateMachineApiSchema {
     Animation2d(Animation2dStateMachineApiSchema),
-    ByteBuffer(ByteBufferStateMachineApiSchema),
+    DataBuffer(DataBufferStateMachineApiSchema),
     Math(MathStateMachineApiSchema),
     Physics2d(Physics2dStateMachineApiSchema),
     Runtime(RuntimeStateMachineApiSchema),
@@ -37,13 +35,36 @@ impl StateMachineApiSchema {
             Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers) => {
                 "animation2d:step_players"
             }
-            Self::ByteBuffer(ByteBufferStateMachineApiSchema::Copy) => "byte_buffer:copy",
-            Self::ByteBuffer(ByteBufferStateMachineApiSchema::Concat) => "byte_buffer:concat",
-            Self::ByteBuffer(ByteBufferStateMachineApiSchema::CopySlice) => "byte_buffer:copy_slice",
-            Self::ByteBuffer(ByteBufferStateMachineApiSchema::Length) => "byte_buffer:length",
-            Self::ByteBuffer(ByteBufferStateMachineApiSchema::ReadU8) => "byte_buffer:read_u8",
-            Self::ByteBuffer(ByteBufferStateMachineApiSchema::ValidateSlice) => "byte_buffer:validate_slice",
-            Self::ByteBuffer(ByteBufferStateMachineApiSchema::WriteU8) => "byte_buffer:write_u8",
+            Self::DataBuffer(DataBufferStateMachineApiSchema::Copy) => "data_buffer:copy",
+            Self::DataBuffer(DataBufferStateMachineApiSchema::Concat) => "data_buffer:concat",
+            Self::DataBuffer(DataBufferStateMachineApiSchema::Alloc) => "data_buffer:alloc",
+            Self::DataBuffer(DataBufferStateMachineApiSchema::CopySlice) => {
+                "data_buffer:copy_slice"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::CopySliceInto) => {
+                "data_buffer:copy_slice_into"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::AddScalarF64LeSlice) => {
+                "data_buffer:add_scalar_f64_le_slice"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::AddScalarI32LeSlice) => {
+                "data_buffer:add_scalar_i32_le_slice"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::MulScalarF64LeSlice) => {
+                "data_buffer:mul_scalar_f64_le_slice"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::FillSliceU8) => {
+                "data_buffer:fill_slice_u8"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::Length) => "data_buffer:length",
+            Self::DataBuffer(DataBufferStateMachineApiSchema::ReadU8) => "data_buffer:read_u8",
+            Self::DataBuffer(DataBufferStateMachineApiSchema::ValidateSlice) => {
+                "data_buffer:validate_slice"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::WriteU8) => "data_buffer:write_u8",
+            Self::DataBuffer(DataBufferStateMachineApiSchema::WriteU8Into) => {
+                "data_buffer:write_u8_into"
+            }
             Self::Math(MathStateMachineApiSchema::Add) => "math:add",
             Self::Math(MathStateMachineApiSchema::Sub) => "math:sub",
             Self::Math(MathStateMachineApiSchema::Mul) => "math:mul",
@@ -109,12 +130,12 @@ impl StateMachineApiSchema {
             Self::String(StringStateMachineApiSchema::Copy) => "string:copy",
             Self::String(StringStateMachineApiSchema::Concat) => "string:concat",
             Self::String(StringStateMachineApiSchema::ConcatBytes) => "string:concat_bytes",
-            Self::String(StringStateMachineApiSchema::DecodeUtf8Bytes) => "string:decode_utf8_bytes",
+            Self::String(StringStateMachineApiSchema::DecodeUtf8Bytes) => {
+                "string:decode_utf8_bytes"
+            }
             Self::String(StringStateMachineApiSchema::Length) => "string:length",
             Self::String(StringStateMachineApiSchema::FormatInt) => "string:format_int",
-            Self::String(StringStateMachineApiSchema::FormatIntBytes) => {
-                "string:format_int_bytes"
-            }
+            Self::String(StringStateMachineApiSchema::FormatIntBytes) => "string:format_int_bytes",
             Self::String(StringStateMachineApiSchema::FormatFloat) => "string:format_float",
             Self::String(StringStateMachineApiSchema::FormatFloatBytes) => {
                 "string:format_float_bytes"
@@ -148,13 +169,48 @@ impl StateMachineApiSchema {
             "animation2d:step_players" => {
                 Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers)
             }
-            "byte_buffer:copy" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::Copy),
-            "byte_buffer:concat" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::Concat),
-            "byte_buffer:copy_slice" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::CopySlice),
-            "byte_buffer:length" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::Length),
-            "byte_buffer:read_u8" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::ReadU8),
-            "byte_buffer:validate_slice" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::ValidateSlice),
-            "byte_buffer:write_u8" => Self::ByteBuffer(ByteBufferStateMachineApiSchema::WriteU8),
+            "data_buffer:copy" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::Copy)
+            }
+            "data_buffer:concat" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::Concat)
+            }
+            "data_buffer:alloc" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::Alloc)
+            }
+            "data_buffer:copy_slice" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::CopySlice)
+            }
+            "data_buffer:copy_slice_into" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::CopySliceInto)
+            }
+            "data_buffer:add_scalar_f64_le_slice" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::AddScalarF64LeSlice)
+            }
+            "data_buffer:add_scalar_i32_le_slice" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::AddScalarI32LeSlice)
+            }
+            "data_buffer:mul_scalar_f64_le_slice" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::MulScalarF64LeSlice)
+            }
+            "data_buffer:fill_slice_u8" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::FillSliceU8)
+            }
+            "data_buffer:length" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::Length)
+            }
+            "data_buffer:read_u8" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::ReadU8)
+            }
+            "data_buffer:validate_slice" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::ValidateSlice)
+            }
+            "data_buffer:write_u8" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::WriteU8)
+            }
+            "data_buffer:write_u8_into" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::WriteU8Into)
+            }
             "math:add" => Self::Math(MathStateMachineApiSchema::Add),
             "math:sub" => Self::Math(MathStateMachineApiSchema::Sub),
             "math:mul" => Self::Math(MathStateMachineApiSchema::Mul),
@@ -225,22 +281,14 @@ impl StateMachineApiSchema {
             }
             "string:length" => Self::String(StringStateMachineApiSchema::Length),
             "string:format_int" => Self::String(StringStateMachineApiSchema::FormatInt),
-            "string:format_int_bytes" => {
-                Self::String(StringStateMachineApiSchema::FormatIntBytes)
-            }
+            "string:format_int_bytes" => Self::String(StringStateMachineApiSchema::FormatIntBytes),
             "string:format_float" => Self::String(StringStateMachineApiSchema::FormatFloat),
             "string:format_float_bytes" => {
                 Self::String(StringStateMachineApiSchema::FormatFloatBytes)
             }
             "string:array_length" => Self::String(StringStateMachineApiSchema::ArrayLength),
-            "world:set_node_position" => {
-                Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)
-            }
             "world:set_node_position_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)
-            }
-            "world:set_node_visibility" => {
-                Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
             }
             "world:set_node_visibility_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
@@ -295,7 +343,10 @@ impl<'de> Deserialize<'de> for StateMachineApiSchema {
 
 impl Message for StateMachineApiSchema {
     fn encode_raw(&self, buf: &mut impl BufMut) {
-        encode_as_json_message(self, buf);
+        StateMachineApiSchemaBinaryWire {
+            identifier: self.as_str().to_string(),
+        }
+        .encode_raw(buf);
     }
 
     fn merge_field(
@@ -305,11 +356,19 @@ impl Message for StateMachineApiSchema {
         buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError> {
-        merge_from_json_message(self, tag, wire_type, buf, ctx)
+        let mut wire = StateMachineApiSchemaBinaryWire {
+            identifier: self.as_str().to_string(),
+        };
+        wire.merge_field(tag, wire_type, buf, ctx)?;
+        *self = StateMachineApiSchema::from_identifier(wire.identifier);
+        Ok(())
     }
 
     fn encoded_len(&self) -> usize {
-        json_message_encoded_len(self)
+        StateMachineApiSchemaBinaryWire {
+            identifier: self.as_str().to_string(),
+        }
+        .encoded_len()
     }
 
     fn clear(&mut self) {
@@ -317,9 +376,19 @@ impl Message for StateMachineApiSchema {
     }
 }
 
+#[derive(Clone, PartialEq, Message)]
+struct StateMachineApiSchemaBinaryWire {
+    #[prost(string, tag = "16")]
+    identifier: String,
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{ByteBufferStateMachineApiSchema, RuntimeStateMachineApiSchema, StateMachineApiSchema, StringStateMachineApiSchema, WorldStateMachineApiSchema};
+    use super::{
+        DataBufferStateMachineApiSchema, RuntimeStateMachineApiSchema, StateMachineApiSchema,
+        StringStateMachineApiSchema,
+    };
+    use prost::Message;
 
     #[test]
     fn canonical_identifier_round_trips_as_string() {
@@ -343,16 +412,6 @@ mod tests {
                 "custom:sample_story:dispatch_progression_complete".to_string()
             )
         );
-    }
-
-    #[test]
-    fn legacy_world_identifier_aliases_lower_to_canonical_variants() {
-        let api = StateMachineApiSchema::from("world:set_node_visibility");
-        assert_eq!(
-            api,
-            StateMachineApiSchema::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
-        );
-        assert_eq!(api.as_str(), "world:set_node_visibility_by_tag");
     }
 
     #[test]
@@ -444,10 +503,10 @@ mod tests {
     }
 
     #[test]
-    fn byte_buffer_identifier_round_trips_as_string() {
-        let api = StateMachineApiSchema::ByteBuffer(ByteBufferStateMachineApiSchema::Concat);
+    fn data_buffer_identifier_round_trips_as_string() {
+        let api = StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::Concat);
         let serialized = serde_json::to_string(&api).expect("serialize");
-        assert_eq!(serialized, "\"byte_buffer:concat\"");
+        assert_eq!(serialized, "\"data_buffer:concat\"");
 
         let deserialized: StateMachineApiSchema =
             serde_json::from_str(&serialized).expect("deserialize");
@@ -455,10 +514,10 @@ mod tests {
     }
 
     #[test]
-    fn byte_buffer_validate_slice_identifier_round_trips_as_string() {
-        let api = StateMachineApiSchema::ByteBuffer(ByteBufferStateMachineApiSchema::ValidateSlice);
+    fn data_buffer_validate_slice_identifier_round_trips_as_string() {
+        let api = StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::ValidateSlice);
         let serialized = serde_json::to_string(&api).expect("serialize");
-        assert_eq!(serialized, "\"byte_buffer:validate_slice\"");
+        assert_eq!(serialized, "\"data_buffer:validate_slice\"");
 
         let deserialized: StateMachineApiSchema =
             serde_json::from_str(&serialized).expect("deserialize");
@@ -466,26 +525,85 @@ mod tests {
     }
 
     #[test]
-    fn byte_buffer_indexed_identifiers_round_trip_as_strings() {
-        let copy_slice = StateMachineApiSchema::ByteBuffer(ByteBufferStateMachineApiSchema::CopySlice);
-        let read_u8 = StateMachineApiSchema::ByteBuffer(ByteBufferStateMachineApiSchema::ReadU8);
-        let write_u8 = StateMachineApiSchema::ByteBuffer(ByteBufferStateMachineApiSchema::WriteU8);
-
-        assert_eq!(serde_json::to_string(&copy_slice).expect("serialize"), "\"byte_buffer:copy_slice\"");
-        assert_eq!(serde_json::to_string(&read_u8).expect("serialize"), "\"byte_buffer:read_u8\"");
-        assert_eq!(serde_json::to_string(&write_u8).expect("serialize"), "\"byte_buffer:write_u8\"");
+    fn data_buffer_indexed_identifiers_round_trip_as_strings() {
+        let copy_slice =
+            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::CopySlice);
+        let copy_slice_into =
+            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::CopySliceInto);
+        let add_scalar_f64_le_slice =
+            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::AddScalarF64LeSlice);
+        let fill_slice =
+            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::FillSliceU8);
+        let read_u8 = StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::ReadU8);
+        let write_u8 = StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::WriteU8);
 
         assert_eq!(
-            serde_json::from_str::<StateMachineApiSchema>("\"byte_buffer:copy_slice\"").expect("deserialize"),
+            serde_json::to_string(&copy_slice).expect("serialize"),
+            "\"data_buffer:copy_slice\""
+        );
+        assert_eq!(
+            serde_json::to_string(&copy_slice_into).expect("serialize"),
+            "\"data_buffer:copy_slice_into\""
+        );
+        assert_eq!(
+            serde_json::to_string(&add_scalar_f64_le_slice).expect("serialize"),
+            "\"data_buffer:add_scalar_f64_le_slice\""
+        );
+        assert_eq!(
+            serde_json::to_string(&fill_slice).expect("serialize"),
+            "\"data_buffer:fill_slice_u8\""
+        );
+        assert_eq!(
+            serde_json::to_string(&read_u8).expect("serialize"),
+            "\"data_buffer:read_u8\""
+        );
+        assert_eq!(
+            serde_json::to_string(&write_u8).expect("serialize"),
+            "\"data_buffer:write_u8\""
+        );
+
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:copy_slice\"")
+                .expect("deserialize"),
             copy_slice
         );
         assert_eq!(
-            serde_json::from_str::<StateMachineApiSchema>("\"byte_buffer:read_u8\"").expect("deserialize"),
+            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:copy_slice_into\"")
+                .expect("deserialize"),
+            copy_slice_into
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>(
+                "\"data_buffer:add_scalar_f64_le_slice\""
+            )
+            .expect("deserialize"),
+            add_scalar_f64_le_slice
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:fill_slice_u8\"")
+                .expect("deserialize"),
+            fill_slice
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:read_u8\"")
+                .expect("deserialize"),
             read_u8
         );
         assert_eq!(
-            serde_json::from_str::<StateMachineApiSchema>("\"byte_buffer:write_u8\"").expect("deserialize"),
+            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:write_u8\"")
+                .expect("deserialize"),
             write_u8
         );
     }
+
+    #[test]
+    fn prost_round_trips_api_schema_as_binary_message() {
+        let api = StateMachineApiSchema::from("data_buffer:write_u8_into");
+
+        let encoded = api.encode_to_vec();
+        let decoded = StateMachineApiSchema::decode(encoded.as_slice()).expect("api schema should decode");
+
+        assert_eq!(decoded, api);
+    }
+
 }

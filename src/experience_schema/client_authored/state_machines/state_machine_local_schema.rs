@@ -1,11 +1,14 @@
 use crate::client_authored::state_machines::state_machine_local_field_schema::StateMachineLocalFieldSchema;
 use crate::properties::{property::Property, property_map::PropertyMap};
+use prost::Message;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Message)]
 pub struct StateMachineLocalSchema {
+    #[prost(string, tag = "1")]
     pub local_id: String,
     #[serde(default)]
+    #[prost(message, repeated, tag = "2")]
     pub fields: Vec<StateMachineLocalFieldSchema>,
 }
 

@@ -7,9 +7,6 @@ use crate::client_authored::worlds::typed_object_schemas::{
     CameraObjectSchema, StaticSpriteObjectSchema, StaticTextObjectSchema,
 };
 use crate::properties::property_map::PropertyMap;
-use crate::wire_compat::json_message::{
-    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
-};
 use prost::bytes::{Buf, BufMut};
 use prost::encoding::{DecodeContext, WireType};
 use prost::{DecodeError, Message};
@@ -98,7 +95,7 @@ impl WorldObjectSchema {
 
 impl Message for WorldObjectSchema {
     fn encode_raw(&self, buf: &mut impl BufMut) {
-        encode_as_json_message(self, buf);
+        WorldObjectSchemaBinaryWire::from(self.clone()).encode_raw(buf);
     }
 
     fn merge_field(
@@ -108,15 +105,59 @@ impl Message for WorldObjectSchema {
         buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError> {
-        merge_from_json_message(self, tag, wire_type, buf, ctx)
+        let mut wire = WorldObjectSchemaBinaryWire::from(self.clone());
+        wire.merge_field(tag, wire_type, buf, ctx)?;
+        *self = wire.into_schema()?;
+        Ok(())
     }
 
     fn encoded_len(&self) -> usize {
-        json_message_encoded_len(self)
+        WorldObjectSchemaBinaryWire::from(self.clone()).encoded_len()
     }
 
     fn clear(&mut self) {
         *self = Self::default();
+    }
+}
+
+#[allow(deprecated)]
+fn world_object_schema_json_decode_error(error: serde_json::Error) -> DecodeError {
+    DecodeError::new(format!("schema JSON message decode failed: {error}"))
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct WorldObjectSchemaBinaryWire {
+    #[prost(bytes, optional, tag = "16")]
+    kinded_json: Option<Vec<u8>>,
+    #[prost(message, optional, tag = "17")]
+    properties: Option<PropertyMap>,
+    #[prost(message, repeated, tag = "18")]
+    state_machines: Vec<StateMachineSchema>,
+}
+
+impl From<WorldObjectSchema> for WorldObjectSchemaBinaryWire {
+    fn from(value: WorldObjectSchema) -> Self {
+        Self {
+            kinded_json: value
+                .kinded
+                .map(|kinded| serde_json::to_vec(&kinded).expect("kinded world object should serialize")),
+            properties: Some(value.properties),
+            state_machines: value.state_machines,
+        }
+    }
+}
+
+impl WorldObjectSchemaBinaryWire {
+    fn into_schema(self) -> Result<WorldObjectSchema, DecodeError> {
+        let kinded = match self.kinded_json {
+            Some(bytes) => Some(serde_json::from_slice(&bytes).map_err(world_object_schema_json_decode_error)?),
+            None => None,
+        };
+        Ok(WorldObjectSchema {
+            kinded,
+            properties: self.properties.unwrap_or_default(),
+            state_machines: self.state_machines,
+        })
     }
 }
 
@@ -132,6 +173,7 @@ mod tests {
         CameraObjectSchema, CameraProjectionSchema, StaticSpriteObjectSchema,
     };
     use crate::client_authored::worlds::world_object_view::AuthoredWorldObjectView;
+    use prost::Message;
     use std::path::PathBuf;
 
     #[test]
@@ -247,4 +289,28 @@ mod tests {
             Some(KindedWorldObjectSchema::InteractableHotspot(_))
         ));
     }
+
+    #[test]
+    fn prost_round_trips_world_object_schema_as_binary_message() {
+        let world_object = WorldObjectSchema::camera(CameraObjectSchema {
+            position_xyz: [1.0, 2.0, 3.0],
+            projection: CameraProjectionSchema::Orthographic2d {
+                pixels_per_unit: 96.0,
+            },
+            is_active_camera: false,
+            debug_movement_units_per_second: 0.0,
+            node_tag: Some("camera:main".to_string()),
+            follow_target_node_tag: None,
+            follow_target_distance_xyz: None,
+            follow_units_per_second_xyz: None,
+            arm_distance: None,
+            follow_scroll_type: None,
+        });
+
+        let encoded = world_object.encode_to_vec();
+        let decoded = WorldObjectSchema::decode(encoded.as_slice()).expect("world object should decode");
+
+        assert_eq!(decoded, world_object);
+    }
+
 }

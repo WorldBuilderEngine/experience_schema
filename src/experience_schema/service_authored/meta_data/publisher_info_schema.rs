@@ -1,6 +1,3 @@
-use crate::wire_compat::json_message::{
-    encode_as_json_message, json_message_encoded_len, merge_from_json_message,
-};
 use prost::DecodeError;
 use prost::Message;
 use prost::bytes::{Buf, BufMut};
@@ -25,7 +22,7 @@ impl PublisherInfoSchema {}
 
 impl Message for PublisherInfoSchema {
     fn encode_raw(&self, buf: &mut impl BufMut) {
-        encode_as_json_message(self, buf);
+        PublisherInfoSchemaBinaryWire::from(self.clone()).encode_raw(buf);
     }
 
     fn merge_field(
@@ -35,14 +32,55 @@ impl Message for PublisherInfoSchema {
         buf: &mut impl Buf,
         ctx: DecodeContext,
     ) -> Result<(), DecodeError> {
-        merge_from_json_message(self, tag, wire_type, buf, ctx)
+        let mut wire = PublisherInfoSchemaBinaryWire::from(self.clone());
+        wire.merge_field(tag, wire_type, buf, ctx)?;
+        *self = wire.into_schema();
+        Ok(())
     }
 
     fn encoded_len(&self) -> usize {
-        json_message_encoded_len(self)
+        PublisherInfoSchemaBinaryWire::from(self.clone()).encoded_len()
     }
 
     fn clear(&mut self) {
         *self = Self::default();
+    }
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct PublisherInfoSchemaBinaryWire {
+    #[prost(string, optional, tag = "16")]
+    publisher_id: Option<String>,
+    #[prost(string, optional, tag = "17")]
+    experience_id: Option<String>,
+    #[prost(string, optional, tag = "18")]
+    publish_id: Option<String>,
+    #[prost(uint64, optional, tag = "19")]
+    publish_version: Option<u64>,
+    #[prost(uint64, optional, tag = "20")]
+    published_at_unix_seconds: Option<u64>,
+}
+
+impl From<PublisherInfoSchema> for PublisherInfoSchemaBinaryWire {
+    fn from(value: PublisherInfoSchema) -> Self {
+        Self {
+            publisher_id: value.publisher_id,
+            experience_id: value.experience_id,
+            publish_id: value.publish_id,
+            publish_version: value.publish_version.map(|value| value as u64),
+            published_at_unix_seconds: value.published_at_unix_seconds,
+        }
+    }
+}
+
+impl PublisherInfoSchemaBinaryWire {
+    fn into_schema(self) -> PublisherInfoSchema {
+        PublisherInfoSchema {
+            publisher_id: self.publisher_id,
+            experience_id: self.experience_id,
+            publish_id: self.publish_id,
+            publish_version: self.publish_version.map(|value| value as usize),
+            published_at_unix_seconds: self.published_at_unix_seconds,
+        }
     }
 }
