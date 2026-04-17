@@ -369,7 +369,9 @@ impl From<PropertyMap> for PropertyMapBinaryWire {
         let mut data_buffer_writes = Vec::new();
         for (key, property) in value.properties {
             match property {
-                Property::DataBuffer(bytes) => data_buffer_writes.push(KeyedDataBufferWriteBinaryWire { key, bytes }),
+                Property::DataBuffer(bytes) => {
+                    data_buffer_writes.push(KeyedDataBufferWriteBinaryWire { key, bytes })
+                }
                 other_property => properties.push(PropertyMapEntryBinaryWire {
                     key,
                     property: Some(other_property),
@@ -494,5 +496,4 @@ mod tests {
 
         assert_eq!(decoded, property_map);
     }
-
 }

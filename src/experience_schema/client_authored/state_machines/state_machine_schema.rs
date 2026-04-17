@@ -1,12 +1,10 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
-use crate::client_authored::state_machines::state_machine_compatibility_schema::StateMachineCompatibilitySchema;
 use crate::client_authored::state_machines::state_machine_local_field_schema::StateMachineLocalFieldSchema;
 use crate::client_authored::state_machines::state_machine_local_schema::StateMachineLocalSchema;
 use crate::client_authored::state_machines::state_machine_node_schema::{
     StateMachineNodeSchema, StateMachineNodeTypeSchema,
 };
 use crate::client_authored::state_machines::state_machine_owned_collection_capacity_schema::StateMachineOwnedCollectionCapacitySchema;
-use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
 use crate::properties::property_map::PropertyMap;
 use prost::DecodeError;
@@ -27,8 +25,6 @@ pub struct StateMachineSchema {
     pub machine_owned_collection_capacities: Vec<StateMachineOwnedCollectionCapacitySchema>,
     #[serde(default)]
     pub nodes: Vec<StateMachineNodeSchema>,
-    #[serde(default, flatten, skip_serializing)]
-    compatibility: StateMachineCompatibilitySchema,
 }
 
 impl Default for StateMachineSchema {
@@ -39,48 +35,17 @@ impl Default for StateMachineSchema {
 
 impl StateMachineSchema {
     pub fn new(initial_state_name: impl Into<String>) -> Self {
-        Self::new_with_proof_class(
-            initial_state_name,
-            StateMachineProofClassSchema::EffectfulOpen,
-        )
+        Self::new_with_seed(initial_state_name, 0)
     }
 
     pub fn new_with_seed(initial_state_name: impl Into<String>, deterministic_seed: u64) -> Self {
-        Self::new_with_seed_and_proof_class(
-            initial_state_name,
-            deterministic_seed,
-            StateMachineProofClassSchema::EffectfulOpen,
-        )
-    }
-
-    pub fn new_with_proof_class(
-        initial_state_name: impl Into<String>,
-        proof_class: StateMachineProofClassSchema,
-    ) -> Self {
-        Self::new_with_seed_and_proof_class(initial_state_name, 0, proof_class)
-    }
-
-    pub fn new_with_seed_and_proof_class(
-        initial_state_name: impl Into<String>,
-        deterministic_seed: u64,
-        proof_class: StateMachineProofClassSchema,
-    ) -> Self {
         Self {
             initial_state_name: initial_state_name.into(),
             deterministic_seed,
             machine_locals: Vec::new(),
             machine_owned_collection_capacities: Vec::new(),
             nodes: Vec::new(),
-            compatibility: StateMachineCompatibilitySchema::with_proof_class(proof_class),
         }
-    }
-
-    pub fn compatibility(&self) -> &StateMachineCompatibilitySchema {
-        &self.compatibility
-    }
-
-    pub fn compatibility_mut(&mut self) -> &mut StateMachineCompatibilitySchema {
-        &mut self.compatibility
     }
 
     pub fn machine_locals(&self) -> &[StateMachineLocalSchema] {
@@ -261,7 +226,6 @@ impl From<StateMachineSchema> for StateMachineSchemaBinaryWire {
             machine_locals,
             machine_owned_collection_capacities,
             nodes,
-            compatibility: _,
         } = value;
         Self {
             initial_state_name,
@@ -281,7 +245,6 @@ impl StateMachineSchemaBinaryWire {
             machine_locals: self.machine_locals,
             machine_owned_collection_capacities: self.machine_owned_collection_capacities,
             nodes: self.nodes,
-            compatibility: StateMachineCompatibilitySchema::default(),
         })
     }
 }
@@ -289,148 +252,38 @@ impl StateMachineSchemaBinaryWire {
 #[cfg(test)]
 mod tests {
     use super::StateMachineSchema;
-    use crate::client_authored::state_machines::state_machine_finite_domain_abstraction_schema::{
-        StateMachineFiniteDomainAbstractionSchema, StateMachineFiniteDomainSchema,
-        StateMachineFiniteDomainSemanticsSchema, StateMachineFiniteDomainTargetSchema,
-    };
     use crate::client_authored::state_machines::state_machine_owned_collection_capacity_schema::StateMachineOwnedCollectionCapacitySchema;
-    use crate::client_authored::state_machines::state_machine_proof_assertion_schema::{
-        StateMachineProofAssertionKindSchema, StateMachineProofAssertionSchema,
-    };
-    use crate::client_authored::state_machines::state_machine_proof_class_schema::StateMachineProofClassSchema;
-    use crate::client_authored::state_machines::state_machine_proof_metadata_schema::StateMachineProofMetadataSchema;
     use prost::Message;
 
     #[test]
     fn constructor_populates_core_fields() {
         let schema = StateMachineSchema::new("idle");
-        assert_eq!(
-            schema.compatibility().declared_proof_class(),
-            StateMachineProofClassSchema::EffectfulOpen
-        );
         assert_eq!(schema.initial_state_name, "idle".to_string());
         assert_eq!(schema.deterministic_seed, 0);
     }
 
     #[test]
-    fn constructor_supports_explicit_proof_class() {
-        let schema = StateMachineSchema::new_with_seed_and_proof_class(
-            "idle",
-            7,
-            StateMachineProofClassSchema::Finite,
-        );
-
-        assert_eq!(
-            schema.compatibility().declared_proof_class(),
-            StateMachineProofClassSchema::Finite
-        );
+    fn constructor_supports_explicit_seed() {
+        let schema = StateMachineSchema::new_with_seed("idle", 7);
         assert_eq!(schema.initial_state_name, "idle");
         assert_eq!(schema.deterministic_seed, 7);
-        assert!(
-            schema
-                .compatibility()
-                .finite_domain_abstractions()
-                .is_empty()
-        );
-        assert!(schema.compatibility().proof_assertions().is_empty());
     }
 
     #[test]
-    fn deserialization_defaults_missing_inline_proof_metadata() {
+    fn deserialization_ignores_legacy_proof_metadata_fields() {
         let schema = serde_json::from_str::<StateMachineSchema>(
             r#"{
-                "initial_state_name":"idle",
-                "nodes":[]
-            }"#,
-        )
-        .expect("missing inline proof metadata should deserialize");
-
-        assert_eq!(
-            schema.compatibility().declared_proof_class(),
-            StateMachineProofClassSchema::EffectfulOpen
-        );
-        assert!(schema.machine_owned_collection_capacities.is_empty());
-        assert!(
-            schema
-                .compatibility()
-                .finite_domain_abstractions()
-                .is_empty()
-        );
-        assert!(schema.compatibility().proof_assertions().is_empty());
-    }
-
-    #[test]
-    fn deserialization_rejects_unknown_proof_class_values() {
-        let parse_error = serde_json::from_str::<StateMachineSchema>(
-            r#"{
-                "proof_class":"not_real",
-                "initial_state_name":"idle",
-                "nodes":[]
-            }"#,
-        )
-        .expect_err("unknown proof_class should fail to deserialize");
-
-        assert!(parse_error.to_string().contains("unknown variant"));
-    }
-
-    #[test]
-    fn deserialization_preserves_inline_proof_metadata() {
-        let schema = serde_json::from_str::<StateMachineSchema>(
-            r#"{
-                "proof_class":"effectful_open",
+                "proof_class":"finite",
                 "initial_state_name":"idle",
                 "finite_domain_abstractions": [],
                 "proof_assertions": [],
                 "nodes":[]
             }"#,
         )
-        .expect("schema should deserialize");
+        .expect("legacy proof metadata fields should be ignored");
 
-        assert_eq!(
-            schema.compatibility().declared_proof_class(),
-            StateMachineProofClassSchema::EffectfulOpen
-        );
-        assert!(
-            schema
-                .compatibility()
-                .finite_domain_abstractions()
-                .is_empty()
-        );
-        assert!(schema.compatibility().proof_assertions().is_empty());
-    }
-
-    #[test]
-    fn register_finite_domain_abstraction_appends_declaration() {
-        let mut schema = StateMachineSchema::new("idle");
-        schema
-            .compatibility_mut()
-            .register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
-                target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                    local_id: "runtime".to_string(),
-                    property_id: "phase".to_string(),
-                },
-                domain: StateMachineFiniteDomainSchema::Enum {
-                    values: vec!["idle".to_string(), "run".to_string()],
-                },
-                semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
-            });
-
-        assert_eq!(schema.compatibility().finite_domain_abstractions().len(), 1);
-    }
-
-    #[test]
-    fn register_proof_assertion_appends_declaration() {
-        let mut schema = StateMachineSchema::new("idle");
-        schema
-            .compatibility_mut()
-            .register_proof_assertion(StateMachineProofAssertionSchema {
-                label: Some("idle_is_reachable".to_string()),
-                kind: StateMachineProofAssertionKindSchema::ReachableState {
-                    state_name: "idle".to_string(),
-                },
-            });
-
-        assert_eq!(schema.compatibility().proof_assertions().len(), 1);
+        assert_eq!(schema.initial_state_name, "idle");
+        assert!(schema.machine_owned_collection_capacities.is_empty());
     }
 
     #[test]
@@ -449,53 +302,6 @@ mod tests {
         assert_eq!(
             schema.machine_local_property("runtime", "is_visible"),
             Some(&crate::properties::property::Property::Bool(false))
-        );
-    }
-
-    #[test]
-    fn set_proof_metadata_replaces_existing_metadata() {
-        let mut schema = StateMachineSchema::new("idle");
-        schema
-            .compatibility_mut()
-            .set_proof_metadata(StateMachineProofMetadataSchema {
-                proof_class: StateMachineProofClassSchema::BoundedExtended,
-                finite_domain_abstractions: vec![StateMachineFiniteDomainAbstractionSchema {
-                    target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                        local_id: "runtime".to_string(),
-                        property_id: "phase".to_string(),
-                    },
-                    domain: StateMachineFiniteDomainSchema::Enum {
-                        values: vec!["idle".to_string(), "run".to_string()],
-                    },
-                    semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
-                }],
-                proof_assertions: vec![StateMachineProofAssertionSchema {
-                    label: Some("idle_is_reachable".to_string()),
-                    kind: StateMachineProofAssertionKindSchema::ReachableState {
-                        state_name: "idle".to_string(),
-                    },
-                }],
-            });
-
-        assert_eq!(
-            schema.compatibility().declared_proof_class(),
-            StateMachineProofClassSchema::BoundedExtended
-        );
-        assert_eq!(
-            schema
-                .compatibility()
-                .proof_metadata()
-                .finite_domain_abstractions
-                .len(),
-            1
-        );
-        assert_eq!(
-            schema
-                .compatibility()
-                .proof_metadata()
-                .proof_assertions
-                .len(),
-            1
         );
     }
 
@@ -522,28 +328,7 @@ mod tests {
 
     #[test]
     fn serialization_omits_proof_only_metadata_from_runtime_schema() {
-        let mut schema =
-            StateMachineSchema::new_with_proof_class("idle", StateMachineProofClassSchema::Finite);
-        schema
-            .compatibility_mut()
-            .register_finite_domain_abstraction(StateMachineFiniteDomainAbstractionSchema {
-                target: StateMachineFiniteDomainTargetSchema::PropertyField {
-                    local_id: "runtime".to_string(),
-                    property_id: "phase".to_string(),
-                },
-                domain: StateMachineFiniteDomainSchema::Enum {
-                    values: vec!["idle".to_string(), "done".to_string()],
-                },
-                semantics: StateMachineFiniteDomainSemanticsSchema::Exact,
-            });
-        schema
-            .compatibility_mut()
-            .register_proof_assertion(StateMachineProofAssertionSchema {
-                label: Some("idle_is_reachable".to_string()),
-                kind: StateMachineProofAssertionKindSchema::ReachableState {
-                    state_name: "idle".to_string(),
-                },
-            });
+        let mut schema = StateMachineSchema::new("idle");
         schema.register_machine_local(
             "runtime",
             crate::properties::property_map::PropertyMap::new(),
@@ -559,24 +344,6 @@ mod tests {
     }
 
     #[test]
-    fn explicit_compatibility_helpers_share_underlying_state() {
-        let mut schema = StateMachineSchema::new("idle");
-        schema
-            .compatibility_mut()
-            .set_proof_class(StateMachineProofClassSchema::Finite);
-        schema.register_machine_local(
-            "runtime",
-            crate::properties::property_map::PropertyMap::new(),
-        );
-
-        assert_eq!(
-            schema.compatibility().declared_proof_class(),
-            StateMachineProofClassSchema::Finite
-        );
-        assert_eq!(schema.machine_locals().len(), 1);
-    }
-
-    #[test]
     fn prost_round_trips_state_machine_schema_as_binary_message() {
         let mut schema = StateMachineSchema::new("idle");
         schema.deterministic_seed = 7;
@@ -587,26 +354,19 @@ mod tests {
         schema.register_machine_owned_collection_capacity("runtime", "scratch", 16);
 
         let encoded = schema.encode_to_vec();
-        let decoded = StateMachineSchema::decode(encoded.as_slice()).expect("state machine schema should decode");
+        let decoded = StateMachineSchema::decode(encoded.as_slice())
+            .expect("state machine schema should decode");
 
         assert_eq!(decoded, schema);
     }
 
     #[test]
     fn prost_state_machine_schema_omits_proof_only_metadata_from_runtime_wire() {
-        let schema = StateMachineSchema::new_with_seed_and_proof_class(
-            "idle",
-            7,
-            StateMachineProofClassSchema::Finite,
-        );
+        let schema = StateMachineSchema::new_with_seed("idle", 7);
 
         let decoded = StateMachineSchema::decode(schema.encode_to_vec().as_slice())
             .expect("state machine schema should decode");
 
-        assert_eq!(
-            decoded.compatibility().declared_proof_class(),
-            StateMachineProofClassSchema::EffectfulOpen
-        );
+        assert_eq!(decoded, schema);
     }
-
 }

@@ -38,6 +38,21 @@ impl StateMachineApiSchema {
             Self::DataBuffer(DataBufferStateMachineApiSchema::Copy) => "data_buffer:copy",
             Self::DataBuffer(DataBufferStateMachineApiSchema::Concat) => "data_buffer:concat",
             Self::DataBuffer(DataBufferStateMachineApiSchema::Alloc) => "data_buffer:alloc",
+            Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeStateMachineHandle) => {
+                "data_buffer:encode_state_machine_handle"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeNodeHandle) => {
+                "data_buffer:encode_node_handle"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeCameraHandle) => {
+                "data_buffer:encode_camera_handle"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeUiHandle) => {
+                "data_buffer:encode_ui_handle"
+            }
+            Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeAssetRef) => {
+                "data_buffer:encode_asset_ref"
+            }
             Self::DataBuffer(DataBufferStateMachineApiSchema::CopySlice) => {
                 "data_buffer:copy_slice"
             }
@@ -130,10 +145,15 @@ impl StateMachineApiSchema {
             Self::String(StringStateMachineApiSchema::Copy) => "string:copy",
             Self::String(StringStateMachineApiSchema::Concat) => "string:concat",
             Self::String(StringStateMachineApiSchema::ConcatBytes) => "string:concat_bytes",
+            Self::String(StringStateMachineApiSchema::AppendBytes) => "string:append_bytes",
             Self::String(StringStateMachineApiSchema::DecodeUtf8Bytes) => {
                 "string:decode_utf8_bytes"
             }
+            Self::String(StringStateMachineApiSchema::StringFromBytes) => {
+                "string:string_from_bytes"
+            }
             Self::String(StringStateMachineApiSchema::Length) => "string:length",
+            Self::String(StringStateMachineApiSchema::StringLenBytes) => "string:string_len_bytes",
             Self::String(StringStateMachineApiSchema::FormatInt) => "string:format_int",
             Self::String(StringStateMachineApiSchema::FormatIntBytes) => "string:format_int_bytes",
             Self::String(StringStateMachineApiSchema::FormatFloat) => "string:format_float",
@@ -169,14 +189,23 @@ impl StateMachineApiSchema {
             "animation2d:step_players" => {
                 Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers)
             }
-            "data_buffer:copy" => {
-                Self::DataBuffer(DataBufferStateMachineApiSchema::Copy)
+            "data_buffer:copy" => Self::DataBuffer(DataBufferStateMachineApiSchema::Copy),
+            "data_buffer:concat" => Self::DataBuffer(DataBufferStateMachineApiSchema::Concat),
+            "data_buffer:alloc" => Self::DataBuffer(DataBufferStateMachineApiSchema::Alloc),
+            "data_buffer:encode_state_machine_handle" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeStateMachineHandle)
             }
-            "data_buffer:concat" => {
-                Self::DataBuffer(DataBufferStateMachineApiSchema::Concat)
+            "data_buffer:encode_node_handle" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeNodeHandle)
             }
-            "data_buffer:alloc" => {
-                Self::DataBuffer(DataBufferStateMachineApiSchema::Alloc)
+            "data_buffer:encode_camera_handle" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeCameraHandle)
+            }
+            "data_buffer:encode_ui_handle" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeUiHandle)
+            }
+            "data_buffer:encode_asset_ref" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeAssetRef)
             }
             "data_buffer:copy_slice" => {
                 Self::DataBuffer(DataBufferStateMachineApiSchema::CopySlice)
@@ -196,18 +225,12 @@ impl StateMachineApiSchema {
             "data_buffer:fill_slice_u8" => {
                 Self::DataBuffer(DataBufferStateMachineApiSchema::FillSliceU8)
             }
-            "data_buffer:length" => {
-                Self::DataBuffer(DataBufferStateMachineApiSchema::Length)
-            }
-            "data_buffer:read_u8" => {
-                Self::DataBuffer(DataBufferStateMachineApiSchema::ReadU8)
-            }
+            "data_buffer:length" => Self::DataBuffer(DataBufferStateMachineApiSchema::Length),
+            "data_buffer:read_u8" => Self::DataBuffer(DataBufferStateMachineApiSchema::ReadU8),
             "data_buffer:validate_slice" => {
                 Self::DataBuffer(DataBufferStateMachineApiSchema::ValidateSlice)
             }
-            "data_buffer:write_u8" => {
-                Self::DataBuffer(DataBufferStateMachineApiSchema::WriteU8)
-            }
+            "data_buffer:write_u8" => Self::DataBuffer(DataBufferStateMachineApiSchema::WriteU8),
             "data_buffer:write_u8_into" => {
                 Self::DataBuffer(DataBufferStateMachineApiSchema::WriteU8Into)
             }
@@ -276,10 +299,15 @@ impl StateMachineApiSchema {
             "string:copy" => Self::String(StringStateMachineApiSchema::Copy),
             "string:concat" => Self::String(StringStateMachineApiSchema::Concat),
             "string:concat_bytes" => Self::String(StringStateMachineApiSchema::ConcatBytes),
+            "string:append_bytes" => Self::String(StringStateMachineApiSchema::AppendBytes),
             "string:decode_utf8_bytes" => {
                 Self::String(StringStateMachineApiSchema::DecodeUtf8Bytes)
             }
+            "string:string_from_bytes" => {
+                Self::String(StringStateMachineApiSchema::StringFromBytes)
+            }
             "string:length" => Self::String(StringStateMachineApiSchema::Length),
+            "string:string_len_bytes" => Self::String(StringStateMachineApiSchema::StringLenBytes),
             "string:format_int" => Self::String(StringStateMachineApiSchema::FormatInt),
             "string:format_int_bytes" => Self::String(StringStateMachineApiSchema::FormatIntBytes),
             "string:format_float" => Self::String(StringStateMachineApiSchema::FormatFloat),
@@ -503,6 +531,42 @@ mod tests {
     }
 
     #[test]
+    fn string_byte_alias_identifiers_round_trip_as_canonical() {
+        let append_bytes = StateMachineApiSchema::from("string:append_bytes");
+        let string_from_bytes = StateMachineApiSchema::from("string:string_from_bytes");
+        let string_len_bytes = StateMachineApiSchema::from("string:string_len_bytes");
+
+        assert_eq!(
+            serde_json::to_string(&append_bytes).expect("serialize"),
+            "\"string:append_bytes\""
+        );
+        assert_eq!(
+            serde_json::to_string(&string_from_bytes).expect("serialize"),
+            "\"string:string_from_bytes\""
+        );
+        assert_eq!(
+            serde_json::to_string(&string_len_bytes).expect("serialize"),
+            "\"string:string_len_bytes\""
+        );
+
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"string:append_bytes\"")
+                .expect("deserialize"),
+            StateMachineApiSchema::String(StringStateMachineApiSchema::AppendBytes)
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"string:string_from_bytes\"")
+                .expect("deserialize"),
+            StateMachineApiSchema::String(StringStateMachineApiSchema::StringFromBytes)
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"string:string_len_bytes\"")
+                .expect("deserialize"),
+            StateMachineApiSchema::String(StringStateMachineApiSchema::StringLenBytes)
+        );
+    }
+
+    #[test]
     fn data_buffer_identifier_round_trips_as_string() {
         let api = StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::Concat);
         let serialized = serde_json::to_string(&api).expect("serialize");
@@ -597,13 +661,77 @@ mod tests {
     }
 
     #[test]
+    fn data_buffer_handle_builder_identifiers_round_trip_as_strings() {
+        let encode_state_machine = StateMachineApiSchema::DataBuffer(
+            DataBufferStateMachineApiSchema::EncodeStateMachineHandle,
+        );
+        let encode_node =
+            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::EncodeNodeHandle);
+        let encode_camera =
+            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::EncodeCameraHandle);
+        let encode_ui =
+            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::EncodeUiHandle);
+        let encode_asset_ref =
+            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::EncodeAssetRef);
+
+        assert_eq!(
+            serde_json::to_string(&encode_state_machine).expect("serialize"),
+            "\"data_buffer:encode_state_machine_handle\""
+        );
+        assert_eq!(
+            serde_json::to_string(&encode_node).expect("serialize"),
+            "\"data_buffer:encode_node_handle\""
+        );
+        assert_eq!(
+            serde_json::to_string(&encode_camera).expect("serialize"),
+            "\"data_buffer:encode_camera_handle\""
+        );
+        assert_eq!(
+            serde_json::to_string(&encode_ui).expect("serialize"),
+            "\"data_buffer:encode_ui_handle\""
+        );
+        assert_eq!(
+            serde_json::to_string(&encode_asset_ref).expect("serialize"),
+            "\"data_buffer:encode_asset_ref\""
+        );
+
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>(
+                "\"data_buffer:encode_state_machine_handle\""
+            )
+            .expect("deserialize"),
+            encode_state_machine
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:encode_node_handle\"")
+                .expect("deserialize"),
+            encode_node
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:encode_camera_handle\"")
+                .expect("deserialize"),
+            encode_camera
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:encode_ui_handle\"")
+                .expect("deserialize"),
+            encode_ui
+        );
+        assert_eq!(
+            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:encode_asset_ref\"")
+                .expect("deserialize"),
+            encode_asset_ref
+        );
+    }
+
+    #[test]
     fn prost_round_trips_api_schema_as_binary_message() {
         let api = StateMachineApiSchema::from("data_buffer:write_u8_into");
 
         let encoded = api.encode_to_vec();
-        let decoded = StateMachineApiSchema::decode(encoded.as_slice()).expect("api schema should decode");
+        let decoded =
+            StateMachineApiSchema::decode(encoded.as_slice()).expect("api schema should decode");
 
         assert_eq!(decoded, api);
     }
-
 }

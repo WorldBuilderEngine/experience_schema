@@ -1,5 +1,4 @@
 pub mod api;
-pub mod state_machine_compatibility_schema;
 pub mod state_machine_finite_domain_abstraction_schema;
 pub mod state_machine_local_field_schema;
 pub mod state_machine_local_schema;

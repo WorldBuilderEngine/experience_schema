@@ -16,14 +16,6 @@ fn default_compiled_property_layout_version() -> u32 {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Enumeration)]
 #[serde(rename_all = "snake_case")]
 #[repr(i32)]
-pub enum CompiledPropertyStorageClassSchema {
-    ColdDynamic = 0,
-    WarmFixedRecord = 1,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Enumeration)]
-#[serde(rename_all = "snake_case")]
-#[repr(i32)]
 pub enum CompiledPropertyValueTypeSchema {
     Bool = 0,
     BoolArray = 1,
@@ -66,8 +58,6 @@ impl CompiledPropertyValueTypeSchema {
 pub struct CompiledPropertyFieldSchema {
     #[prost(string, tag = "1")]
     pub identifier: String,
-    #[prost(uint64, tag = "2")]
-    pub compiled_field_id: u64,
     #[prost(uint32, tag = "3")]
     pub slot_index: u32,
     #[prost(enumeration = "CompiledPropertyValueTypeSchema", tag = "4")]
@@ -85,7 +75,6 @@ impl CompiledPropertyFieldSchema {
     ) -> Self {
         let identifier = identifier.into();
         Self {
-            compiled_field_id: canonical_compiled_identifier(identifier.as_str()),
             identifier,
             slot_index,
             value_type: value_type as i32,
@@ -103,8 +92,6 @@ impl CompiledPropertyFieldSchema {
 pub struct CompiledPropertyOwnedCollectionFieldSchema {
     #[prost(string, tag = "1")]
     pub identifier: String,
-    #[prost(uint64, tag = "2")]
-    pub compiled_field_id: u64,
     #[prost(enumeration = "CompiledPropertyValueTypeSchema", tag = "3")]
     pub value_type: i32,
     #[serde(default)]
@@ -122,7 +109,6 @@ impl CompiledPropertyOwnedCollectionFieldSchema {
     ) -> Self {
         let identifier = identifier.into();
         Self {
-            compiled_field_id: canonical_compiled_identifier(identifier.as_str()),
             identifier,
             value_type: value_type as i32,
             default_value: None,
@@ -140,14 +126,9 @@ impl CompiledPropertyOwnedCollectionFieldSchema {
 pub struct CompiledPropertyLayoutSchema {
     #[prost(string, tag = "1")]
     pub layout_id: String,
-    #[prost(uint64, tag = "2")]
-    pub compiled_layout_id: u64,
     #[serde(default = "default_compiled_property_layout_version")]
     #[prost(uint32, tag = "3")]
     pub layout_version: u32,
-    #[serde(default)]
-    #[prost(enumeration = "CompiledPropertyStorageClassSchema", tag = "4")]
-    pub storage_class: i32,
     #[serde(default)]
     #[prost(message, repeated, tag = "5")]
     pub fields: Vec<CompiledPropertyFieldSchema>,
@@ -157,16 +138,11 @@ pub struct CompiledPropertyLayoutSchema {
 }
 
 impl CompiledPropertyLayoutSchema {
-    pub fn new(
-        layout_id: impl Into<String>,
-        storage_class: CompiledPropertyStorageClassSchema,
-    ) -> Self {
+    pub fn new(layout_id: impl Into<String>) -> Self {
         let layout_id = layout_id.into();
         Self {
-            compiled_layout_id: canonical_compiled_identifier(layout_id.as_str()),
             layout_id,
             layout_version: CURRENT_COMPILED_PROPERTY_LAYOUT_VERSION,
-            storage_class: storage_class as i32,
             fields: Vec::new(),
             owned_collection_fields: Vec::new(),
         }
@@ -203,10 +179,9 @@ impl CompiledPropertyLayoutSchema {
 
     pub fn compile_property_map_defaults(
         layout_id: impl Into<String>,
-        storage_class: CompiledPropertyStorageClassSchema,
         property_map: &PropertyMap,
     ) -> Self {
-        let mut layout = Self::new(layout_id, storage_class);
+        let mut layout = Self::new(layout_id);
         for (identifier, property) in property_map {
             layout.register_field(
                 identifier.clone(),
@@ -237,33 +212,17 @@ impl CompiledPropertyLayoutsSchema {
     }
 }
 
-const FNV_OFFSET_BASIS: u64 = 0xcbf29ce484222325;
-const FNV_PRIME: u64 = 0x100000001b3;
-
-fn canonical_compiled_identifier(identifier: &str) -> u64 {
-    let mut hash = FNV_OFFSET_BASIS;
-    for byte in identifier.as_bytes() {
-        hash ^= *byte as u64;
-        hash = hash.wrapping_mul(FNV_PRIME);
-    }
-    hash
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
         CURRENT_COMPILED_PROPERTY_LAYOUTS_FORMAT_VERSION, CompiledPropertyLayoutSchema,
-        CompiledPropertyLayoutsSchema, CompiledPropertyStorageClassSchema,
-        CompiledPropertyValueTypeSchema, canonical_compiled_identifier,
+        CompiledPropertyLayoutsSchema, CompiledPropertyValueTypeSchema,
     };
     use crate::properties::{property::Property, property_map::PropertyMap};
 
     #[test]
     fn register_field_assigns_compiled_ids_and_contiguous_slots() {
-        let mut layout = CompiledPropertyLayoutSchema::new(
-            "camera_runtime",
-            CompiledPropertyStorageClassSchema::WarmFixedRecord,
-        );
+        let mut layout = CompiledPropertyLayoutSchema::new("camera_runtime");
         let first_slot = layout.register_field(
             "position_x",
             CompiledPropertyValueTypeSchema::Float64,
@@ -277,14 +236,6 @@ mod tests {
 
         assert_eq!(first_slot, 0);
         assert_eq!(second_slot, 1);
-        assert_eq!(
-            layout.compiled_layout_id,
-            canonical_compiled_identifier("camera_runtime")
-        );
-        assert_eq!(
-            layout.fields[0].compiled_field_id,
-            canonical_compiled_identifier("position_x")
-        );
         assert_eq!(layout.fields[1].slot_index, 1);
     }
 
@@ -296,7 +247,6 @@ mod tests {
 
         let layout = CompiledPropertyLayoutSchema::compile_property_map_defaults(
             "runtime_metrics",
-            CompiledPropertyStorageClassSchema::WarmFixedRecord,
             &property_map,
         );
 
@@ -313,10 +263,7 @@ mod tests {
 
     #[test]
     fn register_owned_collection_field_captures_default_and_capacity() {
-        let mut layout = CompiledPropertyLayoutSchema::new(
-            "inventory_runtime",
-            CompiledPropertyStorageClassSchema::WarmFixedRecord,
-        );
+        let mut layout = CompiledPropertyLayoutSchema::new("inventory_runtime");
         layout.register_owned_collection_field(
             "inventory",
             CompiledPropertyValueTypeSchema::StringArray,

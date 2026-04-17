@@ -2,9 +2,9 @@ use crate::client_authored::state_machines::api::StateMachineApiSchema;
 use crate::client_authored::state_machines::state_machine_transition_schema::StateMachineTransitionSchema;
 use prost::DecodeError;
 use prost::Message;
+use prost::Oneof;
 use prost::bytes::{Buf, BufMut};
 use prost::encoding::{DecodeContext, WireType};
-use prost::Oneof;
 use serde::{Deserialize, Serialize};
 
 /// Node action metadata that executes on state entry.
@@ -72,10 +72,12 @@ impl From<StateMachineNodeTypeSchema> for StateMachineNodeTypeBinaryWire {
     fn from(value: StateMachineNodeTypeSchema) -> Self {
         let node_type = Some(match value {
             StateMachineNodeTypeSchema::ApiDispatch { api, args_local_id } => {
-                state_machine_node_type_binary_wire::NodeType::ApiDispatch(ApiDispatchNodeTypeBinaryWire {
-                    api: Some(api),
-                    args_local_id,
-                })
+                state_machine_node_type_binary_wire::NodeType::ApiDispatch(
+                    ApiDispatchNodeTypeBinaryWire {
+                        api: Some(api),
+                        args_local_id,
+                    },
+                )
             }
         });
         Self { node_type }
@@ -175,9 +177,9 @@ mod tests {
         };
 
         let encoded = node_type.encode_to_vec();
-        let decoded = StateMachineNodeTypeSchema::decode(encoded.as_slice()).expect("node type should decode");
+        let decoded = StateMachineNodeTypeSchema::decode(encoded.as_slice())
+            .expect("node type should decode");
 
         assert_eq!(decoded, node_type);
     }
-
 }

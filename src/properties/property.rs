@@ -1,9 +1,9 @@
 use crate::assets::asset_ref::AssetRef;
 use prost::DecodeError;
 use prost::Message;
+use prost::Oneof;
 use prost::bytes::{Buf, BufMut};
 use prost::encoding::{DecodeContext, WireType};
-use prost::Oneof;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
@@ -81,7 +81,10 @@ struct StringArrayBinaryWire {
 
 #[derive(Clone, PartialEq, Message)]
 struct PropertyBinaryWire {
-    #[prost(oneof = "property_binary_wire::Value", tags = "16, 17, 18, 19, 20, 21, 22, 23, 24, 25")]
+    #[prost(
+        oneof = "property_binary_wire::Value",
+        tags = "16, 17, 18, 19, 20, 21, 22, 23, 24, 25"
+    )]
     value: Option<property_binary_wire::Value>,
 }
 
@@ -117,14 +120,22 @@ impl From<Property> for PropertyBinaryWire {
     fn from(value: Property) -> Self {
         let value = Some(match value {
             Property::Bool(value) => property_binary_wire::Value::Bool(value),
-            Property::BoolArray(values) => property_binary_wire::Value::BoolArray(BoolArrayBinaryWire { values }),
+            Property::BoolArray(values) => {
+                property_binary_wire::Value::BoolArray(BoolArrayBinaryWire { values })
+            }
             Property::DataBuffer(values) => property_binary_wire::Value::DataBuffer(values),
             Property::Int64(value) => property_binary_wire::Value::Int64(value),
-            Property::Int64Array(values) => property_binary_wire::Value::Int64Array(Int64ArrayBinaryWire { values }),
+            Property::Int64Array(values) => {
+                property_binary_wire::Value::Int64Array(Int64ArrayBinaryWire { values })
+            }
             Property::Float64(value) => property_binary_wire::Value::Float64(value),
-            Property::Float64Array(values) => property_binary_wire::Value::Float64Array(Float64ArrayBinaryWire { values }),
+            Property::Float64Array(values) => {
+                property_binary_wire::Value::Float64Array(Float64ArrayBinaryWire { values })
+            }
             Property::String(value) => property_binary_wire::Value::String(value),
-            Property::StringArray(values) => property_binary_wire::Value::StringArray(StringArrayBinaryWire { values }),
+            Property::StringArray(values) => {
+                property_binary_wire::Value::StringArray(StringArrayBinaryWire { values })
+            }
             Property::AssetRef(value) => property_binary_wire::Value::AssetRef(value),
         });
         Self { value }
@@ -135,14 +146,22 @@ impl PropertyBinaryWire {
     fn into_property(self) -> Property {
         match self.value {
             Some(property_binary_wire::Value::Bool(value)) => Property::Bool(value),
-            Some(property_binary_wire::Value::BoolArray(values)) => Property::BoolArray(values.values),
+            Some(property_binary_wire::Value::BoolArray(values)) => {
+                Property::BoolArray(values.values)
+            }
             Some(property_binary_wire::Value::DataBuffer(values)) => Property::DataBuffer(values),
             Some(property_binary_wire::Value::Int64(value)) => Property::Int64(value),
-            Some(property_binary_wire::Value::Int64Array(values)) => Property::Int64Array(values.values),
+            Some(property_binary_wire::Value::Int64Array(values)) => {
+                Property::Int64Array(values.values)
+            }
             Some(property_binary_wire::Value::Float64(value)) => Property::Float64(value),
-            Some(property_binary_wire::Value::Float64Array(values)) => Property::Float64Array(values.values),
+            Some(property_binary_wire::Value::Float64Array(values)) => {
+                Property::Float64Array(values.values)
+            }
             Some(property_binary_wire::Value::String(value)) => Property::String(value),
-            Some(property_binary_wire::Value::StringArray(values)) => Property::StringArray(values.values),
+            Some(property_binary_wire::Value::StringArray(values)) => {
+                Property::StringArray(values.values)
+            }
             Some(property_binary_wire::Value::AssetRef(value)) => Property::AssetRef(value),
             None => Property::default(),
         }
@@ -174,9 +193,9 @@ mod tests {
         ));
 
         let encoded = property.encode_to_vec();
-        let decoded = Property::decode(encoded.as_slice()).expect("asset ref property should decode");
+        let decoded =
+            Property::decode(encoded.as_slice()).expect("asset ref property should decode");
 
         assert_eq!(decoded, property);
     }
-
 }

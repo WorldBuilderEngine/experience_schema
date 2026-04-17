@@ -138,9 +138,9 @@ struct WorldObjectSchemaBinaryWire {
 impl From<WorldObjectSchema> for WorldObjectSchemaBinaryWire {
     fn from(value: WorldObjectSchema) -> Self {
         Self {
-            kinded_json: value
-                .kinded
-                .map(|kinded| serde_json::to_vec(&kinded).expect("kinded world object should serialize")),
+            kinded_json: value.kinded.map(|kinded| {
+                serde_json::to_vec(&kinded).expect("kinded world object should serialize")
+            }),
             properties: Some(value.properties),
             state_machines: value.state_machines,
         }
@@ -150,7 +150,9 @@ impl From<WorldObjectSchema> for WorldObjectSchemaBinaryWire {
 impl WorldObjectSchemaBinaryWire {
     fn into_schema(self) -> Result<WorldObjectSchema, DecodeError> {
         let kinded = match self.kinded_json {
-            Some(bytes) => Some(serde_json::from_slice(&bytes).map_err(world_object_schema_json_decode_error)?),
+            Some(bytes) => Some(
+                serde_json::from_slice(&bytes).map_err(world_object_schema_json_decode_error)?,
+            ),
             None => None,
         };
         Ok(WorldObjectSchema {
@@ -308,9 +310,9 @@ mod tests {
         });
 
         let encoded = world_object.encode_to_vec();
-        let decoded = WorldObjectSchema::decode(encoded.as_slice()).expect("world object should decode");
+        let decoded =
+            WorldObjectSchema::decode(encoded.as_slice()).expect("world object should decode");
 
         assert_eq!(decoded, world_object);
     }
-
 }

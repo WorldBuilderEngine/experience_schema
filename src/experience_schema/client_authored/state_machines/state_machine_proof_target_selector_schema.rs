@@ -55,7 +55,10 @@ struct StateMachineSelectorFieldBinaryWire {
 
 #[derive(Clone, PartialEq, Message)]
 struct StateMachineProofTargetSelectorBinaryWire {
-    #[prost(oneof = "state_machine_proof_target_selector_binary_wire::Selector", tags = "16, 17")]
+    #[prost(
+        oneof = "state_machine_proof_target_selector_binary_wire::Selector",
+        tags = "16, 17"
+    )]
     selector: Option<state_machine_proof_target_selector_binary_wire::Selector>,
 }
 
@@ -98,12 +101,12 @@ impl From<StateMachineProofTargetSelectorSchema> for StateMachineProofTargetSele
 impl StateMachineProofTargetSelectorBinaryWire {
     fn into_selector(self) -> StateMachineProofTargetSelectorSchema {
         match self.selector {
-            Some(state_machine_proof_target_selector_binary_wire::Selector::MachineLocalField(field)) => {
-                StateMachineProofTargetSelectorSchema::MachineLocalField {
-                    local_id: field.primary_id,
-                    field_id: field.field_id,
-                }
-            }
+            Some(state_machine_proof_target_selector_binary_wire::Selector::MachineLocalField(
+                field,
+            )) => StateMachineProofTargetSelectorSchema::MachineLocalField {
+                local_id: field.primary_id,
+                field_id: field.field_id,
+            },
             Some(state_machine_proof_target_selector_binary_wire::Selector::StoreField(field)) => {
                 StateMachineProofTargetSelectorSchema::StoreField {
                     store_id: field.primary_id,
@@ -146,7 +149,7 @@ mod tests {
         let selector = serde_json::from_str::<StateMachineProofTargetSelectorSchema>(
             r#"{
                 "StoreField": {
-                    "store_id": "world.default.presentation_runtime.warm",
+                    "store_id": "world.default.presentation_runtime.runtime",
                     "field_id": "default_camera_viewport_size_px"
                 }
             }"#,
@@ -156,7 +159,7 @@ mod tests {
         assert_eq!(
             selector,
             StateMachineProofTargetSelectorSchema::StoreField {
-                store_id: "world.default.presentation_runtime.warm".to_string(),
+                store_id: "world.default.presentation_runtime.runtime".to_string(),
                 field_id: "default_camera_viewport_size_px".to_string(),
             }
         );
@@ -170,9 +173,9 @@ mod tests {
         };
 
         let encoded = selector.encode_to_vec();
-        let decoded = StateMachineProofTargetSelectorSchema::decode(encoded.as_slice()).expect("selector should decode");
+        let decoded = StateMachineProofTargetSelectorSchema::decode(encoded.as_slice())
+            .expect("selector should decode");
 
         assert_eq!(decoded, selector);
     }
-
 }

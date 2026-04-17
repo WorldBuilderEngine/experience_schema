@@ -283,9 +283,9 @@ mod tests {
         bundle.upsert_asset(PathBuf::from("sprites/example.png"), vec![1, 2, 3]);
 
         let encoded = bundle.encode_to_vec();
-        let decoded = AssetBundleSchema::decode(encoded.as_slice()).expect("asset bundle should decode");
+        let decoded =
+            AssetBundleSchema::decode(encoded.as_slice()).expect("asset bundle should decode");
 
         assert_eq!(decoded, bundle);
     }
-
 }

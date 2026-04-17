@@ -44,8 +44,7 @@
             "properties": []
           },
           "state_machines": [],
-          "asset_bundle_ids": [],
-          "object_templates": {}
+          "asset_bundle_ids": []
         }
       ]
     }

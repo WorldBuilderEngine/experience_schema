@@ -1,9 +1,9 @@
 use crate::client_authored::state_machines::state_machine_proof_target_selector_schema::StateMachineProofTargetSelectorSchema;
 use prost::DecodeError;
 use prost::Message;
+use prost::Oneof;
 use prost::bytes::{Buf, BufMut};
 use prost::encoding::{DecodeContext, WireType};
-use prost::Oneof;
 use serde::{Deserialize, Serialize};
 
 /// Transition trigger types supported by serialized state-machine definitions.
@@ -78,7 +78,10 @@ struct DeterministicRandomTriggerBinaryWire {
 
 #[derive(Clone, PartialEq, Message)]
 struct StateMachineTransitionTriggerBinaryWire {
-    #[prost(oneof = "state_machine_transition_trigger_binary_wire::Trigger", tags = "16, 17, 18, 19, 20, 21, 22")]
+    #[prost(
+        oneof = "state_machine_transition_trigger_binary_wire::Trigger",
+        tags = "16, 17, 18, 19, 20, 21, 22"
+    )]
     trigger: Option<state_machine_transition_trigger_binary_wire::Trigger>,
 }
 
@@ -107,19 +110,24 @@ mod state_machine_transition_trigger_binary_wire {
 impl From<StateMachineTransitionTriggerSchema> for StateMachineTransitionTriggerBinaryWire {
     fn from(value: StateMachineTransitionTriggerSchema) -> Self {
         let trigger = Some(match value {
-            StateMachineTransitionTriggerSchema::Always => state_machine_transition_trigger_binary_wire::Trigger::Always(true),
+            StateMachineTransitionTriggerSchema::Always => {
+                state_machine_transition_trigger_binary_wire::Trigger::Always(true)
+            }
             StateMachineTransitionTriggerSchema::GlobalEvent(value) => {
                 state_machine_transition_trigger_binary_wire::Trigger::GlobalEvent(value)
             }
             StateMachineTransitionTriggerSchema::LocalEvent(value) => {
                 state_machine_transition_trigger_binary_wire::Trigger::LocalEvent(value)
             }
-            StateMachineTransitionTriggerSchema::Conditional { local_id, property_id } => {
-                state_machine_transition_trigger_binary_wire::Trigger::Conditional(ConditionalTriggerBinaryWire {
+            StateMachineTransitionTriggerSchema::Conditional {
+                local_id,
+                property_id,
+            } => state_machine_transition_trigger_binary_wire::Trigger::Conditional(
+                ConditionalTriggerBinaryWire {
                     local_id,
                     property_id,
-                })
-            }
+                },
+            ),
             StateMachineTransitionTriggerSchema::ConditionalSelector { selector } => {
                 state_machine_transition_trigger_binary_wire::Trigger::ConditionalSelector(
                     ConditionalSelectorTriggerBinaryWire {
@@ -127,7 +135,9 @@ impl From<StateMachineTransitionTriggerSchema> for StateMachineTransitionTrigger
                     },
                 )
             }
-            StateMachineTransitionTriggerSchema::Default => state_machine_transition_trigger_binary_wire::Trigger::Default(true),
+            StateMachineTransitionTriggerSchema::Default => {
+                state_machine_transition_trigger_binary_wire::Trigger::Default(true)
+            }
             StateMachineTransitionTriggerSchema::DeterministicRandom {
                 threshold_numerator,
                 threshold_denominator,
@@ -145,7 +155,9 @@ impl From<StateMachineTransitionTriggerSchema> for StateMachineTransitionTrigger
 impl StateMachineTransitionTriggerBinaryWire {
     fn into_trigger(self) -> StateMachineTransitionTriggerSchema {
         match self.trigger {
-            Some(state_machine_transition_trigger_binary_wire::Trigger::Always(_)) => StateMachineTransitionTriggerSchema::Always,
+            Some(state_machine_transition_trigger_binary_wire::Trigger::Always(_)) => {
+                StateMachineTransitionTriggerSchema::Always
+            }
             Some(state_machine_transition_trigger_binary_wire::Trigger::GlobalEvent(value)) => {
                 StateMachineTransitionTriggerSchema::GlobalEvent(value)
             }
@@ -158,23 +170,25 @@ impl StateMachineTransitionTriggerBinaryWire {
                     property_id: value.property_id,
                 }
             }
-            Some(state_machine_transition_trigger_binary_wire::Trigger::ConditionalSelector(value)) => {
-                StateMachineTransitionTriggerSchema::ConditionalSelector {
-                    selector: value.selector.unwrap_or(
-                        StateMachineProofTargetSelectorSchema::MachineLocalField {
-                            local_id: String::new(),
-                            field_id: String::new(),
-                        },
-                    ),
-                }
+            Some(state_machine_transition_trigger_binary_wire::Trigger::ConditionalSelector(
+                value,
+            )) => StateMachineTransitionTriggerSchema::ConditionalSelector {
+                selector: value.selector.unwrap_or(
+                    StateMachineProofTargetSelectorSchema::MachineLocalField {
+                        local_id: String::new(),
+                        field_id: String::new(),
+                    },
+                ),
+            },
+            Some(state_machine_transition_trigger_binary_wire::Trigger::Default(_)) => {
+                StateMachineTransitionTriggerSchema::Default
             }
-            Some(state_machine_transition_trigger_binary_wire::Trigger::Default(_)) => StateMachineTransitionTriggerSchema::Default,
-            Some(state_machine_transition_trigger_binary_wire::Trigger::DeterministicRandom(value)) => {
-                StateMachineTransitionTriggerSchema::DeterministicRandom {
-                    threshold_numerator: value.threshold_numerator,
-                    threshold_denominator: value.threshold_denominator,
-                }
-            }
+            Some(state_machine_transition_trigger_binary_wire::Trigger::DeterministicRandom(
+                value,
+            )) => StateMachineTransitionTriggerSchema::DeterministicRandom {
+                threshold_numerator: value.threshold_numerator,
+                threshold_denominator: value.threshold_denominator,
+            },
             None => StateMachineTransitionTriggerSchema::Always,
         }
     }
@@ -246,9 +260,9 @@ mod tests {
         };
 
         let encoded = trigger.encode_to_vec();
-        let decoded = StateMachineTransitionTriggerSchema::decode(encoded.as_slice()).expect("trigger should decode");
+        let decoded = StateMachineTransitionTriggerSchema::decode(encoded.as_slice())
+            .expect("trigger should decode");
 
         assert_eq!(decoded, trigger);
     }
-
 }

@@ -39,8 +39,7 @@ impl ClientAuthoredSchema {}
 mod tests {
     use super::ClientAuthoredSchema;
     use crate::properties::compiled_property_layout_schema::{
-        CURRENT_COMPILED_PROPERTY_LAYOUTS_FORMAT_VERSION, CompiledPropertyStorageClassSchema,
-        CompiledPropertyValueTypeSchema,
+        CURRENT_COMPILED_PROPERTY_LAYOUTS_FORMAT_VERSION, CompiledPropertyValueTypeSchema,
     };
 
     #[test]
@@ -52,8 +51,7 @@ mod tests {
                     "objects": [],
                     "properties": {"properties":[]},
                     "state_machines": [],
-                    "asset_bundle_ids": [],
-                    "object_templates": {}
+                    "asset_bundle_ids": []
                 }
             }
         }"#;
@@ -105,13 +103,10 @@ mod tests {
                 "layouts": [
                     {
                         "layout_id": "camera_runtime",
-                        "compiled_layout_id": 0,
                         "layout_version": 1,
-                        "storage_class": 1,
                         "fields": [
                             {
                                 "identifier": "viewport_width_px",
-                                "compiled_field_id": 0,
                                 "slot_index": 0,
                                 "value_type": 5,
                                 "default_value": {"Float64": 960.0}
@@ -134,10 +129,6 @@ mod tests {
             CURRENT_COMPILED_PROPERTY_LAYOUTS_FORMAT_VERSION
         );
         assert_eq!(compiled_property_layouts.layouts.len(), 1);
-        assert_eq!(
-            compiled_property_layouts.layouts[0].storage_class,
-            CompiledPropertyStorageClassSchema::WarmFixedRecord as i32
-        );
         assert_eq!(
             compiled_property_layouts.layouts[0].fields[0].value_type,
             CompiledPropertyValueTypeSchema::Float64 as i32
