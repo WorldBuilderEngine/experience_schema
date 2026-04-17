@@ -7,7 +7,7 @@ pub enum DataBufferStateMachineApiSchema {
     Concat,
     Alloc,
     EncodeGenerationalHandle,
-    EncodeAssetRef,
+    EncodeAssetHandle,
     CopySlice,
     CopySliceInto,
     AddScalarF64LeSlice,
