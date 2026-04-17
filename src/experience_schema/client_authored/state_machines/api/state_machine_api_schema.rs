@@ -38,17 +38,11 @@ impl StateMachineApiSchema {
             Self::DataBuffer(DataBufferStateMachineApiSchema::Copy) => "data_buffer:copy",
             Self::DataBuffer(DataBufferStateMachineApiSchema::Concat) => "data_buffer:concat",
             Self::DataBuffer(DataBufferStateMachineApiSchema::Alloc) => "data_buffer:alloc",
-            Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeStateMachineHandle) => {
-                "data_buffer:encode_state_machine_handle"
+            Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeGenerationalHandle) => {
+                "data_buffer:encode_generational_handle"
             }
             Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeNodeHandle) => {
                 "data_buffer:encode_node_handle"
-            }
-            Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeCameraHandle) => {
-                "data_buffer:encode_camera_handle"
-            }
-            Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeUiHandle) => {
-                "data_buffer:encode_ui_handle"
             }
             Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeAssetRef) => {
                 "data_buffer:encode_asset_ref"
@@ -192,17 +186,11 @@ impl StateMachineApiSchema {
             "data_buffer:copy" => Self::DataBuffer(DataBufferStateMachineApiSchema::Copy),
             "data_buffer:concat" => Self::DataBuffer(DataBufferStateMachineApiSchema::Concat),
             "data_buffer:alloc" => Self::DataBuffer(DataBufferStateMachineApiSchema::Alloc),
-            "data_buffer:encode_state_machine_handle" => {
-                Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeStateMachineHandle)
+            "data_buffer:encode_generational_handle" => {
+                Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeGenerationalHandle)
             }
             "data_buffer:encode_node_handle" => {
                 Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeNodeHandle)
-            }
-            "data_buffer:encode_camera_handle" => {
-                Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeCameraHandle)
-            }
-            "data_buffer:encode_ui_handle" => {
-                Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeUiHandle)
             }
             "data_buffer:encode_asset_ref" => {
                 Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeAssetRef)
@@ -662,33 +650,21 @@ mod tests {
 
     #[test]
     fn data_buffer_handle_builder_identifiers_round_trip_as_strings() {
-        let encode_state_machine = StateMachineApiSchema::DataBuffer(
-            DataBufferStateMachineApiSchema::EncodeStateMachineHandle,
+        let encode_generational = StateMachineApiSchema::DataBuffer(
+            DataBufferStateMachineApiSchema::EncodeGenerationalHandle,
         );
         let encode_node =
             StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::EncodeNodeHandle);
-        let encode_camera =
-            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::EncodeCameraHandle);
-        let encode_ui =
-            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::EncodeUiHandle);
         let encode_asset_ref =
             StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::EncodeAssetRef);
 
         assert_eq!(
-            serde_json::to_string(&encode_state_machine).expect("serialize"),
-            "\"data_buffer:encode_state_machine_handle\""
+            serde_json::to_string(&encode_generational).expect("serialize"),
+            "\"data_buffer:encode_generational_handle\""
         );
         assert_eq!(
             serde_json::to_string(&encode_node).expect("serialize"),
             "\"data_buffer:encode_node_handle\""
-        );
-        assert_eq!(
-            serde_json::to_string(&encode_camera).expect("serialize"),
-            "\"data_buffer:encode_camera_handle\""
-        );
-        assert_eq!(
-            serde_json::to_string(&encode_ui).expect("serialize"),
-            "\"data_buffer:encode_ui_handle\""
         );
         assert_eq!(
             serde_json::to_string(&encode_asset_ref).expect("serialize"),
@@ -697,25 +673,15 @@ mod tests {
 
         assert_eq!(
             serde_json::from_str::<StateMachineApiSchema>(
-                "\"data_buffer:encode_state_machine_handle\""
+                "\"data_buffer:encode_generational_handle\""
             )
             .expect("deserialize"),
-            encode_state_machine
+            encode_generational
         );
         assert_eq!(
             serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:encode_node_handle\"")
                 .expect("deserialize"),
             encode_node
-        );
-        assert_eq!(
-            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:encode_camera_handle\"")
-                .expect("deserialize"),
-            encode_camera
-        );
-        assert_eq!(
-            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:encode_ui_handle\"")
-                .expect("deserialize"),
-            encode_ui
         );
         assert_eq!(
             serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:encode_asset_ref\"")
