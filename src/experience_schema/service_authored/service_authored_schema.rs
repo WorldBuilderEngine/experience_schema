@@ -1,4 +1,4 @@
-use crate::service_authored::assets::AssetBundleManifestSchema;
+use crate::service_authored::assets::{AssetBundleManifestSchema, AssetHandleTableSchema};
 use crate::service_authored::meta_data::publisher_info_schema::PublisherInfoSchema;
 use prost::Message;
 use serde::{Deserialize, Serialize};
@@ -15,6 +15,11 @@ pub struct ServiceAuthoredSchema {
     #[serde(default)]
     #[prost(message, optional, tag = "2")]
     pub asset_bundle_manifest: Option<AssetBundleManifestSchema>,
+
+    /// Trusted publish-time path-to-handle lowering consumed directly by runtime loaders.
+    #[serde(default)]
+    #[prost(message, optional, tag = "3")]
+    pub asset_handle_table: Option<AssetHandleTableSchema>,
 }
 
 impl ServiceAuthoredSchema {}
