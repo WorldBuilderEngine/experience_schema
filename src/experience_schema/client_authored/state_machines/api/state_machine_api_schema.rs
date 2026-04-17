@@ -41,9 +41,6 @@ impl StateMachineApiSchema {
             Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeGenerationalHandle) => {
                 "data_buffer:encode_generational_handle"
             }
-            Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeNodeHandle) => {
-                "data_buffer:encode_node_handle"
-            }
             Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeAssetRef) => {
                 "data_buffer:encode_asset_ref"
             }
@@ -188,9 +185,6 @@ impl StateMachineApiSchema {
             "data_buffer:alloc" => Self::DataBuffer(DataBufferStateMachineApiSchema::Alloc),
             "data_buffer:encode_generational_handle" => {
                 Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeGenerationalHandle)
-            }
-            "data_buffer:encode_node_handle" => {
-                Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeNodeHandle)
             }
             "data_buffer:encode_asset_ref" => {
                 Self::DataBuffer(DataBufferStateMachineApiSchema::EncodeAssetRef)
@@ -653,18 +647,12 @@ mod tests {
         let encode_generational = StateMachineApiSchema::DataBuffer(
             DataBufferStateMachineApiSchema::EncodeGenerationalHandle,
         );
-        let encode_node =
-            StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::EncodeNodeHandle);
         let encode_asset_ref =
             StateMachineApiSchema::DataBuffer(DataBufferStateMachineApiSchema::EncodeAssetRef);
 
         assert_eq!(
             serde_json::to_string(&encode_generational).expect("serialize"),
             "\"data_buffer:encode_generational_handle\""
-        );
-        assert_eq!(
-            serde_json::to_string(&encode_node).expect("serialize"),
-            "\"data_buffer:encode_node_handle\""
         );
         assert_eq!(
             serde_json::to_string(&encode_asset_ref).expect("serialize"),
@@ -677,11 +665,6 @@ mod tests {
             )
             .expect("deserialize"),
             encode_generational
-        );
-        assert_eq!(
-            serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:encode_node_handle\"")
-                .expect("deserialize"),
-            encode_node
         );
         assert_eq!(
             serde_json::from_str::<StateMachineApiSchema>("\"data_buffer:encode_asset_ref\"")
