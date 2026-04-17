@@ -17,6 +17,8 @@ pub struct ServiceAuthoredSchema {
     pub asset_bundle_manifest: Option<AssetBundleManifestSchema>,
 
     /// Trusted publish-time path-to-handle lowering consumed directly by runtime loaders.
+    ///
+    /// Runtime engines should consume this table rather than reassigning asset ids from source paths.
     #[serde(default)]
     #[prost(message, optional, tag = "3")]
     pub asset_handle_table: Option<AssetHandleTableSchema>,
