@@ -137,11 +137,11 @@ impl StateMachineApiSchema {
             Self::Math(MathStateMachineApiSchema::TransformDirection) => "math:transform_direction",
             Self::Math(MathStateMachineApiSchema::TransformPoint) => "math:transform_point",
             Self::Math(MathStateMachineApiSchema::TransformVector) => "math:transform_vector",
-            Self::Physics2d(Physics2dStateMachineApiSchema::SetNodeLinearVelocityByTag) => {
-                "physics2d:set_node_linear_velocity_by_tag"
+            Self::Physics2d(Physics2dStateMachineApiSchema::SetNodeLinearVelocity) => {
+                "physics2d:set_node_linear_velocity"
             }
-            Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForceByTag) => {
-                "physics2d:add_node_force_by_tag"
+            Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForce) => {
+                "physics2d:add_node_force"
             }
             Self::Physics2d(Physics2dStateMachineApiSchema::StepAndEmitCollisionEvents) => {
                 "physics2d:step_and_emit_collision_events"
@@ -319,11 +319,11 @@ impl StateMachineApiSchema {
             "math:transform_direction" => Self::Math(MathStateMachineApiSchema::TransformDirection),
             "math:transform_point" => Self::Math(MathStateMachineApiSchema::TransformPoint),
             "math:transform_vector" => Self::Math(MathStateMachineApiSchema::TransformVector),
-            "physics2d:set_node_linear_velocity_by_tag" => {
-                Self::Physics2d(Physics2dStateMachineApiSchema::SetNodeLinearVelocityByTag)
+            "physics2d:set_node_linear_velocity" | "physics2d:set_node_linear_velocity_by_tag" => {
+                Self::Physics2d(Physics2dStateMachineApiSchema::SetNodeLinearVelocity)
             }
-            "physics2d:add_node_force_by_tag" => {
-                Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForceByTag)
+            "physics2d:add_node_force" | "physics2d:add_node_force_by_tag" => {
+                Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForce)
             }
             "physics2d:step_and_emit_collision_events" => {
                 Self::Physics2d(Physics2dStateMachineApiSchema::StepAndEmitCollisionEvents)
@@ -540,6 +540,13 @@ mod tests {
         let api = StateMachineApiSchema::from("world:set_node_visibility_by_tag");
         let serialized = serde_json::to_string(&api).expect("serialize");
         assert_eq!(serialized, "\"world:set_node_visibility\"");
+    }
+
+    #[test]
+    fn legacy_physics_tag_identifier_deserializes_to_selector_canonical_identifier() {
+        let api = StateMachineApiSchema::from("physics2d:set_node_linear_velocity_by_tag");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"physics2d:set_node_linear_velocity\"");
     }
 
     #[test]
