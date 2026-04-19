@@ -117,6 +117,7 @@ impl StateMachineSchema {
                 StateMachineNodeTypeSchema::ApiDispatch {
                     api: api.into(),
                     args_local_id: None,
+                    emitted_local_event_names: Vec::new(),
                 },
                 vec![transition],
             ));
@@ -133,6 +134,7 @@ impl StateMachineSchema {
             StateMachineNodeTypeSchema::ApiDispatch {
                 api: api.into(),
                 args_local_id,
+                emitted_local_event_names: Vec::new(),
             },
         ));
     }

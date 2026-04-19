@@ -14,6 +14,8 @@ pub enum StateMachineNodeTypeSchema {
         #[serde(alias = "api_identifier")]
         api: StateMachineApiSchema,
         args_local_id: Option<String>,
+        #[serde(default)]
+        emitted_local_event_names: Vec<String>,
     },
 }
 
@@ -50,6 +52,8 @@ struct ApiDispatchNodeTypeBinaryWire {
     api: Option<StateMachineApiSchema>,
     #[prost(string, optional, tag = "2")]
     args_local_id: Option<String>,
+    #[prost(string, repeated, tag = "3")]
+    emitted_local_event_names: Vec<String>,
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -71,11 +75,16 @@ mod state_machine_node_type_binary_wire {
 impl From<StateMachineNodeTypeSchema> for StateMachineNodeTypeBinaryWire {
     fn from(value: StateMachineNodeTypeSchema) -> Self {
         let node_type = Some(match value {
-            StateMachineNodeTypeSchema::ApiDispatch { api, args_local_id } => {
+            StateMachineNodeTypeSchema::ApiDispatch {
+                api,
+                args_local_id,
+                emitted_local_event_names,
+            } => {
                 state_machine_node_type_binary_wire::NodeType::ApiDispatch(
                     ApiDispatchNodeTypeBinaryWire {
                         api: Some(api),
                         args_local_id,
+                        emitted_local_event_names,
                     },
                 )
             }
@@ -91,6 +100,7 @@ impl StateMachineNodeTypeBinaryWire {
                 StateMachineNodeTypeSchema::ApiDispatch {
                     api: value.api.unwrap_or_default(),
                     args_local_id: value.args_local_id,
+                    emitted_local_event_names: value.emitted_local_event_names,
                 }
             }
             None => StateMachineNodeTypeSchema::default(),
@@ -103,6 +113,7 @@ impl Default for StateMachineNodeTypeSchema {
         Self::ApiDispatch {
             api: StateMachineApiSchema::default(),
             args_local_id: None,
+            emitted_local_event_names: Vec::new(),
         }
     }
 }
@@ -165,6 +176,7 @@ mod tests {
             StateMachineNodeTypeSchema::ApiDispatch {
                 api: StateMachineApiSchema::from("world:set_node_visibility_by_tag"),
                 args_local_id: Some("args_visibility".to_string()),
+                emitted_local_event_names: Vec::new(),
             }
         );
     }
@@ -174,6 +186,7 @@ mod tests {
         let node_type = StateMachineNodeTypeSchema::ApiDispatch {
             api: StateMachineApiSchema::from("runtime:no_op"),
             args_local_id: Some("runtime_args".to_string()),
+            emitted_local_event_names: vec!["script:advance".to_string()],
         };
 
         let encoded = node_type.encode_to_vec();

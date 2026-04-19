@@ -7,4 +7,9 @@ pub enum RuntimeStateMachineApiSchema {
     QueryStepDeltaSeconds,
     QuerySimulatedStepDurationSeconds,
     QuerySimulatedElapsedSeconds,
+    QueryDirectCallEntrypoint,
+    QueryDirectCallRequestTypeId,
+    QueryDirectCallResultTypeId,
+    CopyDirectCallRequestBytes,
+    ReturnDirectCallResult,
 }

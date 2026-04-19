@@ -78,6 +78,7 @@ mod tests {
                             "custom:sample_story:dispatch_progression_complete",
                         ),
                         args_local_id: Some("args".to_string()),
+                        emitted_local_event_names: Vec::new(),
                     },
                 )];
                 state_machine
@@ -97,6 +98,7 @@ mod tests {
                     "custom:sample_story:dispatch_progression_complete".to_string()
                 ),
                 args_local_id: Some("args".to_string()),
+                emitted_local_event_names: Vec::new(),
             }
         );
     }

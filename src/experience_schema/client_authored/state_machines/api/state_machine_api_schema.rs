@@ -103,12 +103,18 @@ impl StateMachineApiSchema {
             Self::Math(MathStateMachineApiSchema::VectorDot) => "math:vector_dot",
             Self::Math(MathStateMachineApiSchema::VectorCross) => "math:vector_cross",
             Self::Math(MathStateMachineApiSchema::VectorLength) => "math:vector_length",
-            Self::Math(MathStateMachineApiSchema::VectorLengthSquared) => "math:vector_length_squared",
+            Self::Math(MathStateMachineApiSchema::VectorLengthSquared) => {
+                "math:vector_length_squared"
+            }
             Self::Math(MathStateMachineApiSchema::VectorNormalize) => "math:vector_normalize",
             Self::Math(MathStateMachineApiSchema::VectorDistance) => "math:vector_distance",
-            Self::Math(MathStateMachineApiSchema::VectorDistanceSquared) => "math:vector_distance_squared",
+            Self::Math(MathStateMachineApiSchema::VectorDistanceSquared) => {
+                "math:vector_distance_squared"
+            }
             Self::Math(MathStateMachineApiSchema::VectorLerp) => "math:vector_lerp",
-            Self::Math(MathStateMachineApiSchema::VectorClampMagnitude) => "math:vector_clamp_magnitude",
+            Self::Math(MathStateMachineApiSchema::VectorClampMagnitude) => {
+                "math:vector_clamp_magnitude"
+            }
             Self::Math(MathStateMachineApiSchema::VectorReflect) => "math:vector_reflect",
             Self::Math(MathStateMachineApiSchema::VectorProject) => "math:vector_project",
             Self::Math(MathStateMachineApiSchema::VectorReject) => "math:vector_reject",
@@ -150,6 +156,21 @@ impl StateMachineApiSchema {
             Self::Runtime(RuntimeStateMachineApiSchema::QuerySimulatedElapsedSeconds) => {
                 "runtime:query_simulated_elapsed_seconds"
             }
+            Self::Runtime(RuntimeStateMachineApiSchema::QueryDirectCallEntrypoint) => {
+                "runtime:query_direct_call_entrypoint"
+            }
+            Self::Runtime(RuntimeStateMachineApiSchema::QueryDirectCallRequestTypeId) => {
+                "runtime:query_direct_call_request_type_id"
+            }
+            Self::Runtime(RuntimeStateMachineApiSchema::QueryDirectCallResultTypeId) => {
+                "runtime:query_direct_call_result_type_id"
+            }
+            Self::Runtime(RuntimeStateMachineApiSchema::CopyDirectCallRequestBytes) => {
+                "runtime:copy_direct_call_request_bytes"
+            }
+            Self::Runtime(RuntimeStateMachineApiSchema::ReturnDirectCallResult) => {
+                "runtime:return_direct_call_result"
+            }
             Self::String(StringStateMachineApiSchema::Copy) => "string:copy",
             Self::String(StringStateMachineApiSchema::Concat) => "string:concat",
             Self::String(StringStateMachineApiSchema::ConcatBytes) => "string:concat_bytes",
@@ -189,6 +210,9 @@ impl StateMachineApiSchema {
             }
             Self::World(WorldStateMachineApiSchema::FollowActiveCameraByTag) => {
                 "world:follow_active_camera_by_tag"
+            }
+            Self::World(WorldStateMachineApiSchema::CallStateMachine) => {
+                "world:call_state_machine"
             }
             Self::World(WorldStateMachineApiSchema::RemoveStateMachine) => {
                 "world:remove_state_machine"
@@ -271,12 +295,18 @@ impl StateMachineApiSchema {
             "math:vector_dot" => Self::Math(MathStateMachineApiSchema::VectorDot),
             "math:vector_cross" => Self::Math(MathStateMachineApiSchema::VectorCross),
             "math:vector_length" => Self::Math(MathStateMachineApiSchema::VectorLength),
-            "math:vector_length_squared" => Self::Math(MathStateMachineApiSchema::VectorLengthSquared),
+            "math:vector_length_squared" => {
+                Self::Math(MathStateMachineApiSchema::VectorLengthSquared)
+            }
             "math:vector_normalize" => Self::Math(MathStateMachineApiSchema::VectorNormalize),
             "math:vector_distance" => Self::Math(MathStateMachineApiSchema::VectorDistance),
-            "math:vector_distance_squared" => Self::Math(MathStateMachineApiSchema::VectorDistanceSquared),
+            "math:vector_distance_squared" => {
+                Self::Math(MathStateMachineApiSchema::VectorDistanceSquared)
+            }
             "math:vector_lerp" => Self::Math(MathStateMachineApiSchema::VectorLerp),
-            "math:vector_clamp_magnitude" => Self::Math(MathStateMachineApiSchema::VectorClampMagnitude),
+            "math:vector_clamp_magnitude" => {
+                Self::Math(MathStateMachineApiSchema::VectorClampMagnitude)
+            }
             "math:vector_reflect" => Self::Math(MathStateMachineApiSchema::VectorReflect),
             "math:vector_project" => Self::Math(MathStateMachineApiSchema::VectorProject),
             "math:vector_reject" => Self::Math(MathStateMachineApiSchema::VectorReject),
@@ -318,6 +348,21 @@ impl StateMachineApiSchema {
             "runtime:query_simulated_elapsed_seconds" => {
                 Self::Runtime(RuntimeStateMachineApiSchema::QuerySimulatedElapsedSeconds)
             }
+            "runtime:query_direct_call_entrypoint" => {
+                Self::Runtime(RuntimeStateMachineApiSchema::QueryDirectCallEntrypoint)
+            }
+            "runtime:query_direct_call_request_type_id" => {
+                Self::Runtime(RuntimeStateMachineApiSchema::QueryDirectCallRequestTypeId)
+            }
+            "runtime:query_direct_call_result_type_id" => {
+                Self::Runtime(RuntimeStateMachineApiSchema::QueryDirectCallResultTypeId)
+            }
+            "runtime:copy_direct_call_request_bytes" => {
+                Self::Runtime(RuntimeStateMachineApiSchema::CopyDirectCallRequestBytes)
+            }
+            "runtime:return_direct_call_result" => {
+                Self::Runtime(RuntimeStateMachineApiSchema::ReturnDirectCallResult)
+            }
             "string:copy" => Self::String(StringStateMachineApiSchema::Copy),
             "string:concat" => Self::String(StringStateMachineApiSchema::Concat),
             "string:concat_bytes" => Self::String(StringStateMachineApiSchema::ConcatBytes),
@@ -357,6 +402,9 @@ impl StateMachineApiSchema {
             }
             "world:follow_active_camera_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::FollowActiveCameraByTag)
+            }
+            "world:call_state_machine" => {
+                Self::World(WorldStateMachineApiSchema::CallStateMachine)
             }
             "world:remove_state_machine" => {
                 Self::World(WorldStateMachineApiSchema::RemoveStateMachine)

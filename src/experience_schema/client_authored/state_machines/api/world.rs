@@ -10,5 +10,6 @@ pub enum WorldStateMachineApiSchema {
     SetNodeTextColorByTag,
     ReorderNodeByTag,
     FollowActiveCameraByTag,
+    CallStateMachine,
     RemoveStateMachine,
 }

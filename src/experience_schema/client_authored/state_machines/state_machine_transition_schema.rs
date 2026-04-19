@@ -11,8 +11,13 @@ use serde::{Deserialize, Serialize};
 pub enum StateMachineTransitionTriggerSchema {
     #[default]
     Always,
-    GlobalEvent(String),
-    LocalEvent(String),
+    BroadcastEvent(String),
+    LocalContinuation(String),
+    DirectCallEntrypoint {
+        entrypoint: String,
+        request_type_id: String,
+        result_type_id: String,
+    },
     Conditional {
         local_id: String,
         property_id: String,
@@ -69,6 +74,16 @@ struct ConditionalSelectorTriggerBinaryWire {
 }
 
 #[derive(Clone, PartialEq, Message)]
+struct DirectCallEntrypointTriggerBinaryWire {
+    #[prost(string, tag = "1")]
+    entrypoint: String,
+    #[prost(string, tag = "2")]
+    request_type_id: String,
+    #[prost(string, tag = "3")]
+    result_type_id: String,
+}
+
+#[derive(Clone, PartialEq, Message)]
 struct DeterministicRandomTriggerBinaryWire {
     #[prost(uint32, tag = "1")]
     threshold_numerator: u32,
@@ -80,7 +95,7 @@ struct DeterministicRandomTriggerBinaryWire {
 struct StateMachineTransitionTriggerBinaryWire {
     #[prost(
         oneof = "state_machine_transition_trigger_binary_wire::Trigger",
-        tags = "16, 17, 18, 19, 20, 21, 22"
+        tags = "16, 17, 18, 19, 20, 21, 22, 23"
     )]
     trigger: Option<state_machine_transition_trigger_binary_wire::Trigger>,
 }
@@ -93,9 +108,11 @@ mod state_machine_transition_trigger_binary_wire {
         #[prost(bool, tag = "16")]
         Always(bool),
         #[prost(string, tag = "17")]
-        GlobalEvent(String),
+        BroadcastEvent(String),
         #[prost(string, tag = "18")]
-        LocalEvent(String),
+        LocalContinuation(String),
+        #[prost(message, tag = "23")]
+        DirectCallEntrypoint(DirectCallEntrypointTriggerBinaryWire),
         #[prost(message, tag = "19")]
         Conditional(ConditionalTriggerBinaryWire),
         #[prost(message, tag = "20")]
@@ -113,12 +130,23 @@ impl From<StateMachineTransitionTriggerSchema> for StateMachineTransitionTrigger
             StateMachineTransitionTriggerSchema::Always => {
                 state_machine_transition_trigger_binary_wire::Trigger::Always(true)
             }
-            StateMachineTransitionTriggerSchema::GlobalEvent(value) => {
-                state_machine_transition_trigger_binary_wire::Trigger::GlobalEvent(value)
+            StateMachineTransitionTriggerSchema::BroadcastEvent(value) => {
+                state_machine_transition_trigger_binary_wire::Trigger::BroadcastEvent(value)
             }
-            StateMachineTransitionTriggerSchema::LocalEvent(value) => {
-                state_machine_transition_trigger_binary_wire::Trigger::LocalEvent(value)
+            StateMachineTransitionTriggerSchema::LocalContinuation(value) => {
+                state_machine_transition_trigger_binary_wire::Trigger::LocalContinuation(value)
             }
+            StateMachineTransitionTriggerSchema::DirectCallEntrypoint {
+                entrypoint,
+                request_type_id,
+                result_type_id,
+            } => state_machine_transition_trigger_binary_wire::Trigger::DirectCallEntrypoint(
+                DirectCallEntrypointTriggerBinaryWire {
+                    entrypoint,
+                    request_type_id,
+                    result_type_id,
+                },
+            ),
             StateMachineTransitionTriggerSchema::Conditional {
                 local_id,
                 property_id,
@@ -158,12 +186,19 @@ impl StateMachineTransitionTriggerBinaryWire {
             Some(state_machine_transition_trigger_binary_wire::Trigger::Always(_)) => {
                 StateMachineTransitionTriggerSchema::Always
             }
-            Some(state_machine_transition_trigger_binary_wire::Trigger::GlobalEvent(value)) => {
-                StateMachineTransitionTriggerSchema::GlobalEvent(value)
+            Some(state_machine_transition_trigger_binary_wire::Trigger::BroadcastEvent(value)) => {
+                StateMachineTransitionTriggerSchema::BroadcastEvent(value)
             }
-            Some(state_machine_transition_trigger_binary_wire::Trigger::LocalEvent(value)) => {
-                StateMachineTransitionTriggerSchema::LocalEvent(value)
+            Some(state_machine_transition_trigger_binary_wire::Trigger::LocalContinuation(value)) => {
+                StateMachineTransitionTriggerSchema::LocalContinuation(value)
             }
+            Some(state_machine_transition_trigger_binary_wire::Trigger::DirectCallEntrypoint(
+                value,
+            )) => StateMachineTransitionTriggerSchema::DirectCallEntrypoint {
+                entrypoint: value.entrypoint,
+                request_type_id: value.request_type_id,
+                result_type_id: value.result_type_id,
+            },
             Some(state_machine_transition_trigger_binary_wire::Trigger::Conditional(value)) => {
                 StateMachineTransitionTriggerSchema::Conditional {
                     local_id: value.local_id,
