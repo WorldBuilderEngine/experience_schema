@@ -1,6 +1,4 @@
-use crate::service_authored::assets::{
-    AssetBundleManifestImageMetadataSchema, AssetBundleManifestStaticTextFontMetadataSchema,
-};
+use crate::service_authored::assets::AssetBundleManifestImageMetadataSchema;
 use prost::Message;
 use serde::{Deserialize, Serialize};
 
@@ -11,15 +9,13 @@ pub struct AssetBundleManifestAssetMetadataSchema {
     #[serde(flatten)]
     #[prost(
         oneof = "asset_bundle_manifest_asset_metadata_schema::Metadata",
-        tags = "1, 2"
+        tags = "1"
     )]
     pub metadata: Option<asset_bundle_manifest_asset_metadata_schema::Metadata>,
 }
 
 pub mod asset_bundle_manifest_asset_metadata_schema {
-    use super::{
-        AssetBundleManifestImageMetadataSchema, AssetBundleManifestStaticTextFontMetadataSchema,
-    };
+    use super::AssetBundleManifestImageMetadataSchema;
     use prost::Oneof;
     use serde::{Deserialize, Serialize};
 
@@ -29,9 +25,5 @@ pub mod asset_bundle_manifest_asset_metadata_schema {
         #[serde(rename = "image")]
         #[prost(message, tag = "1")]
         Image(AssetBundleManifestImageMetadataSchema),
-
-        #[serde(rename = "static_text_font")]
-        #[prost(message, tag = "2")]
-        StaticTextFont(AssetBundleManifestStaticTextFontMetadataSchema),
     }
 }

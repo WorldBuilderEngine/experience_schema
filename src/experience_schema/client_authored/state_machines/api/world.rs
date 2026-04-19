@@ -4,8 +4,10 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "snake_case")]
 pub enum WorldStateMachineApiSchema {
     SetNodePositionByTag,
+    SetNodeScaleByTag,
     SetNodeVisibilityByTag,
     SetNodeTextByTag,
+    SetNodeTextColorByTag,
     ReorderNodeByTag,
     FollowActiveCameraByTag,
     RemoveStateMachine,

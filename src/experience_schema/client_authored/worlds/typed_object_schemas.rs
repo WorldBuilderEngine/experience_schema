@@ -118,6 +118,7 @@ pub struct StaticTextObjectSchema {
     pub parent_node_tag: Option<String>,
     pub scene_id: Option<String>,
     pub interaction_enabled: bool,
+    pub color_rgba: Option<[f64; 4]>,
     pub outline_color_rgba: Option<[f64; 4]>,
     pub outline_thickness_px: Option<f64>,
 }
@@ -140,6 +141,7 @@ impl StaticTextObjectSchema {
             parent_node_tag: None,
             scene_id: None,
             interaction_enabled: false,
+            color_rgba: None,
             outline_color_rgba: None,
             outline_thickness_px: None,
         }

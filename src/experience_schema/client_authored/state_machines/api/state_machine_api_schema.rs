@@ -95,6 +95,23 @@ impl StateMachineApiSchema {
             Self::Math(MathStateMachineApiSchema::Atan) => "math:atan",
             Self::Math(MathStateMachineApiSchema::Atan2) => "math:atan2",
             Self::Math(MathStateMachineApiSchema::Lerp) => "math:lerp",
+            Self::Math(MathStateMachineApiSchema::VectorAdd) => "math:vector_add",
+            Self::Math(MathStateMachineApiSchema::VectorSub) => "math:vector_sub",
+            Self::Math(MathStateMachineApiSchema::VectorMul) => "math:vector_mul",
+            Self::Math(MathStateMachineApiSchema::VectorDiv) => "math:vector_div",
+            Self::Math(MathStateMachineApiSchema::VectorScale) => "math:vector_scale",
+            Self::Math(MathStateMachineApiSchema::VectorDot) => "math:vector_dot",
+            Self::Math(MathStateMachineApiSchema::VectorCross) => "math:vector_cross",
+            Self::Math(MathStateMachineApiSchema::VectorLength) => "math:vector_length",
+            Self::Math(MathStateMachineApiSchema::VectorLengthSquared) => "math:vector_length_squared",
+            Self::Math(MathStateMachineApiSchema::VectorNormalize) => "math:vector_normalize",
+            Self::Math(MathStateMachineApiSchema::VectorDistance) => "math:vector_distance",
+            Self::Math(MathStateMachineApiSchema::VectorDistanceSquared) => "math:vector_distance_squared",
+            Self::Math(MathStateMachineApiSchema::VectorLerp) => "math:vector_lerp",
+            Self::Math(MathStateMachineApiSchema::VectorClampMagnitude) => "math:vector_clamp_magnitude",
+            Self::Math(MathStateMachineApiSchema::VectorReflect) => "math:vector_reflect",
+            Self::Math(MathStateMachineApiSchema::VectorProject) => "math:vector_project",
+            Self::Math(MathStateMachineApiSchema::VectorReject) => "math:vector_reject",
             Self::Math(MathStateMachineApiSchema::MatrixComposeTrs) => "math:matrix_compose_trs",
             Self::Math(MathStateMachineApiSchema::MatrixDecomposeTrs) => {
                 "math:matrix_decompose_trs"
@@ -155,11 +172,17 @@ impl StateMachineApiSchema {
             Self::World(WorldStateMachineApiSchema::SetNodePositionByTag) => {
                 "world:set_node_position_by_tag"
             }
+            Self::World(WorldStateMachineApiSchema::SetNodeScaleByTag) => {
+                "world:set_node_scale_by_tag"
+            }
             Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag) => {
                 "world:set_node_visibility_by_tag"
             }
             Self::World(WorldStateMachineApiSchema::SetNodeTextByTag) => {
                 "world:set_node_text_by_tag"
+            }
+            Self::World(WorldStateMachineApiSchema::SetNodeTextColorByTag) => {
+                "world:set_node_text_color_by_tag"
             }
             Self::World(WorldStateMachineApiSchema::ReorderNodeByTag) => {
                 "world:reorder_node_by_tag"
@@ -240,6 +263,23 @@ impl StateMachineApiSchema {
             "math:atan" => Self::Math(MathStateMachineApiSchema::Atan),
             "math:atan2" => Self::Math(MathStateMachineApiSchema::Atan2),
             "math:lerp" => Self::Math(MathStateMachineApiSchema::Lerp),
+            "math:vector_add" => Self::Math(MathStateMachineApiSchema::VectorAdd),
+            "math:vector_sub" => Self::Math(MathStateMachineApiSchema::VectorSub),
+            "math:vector_mul" => Self::Math(MathStateMachineApiSchema::VectorMul),
+            "math:vector_div" => Self::Math(MathStateMachineApiSchema::VectorDiv),
+            "math:vector_scale" => Self::Math(MathStateMachineApiSchema::VectorScale),
+            "math:vector_dot" => Self::Math(MathStateMachineApiSchema::VectorDot),
+            "math:vector_cross" => Self::Math(MathStateMachineApiSchema::VectorCross),
+            "math:vector_length" => Self::Math(MathStateMachineApiSchema::VectorLength),
+            "math:vector_length_squared" => Self::Math(MathStateMachineApiSchema::VectorLengthSquared),
+            "math:vector_normalize" => Self::Math(MathStateMachineApiSchema::VectorNormalize),
+            "math:vector_distance" => Self::Math(MathStateMachineApiSchema::VectorDistance),
+            "math:vector_distance_squared" => Self::Math(MathStateMachineApiSchema::VectorDistanceSquared),
+            "math:vector_lerp" => Self::Math(MathStateMachineApiSchema::VectorLerp),
+            "math:vector_clamp_magnitude" => Self::Math(MathStateMachineApiSchema::VectorClampMagnitude),
+            "math:vector_reflect" => Self::Math(MathStateMachineApiSchema::VectorReflect),
+            "math:vector_project" => Self::Math(MathStateMachineApiSchema::VectorProject),
+            "math:vector_reject" => Self::Math(MathStateMachineApiSchema::VectorReject),
             "math:matrix_compose_trs" => Self::Math(MathStateMachineApiSchema::MatrixComposeTrs),
             "math:matrix_decompose_trs" => {
                 Self::Math(MathStateMachineApiSchema::MatrixDecomposeTrs)
@@ -300,11 +340,17 @@ impl StateMachineApiSchema {
             "world:set_node_position_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)
             }
+            "world:set_node_scale_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::SetNodeScaleByTag)
+            }
             "world:set_node_visibility_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
             }
             "world:set_node_text_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeTextByTag)
+            }
+            "world:set_node_text_color_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::SetNodeTextColorByTag)
             }
             "world:reorder_node_by_tag" => {
                 Self::World(WorldStateMachineApiSchema::ReorderNodeByTag)

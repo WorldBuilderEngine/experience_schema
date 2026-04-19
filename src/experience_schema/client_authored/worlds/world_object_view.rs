@@ -205,6 +205,7 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 "position" => Some(static_text.position_xyz.to_vec()),
                 "scale" => Some(static_text.scale_xy.to_vec()),
                 "rotation_deg" => Some(static_text.rotation_deg_xyz.to_vec()),
+                "color_rgba" => static_text.color_rgba.map(|value| value.to_vec()),
                 "outline_color_rgba" => static_text
                     .outline_color_rgba
                     .map(|value| value.to_vec()),
