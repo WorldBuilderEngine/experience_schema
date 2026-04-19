@@ -1,4 +1,5 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
+use crate::client_authored::state_machines::state_machine_boot_named_handle_binding_schema::StateMachineBootNamedHandleBindingSchema;
 use crate::client_authored::state_machines::state_machine_local_field_schema::StateMachineLocalFieldSchema;
 use crate::client_authored::state_machines::state_machine_local_schema::StateMachineLocalSchema;
 use crate::client_authored::state_machines::state_machine_node_schema::{
@@ -22,6 +23,8 @@ pub struct StateMachineSchema {
     #[serde(default)]
     pub machine_locals: Vec<StateMachineLocalSchema>,
     #[serde(default)]
+    pub boot_named_handle_bindings: Vec<StateMachineBootNamedHandleBindingSchema>,
+    #[serde(default)]
     pub machine_owned_collection_capacities: Vec<StateMachineOwnedCollectionCapacitySchema>,
     #[serde(default)]
     pub nodes: Vec<StateMachineNodeSchema>,
@@ -43,6 +46,7 @@ impl StateMachineSchema {
             initial_state_name: initial_state_name.into(),
             deterministic_seed,
             machine_locals: Vec::new(),
+            boot_named_handle_bindings: Vec::new(),
             machine_owned_collection_capacities: Vec::new(),
             nodes: Vec::new(),
         }
@@ -50,6 +54,10 @@ impl StateMachineSchema {
 
     pub fn machine_locals(&self) -> &[StateMachineLocalSchema] {
         self.machine_locals.as_slice()
+    }
+
+    pub fn boot_named_handle_bindings(&self) -> &[StateMachineBootNamedHandleBindingSchema] {
+        self.boot_named_handle_bindings.as_slice()
     }
 
     pub fn register_machine_local(&mut self, local_id: impl Into<String>, properties: PropertyMap) {
@@ -104,6 +112,25 @@ impl StateMachineSchema {
     ) -> Option<&crate::properties::property::Property> {
         self.machine_local(local_id)
             .and_then(|machine_local| machine_local.field_value(field_id))
+    }
+
+    pub fn register_boot_named_handle_binding(
+        &mut self,
+        binding: StateMachineBootNamedHandleBindingSchema,
+    ) {
+        if let Some(existing_binding_index) =
+            self.boot_named_handle_bindings
+                .iter()
+                .position(|existing_binding| {
+                    existing_binding.local_id == binding.local_id
+                        && existing_binding.property_id == binding.property_id
+                })
+        {
+            self.boot_named_handle_bindings[existing_binding_index] = binding;
+            return;
+        }
+
+        self.boot_named_handle_bindings.push(binding);
     }
 
     pub fn add_transition(
@@ -215,8 +242,10 @@ struct StateMachineSchemaBinaryWire {
     #[prost(message, repeated, tag = "18")]
     machine_locals: Vec<StateMachineLocalSchema>,
     #[prost(message, repeated, tag = "19")]
-    machine_owned_collection_capacities: Vec<StateMachineOwnedCollectionCapacitySchema>,
+    boot_named_handle_bindings: Vec<StateMachineBootNamedHandleBindingSchema>,
     #[prost(message, repeated, tag = "20")]
+    machine_owned_collection_capacities: Vec<StateMachineOwnedCollectionCapacitySchema>,
+    #[prost(message, repeated, tag = "21")]
     nodes: Vec<StateMachineNodeSchema>,
 }
 
@@ -226,6 +255,7 @@ impl From<StateMachineSchema> for StateMachineSchemaBinaryWire {
             initial_state_name,
             deterministic_seed,
             machine_locals,
+            boot_named_handle_bindings,
             machine_owned_collection_capacities,
             nodes,
         } = value;
@@ -233,6 +263,7 @@ impl From<StateMachineSchema> for StateMachineSchemaBinaryWire {
             initial_state_name,
             deterministic_seed,
             machine_locals,
+            boot_named_handle_bindings,
             machine_owned_collection_capacities,
             nodes,
         }
@@ -245,6 +276,7 @@ impl StateMachineSchemaBinaryWire {
             initial_state_name: self.initial_state_name,
             deterministic_seed: self.deterministic_seed,
             machine_locals: self.machine_locals,
+            boot_named_handle_bindings: self.boot_named_handle_bindings,
             machine_owned_collection_capacities: self.machine_owned_collection_capacities,
             nodes: self.nodes,
         })
@@ -254,6 +286,9 @@ impl StateMachineSchemaBinaryWire {
 #[cfg(test)]
 mod tests {
     use super::StateMachineSchema;
+    use crate::client_authored::state_machines::state_machine_boot_named_handle_binding_schema::{
+        StateMachineBootNamedHandleBindingSchema, StateMachineBootNamedHandleKindSchema,
+    };
     use crate::client_authored::state_machines::state_machine_owned_collection_capacity_schema::StateMachineOwnedCollectionCapacitySchema;
     use prost::Message;
 
@@ -285,6 +320,7 @@ mod tests {
         .expect("legacy proof metadata fields should be ignored");
 
         assert_eq!(schema.initial_state_name, "idle");
+        assert!(schema.boot_named_handle_bindings.is_empty());
         assert!(schema.machine_owned_collection_capacities.is_empty());
     }
 
@@ -325,6 +361,34 @@ mod tests {
         assert_eq!(
             schema.machine_owned_collection_capacity("runtime", "inventory"),
             Some(5)
+        );
+    }
+
+    #[test]
+    fn register_boot_named_handle_binding_replaces_existing_declaration() {
+        let mut schema = StateMachineSchema::new("idle");
+
+        schema.register_boot_named_handle_binding(StateMachineBootNamedHandleBindingSchema::new(
+            "runtime_values",
+            "target_handle_bytes",
+            StateMachineBootNamedHandleKindSchema::Node,
+            "ui:panel",
+        ));
+        schema.register_boot_named_handle_binding(StateMachineBootNamedHandleBindingSchema::new(
+            "runtime_values",
+            "target_handle_bytes",
+            StateMachineBootNamedHandleKindSchema::Camera,
+            "camera:primary",
+        ));
+
+        assert_eq!(
+            schema.boot_named_handle_bindings,
+            vec![StateMachineBootNamedHandleBindingSchema::new(
+                "runtime_values",
+                "target_handle_bytes",
+                StateMachineBootNamedHandleKindSchema::Camera,
+                "camera:primary",
+            )]
         );
     }
 
