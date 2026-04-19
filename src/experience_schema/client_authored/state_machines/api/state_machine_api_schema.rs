@@ -190,30 +190,20 @@ impl StateMachineApiSchema {
                 "string:format_float_bytes"
             }
             Self::String(StringStateMachineApiSchema::ArrayLength) => "string:array_length",
-            Self::World(WorldStateMachineApiSchema::SetNodePositionByTag) => {
-                "world:set_node_position_by_tag"
+            Self::World(WorldStateMachineApiSchema::SetNodePosition) => "world:set_node_position",
+            Self::World(WorldStateMachineApiSchema::SetNodeScale) => "world:set_node_scale",
+            Self::World(WorldStateMachineApiSchema::SetNodeVisibility) => {
+                "world:set_node_visibility"
             }
-            Self::World(WorldStateMachineApiSchema::SetNodeScaleByTag) => {
-                "world:set_node_scale_by_tag"
+            Self::World(WorldStateMachineApiSchema::SetNodeText) => "world:set_node_text",
+            Self::World(WorldStateMachineApiSchema::SetNodeTextColor) => {
+                "world:set_node_text_color"
             }
-            Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag) => {
-                "world:set_node_visibility_by_tag"
+            Self::World(WorldStateMachineApiSchema::ReorderNode) => "world:reorder_node",
+            Self::World(WorldStateMachineApiSchema::FollowActiveCamera) => {
+                "world:follow_active_camera"
             }
-            Self::World(WorldStateMachineApiSchema::SetNodeTextByTag) => {
-                "world:set_node_text_by_tag"
-            }
-            Self::World(WorldStateMachineApiSchema::SetNodeTextColorByTag) => {
-                "world:set_node_text_color_by_tag"
-            }
-            Self::World(WorldStateMachineApiSchema::ReorderNodeByTag) => {
-                "world:reorder_node_by_tag"
-            }
-            Self::World(WorldStateMachineApiSchema::FollowActiveCameraByTag) => {
-                "world:follow_active_camera_by_tag"
-            }
-            Self::World(WorldStateMachineApiSchema::CallStateMachine) => {
-                "world:call_state_machine"
-            }
+            Self::World(WorldStateMachineApiSchema::CallStateMachine) => "world:call_state_machine",
             Self::World(WorldStateMachineApiSchema::RemoveStateMachine) => {
                 "world:remove_state_machine"
             }
@@ -382,30 +372,28 @@ impl StateMachineApiSchema {
                 Self::String(StringStateMachineApiSchema::FormatFloatBytes)
             }
             "string:array_length" => Self::String(StringStateMachineApiSchema::ArrayLength),
-            "world:set_node_position_by_tag" => {
-                Self::World(WorldStateMachineApiSchema::SetNodePositionByTag)
+            "world:set_node_position" | "world:set_node_position_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::SetNodePosition)
             }
-            "world:set_node_scale_by_tag" => {
-                Self::World(WorldStateMachineApiSchema::SetNodeScaleByTag)
+            "world:set_node_scale" | "world:set_node_scale_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::SetNodeScale)
             }
-            "world:set_node_visibility_by_tag" => {
-                Self::World(WorldStateMachineApiSchema::SetNodeVisibilityByTag)
+            "world:set_node_visibility" | "world:set_node_visibility_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::SetNodeVisibility)
             }
-            "world:set_node_text_by_tag" => {
-                Self::World(WorldStateMachineApiSchema::SetNodeTextByTag)
+            "world:set_node_text" | "world:set_node_text_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::SetNodeText)
             }
-            "world:set_node_text_color_by_tag" => {
-                Self::World(WorldStateMachineApiSchema::SetNodeTextColorByTag)
+            "world:set_node_text_color" | "world:set_node_text_color_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::SetNodeTextColor)
             }
-            "world:reorder_node_by_tag" => {
-                Self::World(WorldStateMachineApiSchema::ReorderNodeByTag)
+            "world:reorder_node" | "world:reorder_node_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::ReorderNode)
             }
-            "world:follow_active_camera_by_tag" => {
-                Self::World(WorldStateMachineApiSchema::FollowActiveCameraByTag)
+            "world:follow_active_camera" | "world:follow_active_camera_by_tag" => {
+                Self::World(WorldStateMachineApiSchema::FollowActiveCamera)
             }
-            "world:call_state_machine" => {
-                Self::World(WorldStateMachineApiSchema::CallStateMachine)
-            }
+            "world:call_state_machine" => Self::World(WorldStateMachineApiSchema::CallStateMachine),
             "world:remove_state_machine" => {
                 Self::World(WorldStateMachineApiSchema::RemoveStateMachine)
             }
@@ -496,9 +484,9 @@ mod tests {
 
     #[test]
     fn canonical_identifier_round_trips_as_string() {
-        let api = StateMachineApiSchema::from("world:set_node_visibility_by_tag");
+        let api = StateMachineApiSchema::from("world:set_node_visibility");
         let serialized = serde_json::to_string(&api).expect("serialize");
-        assert_eq!(serialized, "\"world:set_node_visibility_by_tag\"");
+        assert_eq!(serialized, "\"world:set_node_visibility\"");
 
         let deserialized: StateMachineApiSchema =
             serde_json::from_str(&serialized).expect("deserialize");
@@ -542,9 +530,16 @@ mod tests {
 
     #[test]
     fn world_reorder_identifier_round_trips_as_canonical() {
-        let api = StateMachineApiSchema::from("world:reorder_node_by_tag");
+        let api = StateMachineApiSchema::from("world:reorder_node");
         let serialized = serde_json::to_string(&api).expect("serialize");
-        assert_eq!(serialized, "\"world:reorder_node_by_tag\"");
+        assert_eq!(serialized, "\"world:reorder_node\"");
+    }
+
+    #[test]
+    fn legacy_world_tag_identifier_deserializes_to_selector_canonical_identifier() {
+        let api = StateMachineApiSchema::from("world:set_node_visibility_by_tag");
+        let serialized = serde_json::to_string(&api).expect("serialize");
+        assert_eq!(serialized, "\"world:set_node_visibility\"");
     }
 
     #[test]

@@ -79,15 +79,13 @@ impl From<StateMachineNodeTypeSchema> for StateMachineNodeTypeBinaryWire {
                 api,
                 args_local_id,
                 emitted_local_event_names,
-            } => {
-                state_machine_node_type_binary_wire::NodeType::ApiDispatch(
-                    ApiDispatchNodeTypeBinaryWire {
-                        api: Some(api),
-                        args_local_id,
-                        emitted_local_event_names,
-                    },
-                )
-            }
+            } => state_machine_node_type_binary_wire::NodeType::ApiDispatch(
+                ApiDispatchNodeTypeBinaryWire {
+                    api: Some(api),
+                    args_local_id,
+                    emitted_local_event_names,
+                },
+            ),
         });
         Self { node_type }
     }
@@ -163,7 +161,7 @@ mod tests {
     fn deserializes_api_dispatch_from_api_identifier_field() {
         let node_type_json = r#"{
             "ApiDispatch": {
-                "api_identifier": "world:set_node_visibility_by_tag",
+                "api_identifier": "world:set_node_visibility",
                 "args_local_id": "args_visibility"
             }
         }"#;
@@ -174,7 +172,7 @@ mod tests {
         assert_eq!(
             parsed_node_type,
             StateMachineNodeTypeSchema::ApiDispatch {
-                api: StateMachineApiSchema::from("world:set_node_visibility_by_tag"),
+                api: StateMachineApiSchema::from("world:set_node_visibility"),
                 args_local_id: Some("args_visibility".to_string()),
                 emitted_local_event_names: Vec::new(),
             }
