@@ -30,6 +30,23 @@ impl Default for StateMachineApiSchema {
 }
 
 impl StateMachineApiSchema {
+    fn legacy_selector_alias_replacement(identifier: &str) -> Option<&'static str> {
+        match identifier {
+            "physics2d:set_node_linear_velocity_by_tag" => {
+                Some("physics2d:set_node_linear_velocity")
+            }
+            "physics2d:add_node_force_by_tag" => Some("physics2d:add_node_force"),
+            "world:set_node_position_by_tag" => Some("world:set_node_position"),
+            "world:set_node_scale_by_tag" => Some("world:set_node_scale"),
+            "world:set_node_visibility_by_tag" => Some("world:set_node_visibility"),
+            "world:set_node_text_by_tag" => Some("world:set_node_text"),
+            "world:set_node_text_color_by_tag" => Some("world:set_node_text_color"),
+            "world:reorder_node_by_tag" => Some("world:reorder_node"),
+            "world:follow_active_camera_by_tag" => Some("world:follow_active_camera"),
+            _ => None,
+        }
+    }
+
     pub fn as_str(&self) -> &str {
         match self {
             Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers) => {
@@ -319,10 +336,10 @@ impl StateMachineApiSchema {
             "math:transform_direction" => Self::Math(MathStateMachineApiSchema::TransformDirection),
             "math:transform_point" => Self::Math(MathStateMachineApiSchema::TransformPoint),
             "math:transform_vector" => Self::Math(MathStateMachineApiSchema::TransformVector),
-            "physics2d:set_node_linear_velocity" | "physics2d:set_node_linear_velocity_by_tag" => {
+            "physics2d:set_node_linear_velocity" => {
                 Self::Physics2d(Physics2dStateMachineApiSchema::SetNodeLinearVelocity)
             }
-            "physics2d:add_node_force" | "physics2d:add_node_force_by_tag" => {
+            "physics2d:add_node_force" => {
                 Self::Physics2d(Physics2dStateMachineApiSchema::AddNodeForce)
             }
             "physics2d:step_and_emit_collision_events" => {
@@ -372,25 +389,25 @@ impl StateMachineApiSchema {
                 Self::String(StringStateMachineApiSchema::FormatFloatBytes)
             }
             "string:array_length" => Self::String(StringStateMachineApiSchema::ArrayLength),
-            "world:set_node_position" | "world:set_node_position_by_tag" => {
+            "world:set_node_position" => {
                 Self::World(WorldStateMachineApiSchema::SetNodePosition)
             }
-            "world:set_node_scale" | "world:set_node_scale_by_tag" => {
+            "world:set_node_scale" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeScale)
             }
-            "world:set_node_visibility" | "world:set_node_visibility_by_tag" => {
+            "world:set_node_visibility" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeVisibility)
             }
-            "world:set_node_text" | "world:set_node_text_by_tag" => {
+            "world:set_node_text" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeText)
             }
-            "world:set_node_text_color" | "world:set_node_text_color_by_tag" => {
+            "world:set_node_text_color" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeTextColor)
             }
-            "world:reorder_node" | "world:reorder_node_by_tag" => {
+            "world:reorder_node" => {
                 Self::World(WorldStateMachineApiSchema::ReorderNode)
             }
-            "world:follow_active_camera" | "world:follow_active_camera_by_tag" => {
+            "world:follow_active_camera" => {
                 Self::World(WorldStateMachineApiSchema::FollowActiveCamera)
             }
             "world:call_state_machine" => Self::World(WorldStateMachineApiSchema::CallStateMachine),
@@ -428,6 +445,13 @@ impl<'de> Deserialize<'de> for StateMachineApiSchema {
             return Err(de::Error::custom(
                 "state machine API in schema must not be blank",
             ));
+        }
+        if let Some(canonical_identifier) =
+            Self::legacy_selector_alias_replacement(trimmed_identifier)
+        {
+            return Err(de::Error::custom(format!(
+                "legacy state machine API '{trimmed_identifier}' is no longer accepted in authored schema; use '{canonical_identifier}'"
+            )));
         }
         Ok(Self::from_identifier(trimmed_identifier.to_string()))
     }
@@ -536,17 +560,51 @@ mod tests {
     }
 
     #[test]
-    fn legacy_world_tag_identifier_deserializes_to_selector_canonical_identifier() {
+    fn legacy_world_tag_identifier_becomes_custom_when_constructed_programmatically() {
         let api = StateMachineApiSchema::from("world:set_node_visibility_by_tag");
-        let serialized = serde_json::to_string(&api).expect("serialize");
-        assert_eq!(serialized, "\"world:set_node_visibility\"");
+        assert_eq!(
+            api,
+            StateMachineApiSchema::Custom("world:set_node_visibility_by_tag".to_string())
+        );
     }
 
     #[test]
-    fn legacy_physics_tag_identifier_deserializes_to_selector_canonical_identifier() {
+    fn legacy_physics_tag_identifier_becomes_custom_when_constructed_programmatically() {
         let api = StateMachineApiSchema::from("physics2d:set_node_linear_velocity_by_tag");
-        let serialized = serde_json::to_string(&api).expect("serialize");
-        assert_eq!(serialized, "\"physics2d:set_node_linear_velocity\"");
+        assert_eq!(
+            api,
+            StateMachineApiSchema::Custom(
+                "physics2d:set_node_linear_velocity_by_tag".to_string()
+            )
+        );
+    }
+
+    #[test]
+    fn deserialization_rejects_legacy_world_tag_identifier_with_canonical_replacement() {
+        let error = serde_json::from_str::<StateMachineApiSchema>(
+            "\"world:set_node_visibility_by_tag\"",
+        )
+        .expect_err("legacy alias should fail closed");
+        assert!(
+            error
+                .to_string()
+                .contains("use 'world:set_node_visibility'"),
+            "unexpected error: {error}"
+        );
+    }
+
+    #[test]
+    fn deserialization_rejects_legacy_physics_tag_identifier_with_canonical_replacement() {
+        let error = serde_json::from_str::<StateMachineApiSchema>(
+            "\"physics2d:set_node_linear_velocity_by_tag\"",
+        )
+        .expect_err("legacy alias should fail closed");
+        assert!(
+            error
+                .to_string()
+                .contains("use 'physics2d:set_node_linear_velocity'"),
+            "unexpected error: {error}"
+        );
     }
 
     #[test]
