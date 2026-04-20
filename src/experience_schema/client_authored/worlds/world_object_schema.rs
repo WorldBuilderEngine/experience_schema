@@ -187,8 +187,8 @@ mod tests {
             },
             is_active_camera: true,
             debug_movement_units_per_second: 240.0,
-            node_tag: Some(" camera:main ".to_string()),
-            follow_target_node_tag: None,
+            named_handle: Some(" camera:main ".to_string()),
+            follow_target_named_handle: None,
             follow_target_distance_xyz: Some([4.0, 5.0, 6.0]),
             follow_units_per_second_xyz: Some([7.0, 8.0, 9.0]),
             arm_distance: Some(10.0),
@@ -198,7 +198,7 @@ mod tests {
 
         assert!(world_object.properties.is_empty());
         assert_eq!(world_object_view.object_type(), Some("camera"));
-        assert_eq!(world_object_view.node_tag().as_deref(), Some("camera:main"));
+        assert_eq!(world_object_view.named_handle().as_deref(), Some("camera:main"));
         assert_eq!(
             world_object_view.float_array("position"),
             Some(vec![1.0, 2.0, 3.0])
@@ -301,8 +301,8 @@ mod tests {
             },
             is_active_camera: false,
             debug_movement_units_per_second: 0.0,
-            node_tag: Some("camera:main".to_string()),
-            follow_target_node_tag: None,
+            named_handle: Some("camera:main".to_string()),
+            follow_target_named_handle: None,
             follow_target_distance_xyz: None,
             follow_units_per_second_xyz: None,
             arm_distance: None,

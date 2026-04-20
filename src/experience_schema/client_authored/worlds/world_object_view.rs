@@ -234,22 +234,22 @@ impl<'a> AuthoredWorldObjectView<'a> {
     pub fn string(&self, property_name: &str) -> Option<&'a String> {
         match self.world_object_schema.kinded.as_ref() {
             Some(KindedWorldObjectSchema::Camera(camera)) => match property_name {
-                "node_tag" => camera.node_tag.as_ref(),
-                "follow_target_node_tag" => camera.follow_target_node_tag.as_ref(),
+                "named_handle" | "node_tag" => camera.named_handle.as_ref(),
+                "follow_target_named_handle" | "follow_target_node_tag" => camera.follow_target_named_handle.as_ref(),
                 "follow_scroll_type" => camera.follow_scroll_type.as_ref(),
                 "camera_projection" => None,
                 _ => None,
             },
             Some(KindedWorldObjectSchema::StaticSprite(static_sprite)) => match property_name {
-                "node_tag" => static_sprite.node_tag.as_ref(),
-                "parent_node_tag" => static_sprite.parent_node_tag.as_ref(),
+                "named_handle" | "node_tag" => static_sprite.named_handle.as_ref(),
+                "parent_named_handle" | "parent_node_tag" => static_sprite.parent_named_handle.as_ref(),
                 "scene_id" => static_sprite.scene_id.as_ref(),
                 _ => None,
             },
             Some(KindedWorldObjectSchema::StaticText(static_text)) => match property_name {
                 "text" => Some(&static_text.text),
-                "node_tag" => static_text.node_tag.as_ref(),
-                "parent_node_tag" => static_text.parent_node_tag.as_ref(),
+                "named_handle" | "node_tag" => static_text.named_handle.as_ref(),
+                "parent_named_handle" | "parent_node_tag" => static_text.parent_named_handle.as_ref(),
                 "scene_id" => static_text.scene_id.as_ref(),
                 _ => None,
             },
@@ -302,9 +302,33 @@ impl<'a> AuthoredWorldObjectView<'a> {
                     _ => None,
                 }
             }
-            _ => self
-                .property_view
-                .and_then(|property_view| property_view.string(property_name)),
+            _ => match property_name {
+                "named_handle" => self
+                    .property_view
+                    .and_then(|property_view| property_view.string("named_handle").or_else(|| property_view.string("node_tag"))),
+                "parent_named_handle" => self
+                    .property_view
+                    .and_then(|property_view| property_view.string("parent_named_handle").or_else(|| property_view.string("parent_node_tag"))),
+                "follow_target_named_handle" => self.property_view.and_then(|property_view| {
+                    property_view
+                        .string("follow_target_named_handle")
+                        .or_else(|| property_view.string("follow_target_node_tag"))
+                }),
+                "node_tag" => self
+                    .property_view
+                    .and_then(|property_view| property_view.string("node_tag").or_else(|| property_view.string("named_handle"))),
+                "parent_node_tag" => self
+                    .property_view
+                    .and_then(|property_view| property_view.string("parent_node_tag").or_else(|| property_view.string("parent_named_handle"))),
+                "follow_target_node_tag" => self.property_view.and_then(|property_view| {
+                    property_view
+                        .string("follow_target_node_tag")
+                        .or_else(|| property_view.string("follow_target_named_handle"))
+                }),
+                _ => self
+                    .property_view
+                    .and_then(|property_view| property_view.string(property_name)),
+            },
         }
     }
 
@@ -397,12 +421,27 @@ impl<'a> AuthoredWorldObjectView<'a> {
             .map(|sanitized_property_value| sanitized_property_value.to_string())
     }
 
+    pub fn named_handle(&self) -> Option<String> {
+        self.sanitized_string("named_handle")
+            .or_else(|| self.sanitized_string("node_tag"))
+    }
+
     pub fn node_tag(&self) -> Option<String> {
-        self.sanitized_string("node_tag")
+        self.named_handle()
+    }
+
+    pub fn parent_named_handle(&self) -> Option<String> {
+        self.sanitized_string("parent_named_handle")
+            .or_else(|| self.sanitized_string("parent_node_tag"))
     }
 
     pub fn parent_node_tag(&self) -> Option<String> {
-        self.sanitized_string("parent_node_tag")
+        self.parent_named_handle()
+    }
+
+    pub fn follow_target_named_handle(&self) -> Option<String> {
+        self.sanitized_string("follow_target_named_handle")
+            .or_else(|| self.sanitized_string("follow_target_node_tag"))
     }
 
     pub fn positive_dimension(&self, property_name: &str) -> u32 {
@@ -427,8 +466,16 @@ impl<'a> AuthoredCameraObjectView<'a> {
         self.world_object_view.property_view()
     }
 
+    pub fn named_handle(&self) -> Option<String> {
+        self.world_object_view.named_handle()
+    }
+
     pub fn node_tag(&self) -> Option<String> {
-        self.world_object_view.node_tag()
+        self.named_handle()
+    }
+
+    pub fn follow_target_named_handle(&self) -> Option<String> {
+        self.world_object_view.follow_target_named_handle()
     }
 
     pub fn bool(&self, property_name: &str) -> Option<bool> {
@@ -458,12 +505,20 @@ impl<'a> AuthoredStaticSpriteObjectView<'a> {
         self.world_object_view.asset_ref("asset_ref")
     }
 
+    pub fn named_handle(&self) -> Option<String> {
+        self.world_object_view.named_handle()
+    }
+
     pub fn node_tag(&self) -> Option<String> {
-        self.world_object_view.node_tag()
+        self.named_handle()
+    }
+
+    pub fn parent_named_handle(&self) -> Option<String> {
+        self.world_object_view.parent_named_handle()
     }
 
     pub fn parent_node_tag(&self) -> Option<String> {
-        self.world_object_view.parent_node_tag()
+        self.parent_named_handle()
     }
 
     pub fn bool(&self, property_name: &str) -> Option<bool> {
@@ -493,12 +548,20 @@ impl<'a> AuthoredStaticTextObjectView<'a> {
         self.world_object_view.sanitized_string("text")
     }
 
+    pub fn named_handle(&self) -> Option<String> {
+        self.world_object_view.named_handle()
+    }
+
     pub fn node_tag(&self) -> Option<String> {
-        self.world_object_view.node_tag()
+        self.named_handle()
+    }
+
+    pub fn parent_named_handle(&self) -> Option<String> {
+        self.world_object_view.parent_named_handle()
     }
 
     pub fn parent_node_tag(&self) -> Option<String> {
-        self.world_object_view.parent_node_tag()
+        self.parent_named_handle()
     }
 
     pub fn bool(&self, property_name: &str) -> Option<bool> {
@@ -547,7 +610,7 @@ mod tests {
     fn authored_world_object_view_reads_canonical_fields() {
         let mut properties = PropertyMap::new();
         properties.insert_string("object_type", "static_sprite");
-        properties.insert_string("node_tag", " sprite:tag ");
+        properties.insert_string("named_handle", " sprite:tag ");
         properties.insert_int("tile_width_px", 12);
         properties.insert_asset_ref(
             "asset_ref",
@@ -562,7 +625,7 @@ mod tests {
         let view = AuthoredWorldObjectView::new(&world_object_schema);
 
         assert_eq!(view.kind(), Some(AuthoredWorldObjectKind::StaticSprite));
-        assert_eq!(view.node_tag().as_deref(), Some("sprite:tag"));
+        assert_eq!(view.named_handle().as_deref(), Some("sprite:tag"));
         assert_eq!(view.positive_dimension("tile_width_px"), 12);
         assert_eq!(
             view.asset_ref("asset_ref")
@@ -603,7 +666,7 @@ mod tests {
     #[test]
     fn authored_world_object_view_ignores_blank_tag_and_non_positive_dimensions() {
         let mut properties = PropertyMap::new();
-        properties.insert_string("node_tag", "   ");
+        properties.insert_string("named_handle", "   ");
         properties.insert_int("tile_width_px", 0);
 
         let world_object_schema = WorldObjectSchema {
@@ -613,7 +676,7 @@ mod tests {
         };
         let view = AuthoredWorldObjectView::new(&world_object_schema);
 
-        assert_eq!(view.node_tag(), None);
+        assert_eq!(view.named_handle(), None);
         assert_eq!(view.positive_dimension("tile_width_px"), 0);
         assert_eq!(view.kind(), None);
     }
