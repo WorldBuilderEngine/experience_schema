@@ -189,9 +189,9 @@ impl StateMachineTransitionTriggerBinaryWire {
             Some(state_machine_transition_trigger_binary_wire::Trigger::BroadcastEvent(value)) => {
                 StateMachineTransitionTriggerSchema::BroadcastEvent(value)
             }
-            Some(state_machine_transition_trigger_binary_wire::Trigger::LocalContinuation(value)) => {
-                StateMachineTransitionTriggerSchema::LocalContinuation(value)
-            }
+            Some(state_machine_transition_trigger_binary_wire::Trigger::LocalContinuation(
+                value,
+            )) => StateMachineTransitionTriggerSchema::LocalContinuation(value),
             Some(state_machine_transition_trigger_binary_wire::Trigger::DirectCallEntrypoint(
                 value,
             )) => StateMachineTransitionTriggerSchema::DirectCallEntrypoint {

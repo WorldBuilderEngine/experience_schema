@@ -21,7 +21,11 @@ pub struct CameraObjectSchema {
     pub debug_movement_units_per_second: f64,
     #[serde(default, alias = "node_tag", skip_serializing_if = "Option::is_none")]
     pub named_handle: Option<String>,
-    #[serde(default, alias = "follow_target_node_tag", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        alias = "follow_target_node_tag",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub follow_target_named_handle: Option<String>,
     pub follow_target_distance_xyz: Option<[f64; 3]>,
     pub follow_units_per_second_xyz: Option<[f64; 3]>,
@@ -74,7 +78,11 @@ pub struct StaticSpriteObjectSchema {
     pub is_visible: bool,
     #[serde(default, alias = "node_tag", skip_serializing_if = "Option::is_none")]
     pub named_handle: Option<String>,
-    #[serde(default, alias = "parent_node_tag", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        alias = "parent_node_tag",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub parent_named_handle: Option<String>,
     pub scene_id: Option<String>,
     pub visible_when_scene_active: Option<bool>,
@@ -120,7 +128,11 @@ pub struct StaticTextObjectSchema {
     pub is_visible: bool,
     #[serde(default, alias = "node_tag", skip_serializing_if = "Option::is_none")]
     pub named_handle: Option<String>,
-    #[serde(default, alias = "parent_node_tag", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        alias = "parent_node_tag",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub parent_named_handle: Option<String>,
     pub scene_id: Option<String>,
     pub interaction_enabled: bool,

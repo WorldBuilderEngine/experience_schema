@@ -235,21 +235,27 @@ impl<'a> AuthoredWorldObjectView<'a> {
         match self.world_object_schema.kinded.as_ref() {
             Some(KindedWorldObjectSchema::Camera(camera)) => match property_name {
                 "named_handle" | "node_tag" => camera.named_handle.as_ref(),
-                "follow_target_named_handle" | "follow_target_node_tag" => camera.follow_target_named_handle.as_ref(),
+                "follow_target_named_handle" | "follow_target_node_tag" => {
+                    camera.follow_target_named_handle.as_ref()
+                }
                 "follow_scroll_type" => camera.follow_scroll_type.as_ref(),
                 "camera_projection" => None,
                 _ => None,
             },
             Some(KindedWorldObjectSchema::StaticSprite(static_sprite)) => match property_name {
                 "named_handle" | "node_tag" => static_sprite.named_handle.as_ref(),
-                "parent_named_handle" | "parent_node_tag" => static_sprite.parent_named_handle.as_ref(),
+                "parent_named_handle" | "parent_node_tag" => {
+                    static_sprite.parent_named_handle.as_ref()
+                }
                 "scene_id" => static_sprite.scene_id.as_ref(),
                 _ => None,
             },
             Some(KindedWorldObjectSchema::StaticText(static_text)) => match property_name {
                 "text" => Some(&static_text.text),
                 "named_handle" | "node_tag" => static_text.named_handle.as_ref(),
-                "parent_named_handle" | "parent_node_tag" => static_text.parent_named_handle.as_ref(),
+                "parent_named_handle" | "parent_node_tag" => {
+                    static_text.parent_named_handle.as_ref()
+                }
                 "scene_id" => static_text.scene_id.as_ref(),
                 _ => None,
             },
@@ -303,23 +309,31 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 }
             }
             _ => match property_name {
-                "named_handle" => self
-                    .property_view
-                    .and_then(|property_view| property_view.string("named_handle").or_else(|| property_view.string("node_tag"))),
-                "parent_named_handle" => self
-                    .property_view
-                    .and_then(|property_view| property_view.string("parent_named_handle").or_else(|| property_view.string("parent_node_tag"))),
+                "named_handle" => self.property_view.and_then(|property_view| {
+                    property_view
+                        .string("named_handle")
+                        .or_else(|| property_view.string("node_tag"))
+                }),
+                "parent_named_handle" => self.property_view.and_then(|property_view| {
+                    property_view
+                        .string("parent_named_handle")
+                        .or_else(|| property_view.string("parent_node_tag"))
+                }),
                 "follow_target_named_handle" => self.property_view.and_then(|property_view| {
                     property_view
                         .string("follow_target_named_handle")
                         .or_else(|| property_view.string("follow_target_node_tag"))
                 }),
-                "node_tag" => self
-                    .property_view
-                    .and_then(|property_view| property_view.string("node_tag").or_else(|| property_view.string("named_handle"))),
-                "parent_node_tag" => self
-                    .property_view
-                    .and_then(|property_view| property_view.string("parent_node_tag").or_else(|| property_view.string("parent_named_handle"))),
+                "node_tag" => self.property_view.and_then(|property_view| {
+                    property_view
+                        .string("node_tag")
+                        .or_else(|| property_view.string("named_handle"))
+                }),
+                "parent_node_tag" => self.property_view.and_then(|property_view| {
+                    property_view
+                        .string("parent_node_tag")
+                        .or_else(|| property_view.string("parent_named_handle"))
+                }),
                 "follow_target_node_tag" => self.property_view.and_then(|property_view| {
                     property_view
                         .string("follow_target_node_tag")

@@ -198,7 +198,10 @@ mod tests {
 
         assert!(world_object.properties.is_empty());
         assert_eq!(world_object_view.object_type(), Some("camera"));
-        assert_eq!(world_object_view.named_handle().as_deref(), Some("camera:main"));
+        assert_eq!(
+            world_object_view.named_handle().as_deref(),
+            Some("camera:main")
+        );
         assert_eq!(
             world_object_view.float_array("position"),
             Some(vec![1.0, 2.0, 3.0])

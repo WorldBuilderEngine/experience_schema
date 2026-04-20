@@ -389,24 +389,16 @@ impl StateMachineApiSchema {
                 Self::String(StringStateMachineApiSchema::FormatFloatBytes)
             }
             "string:array_length" => Self::String(StringStateMachineApiSchema::ArrayLength),
-            "world:set_node_position" => {
-                Self::World(WorldStateMachineApiSchema::SetNodePosition)
-            }
-            "world:set_node_scale" => {
-                Self::World(WorldStateMachineApiSchema::SetNodeScale)
-            }
+            "world:set_node_position" => Self::World(WorldStateMachineApiSchema::SetNodePosition),
+            "world:set_node_scale" => Self::World(WorldStateMachineApiSchema::SetNodeScale),
             "world:set_node_visibility" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeVisibility)
             }
-            "world:set_node_text" => {
-                Self::World(WorldStateMachineApiSchema::SetNodeText)
-            }
+            "world:set_node_text" => Self::World(WorldStateMachineApiSchema::SetNodeText),
             "world:set_node_text_color" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeTextColor)
             }
-            "world:reorder_node" => {
-                Self::World(WorldStateMachineApiSchema::ReorderNode)
-            }
+            "world:reorder_node" => Self::World(WorldStateMachineApiSchema::ReorderNode),
             "world:follow_active_camera" => {
                 Self::World(WorldStateMachineApiSchema::FollowActiveCamera)
             }
@@ -573,18 +565,15 @@ mod tests {
         let api = StateMachineApiSchema::from("physics2d:set_node_linear_velocity_by_tag");
         assert_eq!(
             api,
-            StateMachineApiSchema::Custom(
-                "physics2d:set_node_linear_velocity_by_tag".to_string()
-            )
+            StateMachineApiSchema::Custom("physics2d:set_node_linear_velocity_by_tag".to_string())
         );
     }
 
     #[test]
     fn deserialization_rejects_migration_only_world_tag_identifier_with_canonical_replacement() {
-        let error = serde_json::from_str::<StateMachineApiSchema>(
-            "\"world:set_node_visibility_by_tag\"",
-        )
-        .expect_err("migration-only alias should fail closed");
+        let error =
+            serde_json::from_str::<StateMachineApiSchema>("\"world:set_node_visibility_by_tag\"")
+                .expect_err("migration-only alias should fail closed");
         assert!(
             error
                 .to_string()
@@ -598,7 +587,7 @@ mod tests {
         let error = serde_json::from_str::<StateMachineApiSchema>(
             "\"physics2d:set_node_linear_velocity_by_tag\"",
         )
-    .expect_err("migration-only alias should fail closed");
+        .expect_err("migration-only alias should fail closed");
         assert!(
             error
                 .to_string()
