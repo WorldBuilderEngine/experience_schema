@@ -30,7 +30,7 @@ impl Default for StateMachineApiSchema {
 }
 
 impl StateMachineApiSchema {
-    fn legacy_selector_alias_replacement(identifier: &str) -> Option<&'static str> {
+    fn migration_only_selector_alias_replacement(identifier: &str) -> Option<&'static str> {
         match identifier {
             "physics2d:set_node_linear_velocity_by_tag" => {
                 Some("physics2d:set_node_linear_velocity")
@@ -447,10 +447,10 @@ impl<'de> Deserialize<'de> for StateMachineApiSchema {
             ));
         }
         if let Some(canonical_identifier) =
-            Self::legacy_selector_alias_replacement(trimmed_identifier)
+            Self::migration_only_selector_alias_replacement(trimmed_identifier)
         {
             return Err(de::Error::custom(format!(
-                "legacy state machine API '{trimmed_identifier}' is no longer accepted in authored schema; use '{canonical_identifier}'"
+                "migration-only state machine API '{trimmed_identifier}' is no longer accepted in authored schema; use '{canonical_identifier}'"
             )));
         }
         Ok(Self::from_identifier(trimmed_identifier.to_string()))
@@ -560,7 +560,7 @@ mod tests {
     }
 
     #[test]
-    fn legacy_world_tag_identifier_becomes_custom_when_constructed_programmatically() {
+    fn migration_only_world_tag_identifier_becomes_custom_when_constructed_programmatically() {
         let api = StateMachineApiSchema::from("world:set_node_visibility_by_tag");
         assert_eq!(
             api,
@@ -569,7 +569,7 @@ mod tests {
     }
 
     #[test]
-    fn legacy_physics_tag_identifier_becomes_custom_when_constructed_programmatically() {
+    fn migration_only_physics_tag_identifier_becomes_custom_when_constructed_programmatically() {
         let api = StateMachineApiSchema::from("physics2d:set_node_linear_velocity_by_tag");
         assert_eq!(
             api,
@@ -580,11 +580,11 @@ mod tests {
     }
 
     #[test]
-    fn deserialization_rejects_legacy_world_tag_identifier_with_canonical_replacement() {
+    fn deserialization_rejects_migration_only_world_tag_identifier_with_canonical_replacement() {
         let error = serde_json::from_str::<StateMachineApiSchema>(
             "\"world:set_node_visibility_by_tag\"",
         )
-        .expect_err("legacy alias should fail closed");
+        .expect_err("migration-only alias should fail closed");
         assert!(
             error
                 .to_string()
@@ -594,11 +594,11 @@ mod tests {
     }
 
     #[test]
-    fn deserialization_rejects_legacy_physics_tag_identifier_with_canonical_replacement() {
+    fn deserialization_rejects_migration_only_physics_tag_identifier_with_canonical_replacement() {
         let error = serde_json::from_str::<StateMachineApiSchema>(
             "\"physics2d:set_node_linear_velocity_by_tag\"",
         )
-        .expect_err("legacy alias should fail closed");
+    .expect_err("migration-only alias should fail closed");
         assert!(
             error
                 .to_string()
