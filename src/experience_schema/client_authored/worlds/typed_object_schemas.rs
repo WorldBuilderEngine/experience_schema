@@ -69,6 +69,24 @@ impl CameraObjectSchema {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StaticSpritePresentationSpaceSchema {
+    World,
+    PresentedViewport,
+    GameplayFrame,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StaticSpritePresentationSizingModeSchema {
+    Authored,
+    Fit,
+    Cover,
+    Stretch,
+    Tile,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StaticSpriteObjectSchema {
     pub asset_ref: AssetRef,
@@ -92,6 +110,11 @@ pub struct StaticSpriteObjectSchema {
     pub intrinsic_height_px: Option<u32>,
     pub repeat_x: Option<bool>,
     pub repeat_y: Option<bool>,
+    pub presentation_space: Option<StaticSpritePresentationSpaceSchema>,
+    pub presentation_sizing_mode: Option<StaticSpritePresentationSizingModeSchema>,
+    pub anchor_normalized_xy: Option<[f64; 2]>,
+    pub pivot_normalized_xy: Option<[f64; 2]>,
+    pub margin_px: Option<[f64; 2]>,
     pub interaction_enabled: bool,
 }
 
@@ -113,6 +136,11 @@ impl StaticSpriteObjectSchema {
             intrinsic_height_px: None,
             repeat_x: None,
             repeat_y: None,
+            presentation_space: None,
+            presentation_sizing_mode: None,
+            anchor_normalized_xy: None,
+            pivot_normalized_xy: None,
+            margin_px: None,
             interaction_enabled: false,
         }
     }
@@ -135,6 +163,11 @@ pub struct StaticTextObjectSchema {
     )]
     pub parent_named_handle: Option<String>,
     pub scene_id: Option<String>,
+    pub presentation_space: Option<StaticSpritePresentationSpaceSchema>,
+    pub presentation_sizing_mode: Option<StaticSpritePresentationSizingModeSchema>,
+    pub anchor_normalized_xy: Option<[f64; 2]>,
+    pub pivot_normalized_xy: Option<[f64; 2]>,
+    pub margin_px: Option<[f64; 2]>,
     pub interaction_enabled: bool,
     pub color_rgba: Option<[f64; 4]>,
     pub outline_color_rgba: Option<[f64; 4]>,
@@ -158,6 +191,11 @@ impl StaticTextObjectSchema {
             named_handle: None,
             parent_named_handle: None,
             scene_id: None,
+            presentation_space: None,
+            presentation_sizing_mode: None,
+            anchor_normalized_xy: None,
+            pivot_normalized_xy: None,
+            margin_px: None,
             interaction_enabled: false,
             color_rgba: None,
             outline_color_rgba: None,

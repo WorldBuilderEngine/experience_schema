@@ -1,5 +1,8 @@
 use super::kinded_world_object_schema::KindedWorldObjectSchema;
 use super::world_object_schema::WorldObjectSchema;
+use crate::client_authored::worlds::typed_object_schemas::{
+    StaticSpritePresentationSizingModeSchema, StaticSpritePresentationSpaceSchema,
+};
 use crate::{
     assets::asset_ref::AssetRef, properties::authored_property_view::AuthoredPropertyView,
     properties::property_map::PropertyMap,
@@ -199,12 +202,18 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 "position" => Some(static_sprite.position_xyz.to_vec()),
                 "scale" => Some(static_sprite.scale_xy.to_vec()),
                 "rotation_deg" => Some(static_sprite.rotation_deg_xyz.to_vec()),
+                "anchor_normalized_xy" => static_sprite.anchor_normalized_xy.map(|value| value.to_vec()),
+                "pivot_normalized_xy" => static_sprite.pivot_normalized_xy.map(|value| value.to_vec()),
+                "margin_px" => static_sprite.margin_px.map(|value| value.to_vec()),
                 _ => self.property_view.and_then(|property_view| property_view.float_array(property_name).cloned()),
             },
             Some(KindedWorldObjectSchema::StaticText(static_text)) => match property_name {
                 "position" => Some(static_text.position_xyz.to_vec()),
                 "scale" => Some(static_text.scale_xy.to_vec()),
                 "rotation_deg" => Some(static_text.rotation_deg_xyz.to_vec()),
+                "anchor_normalized_xy" => static_text.anchor_normalized_xy.map(|value| value.to_vec()),
+                "pivot_normalized_xy" => static_text.pivot_normalized_xy.map(|value| value.to_vec()),
+                "margin_px" => static_text.margin_px.map(|value| value.to_vec()),
                 "color_rgba" => static_text.color_rgba.map(|value| value.to_vec()),
                 "outline_color_rgba" => static_text
                     .outline_color_rgba
@@ -546,6 +555,46 @@ impl<'a> AuthoredStaticSpriteObjectView<'a> {
     pub fn positive_dimension(&self, property_name: &str) -> u32 {
         self.world_object_view.positive_dimension(property_name)
     }
+
+    pub fn presentation_space(&self) -> Option<StaticSpritePresentationSpaceSchema> {
+        match self.world_object_view.world_object_schema.kinded.as_ref() {
+            Some(KindedWorldObjectSchema::StaticSprite(static_sprite)) => {
+                static_sprite.presentation_space
+            }
+            _ => self
+                .world_object_view
+                .property_view
+                .and_then(|property_view| property_view.string("presentation_space"))
+                .and_then(|raw_value| match raw_value.trim() {
+                    "world" => Some(StaticSpritePresentationSpaceSchema::World),
+                    "presented_viewport" => {
+                        Some(StaticSpritePresentationSpaceSchema::PresentedViewport)
+                    }
+                    "gameplay_frame" => Some(StaticSpritePresentationSpaceSchema::GameplayFrame),
+                    _ => None,
+                }),
+        }
+    }
+
+    pub fn presentation_sizing_mode(&self) -> Option<StaticSpritePresentationSizingModeSchema> {
+        match self.world_object_view.world_object_schema.kinded.as_ref() {
+            Some(KindedWorldObjectSchema::StaticSprite(static_sprite)) => {
+                static_sprite.presentation_sizing_mode
+            }
+            _ => self
+                .world_object_view
+                .property_view
+                .and_then(|property_view| property_view.string("presentation_sizing_mode"))
+                .and_then(|raw_value| match raw_value.trim() {
+                    "authored" => Some(StaticSpritePresentationSizingModeSchema::Authored),
+                    "fit" => Some(StaticSpritePresentationSizingModeSchema::Fit),
+                    "cover" => Some(StaticSpritePresentationSizingModeSchema::Cover),
+                    "stretch" => Some(StaticSpritePresentationSizingModeSchema::Stretch),
+                    "tile" => Some(StaticSpritePresentationSizingModeSchema::Tile),
+                    _ => None,
+                }),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -588,6 +637,46 @@ impl<'a> AuthoredStaticTextObjectView<'a> {
 
     pub fn float_array(&self, property_name: &str) -> Option<Vec<f64>> {
         self.world_object_view.float_array(property_name)
+    }
+
+    pub fn presentation_space(&self) -> Option<StaticSpritePresentationSpaceSchema> {
+        match self.world_object_view.world_object_schema.kinded.as_ref() {
+            Some(KindedWorldObjectSchema::StaticText(static_text)) => {
+                static_text.presentation_space
+            }
+            _ => self
+                .world_object_view
+                .property_view
+                .and_then(|property_view| property_view.string("presentation_space"))
+                .and_then(|raw_value| match raw_value.trim() {
+                    "world" => Some(StaticSpritePresentationSpaceSchema::World),
+                    "presented_viewport" => {
+                        Some(StaticSpritePresentationSpaceSchema::PresentedViewport)
+                    }
+                    "gameplay_frame" => Some(StaticSpritePresentationSpaceSchema::GameplayFrame),
+                    _ => None,
+                }),
+        }
+    }
+
+    pub fn presentation_sizing_mode(&self) -> Option<StaticSpritePresentationSizingModeSchema> {
+        match self.world_object_view.world_object_schema.kinded.as_ref() {
+            Some(KindedWorldObjectSchema::StaticText(static_text)) => {
+                static_text.presentation_sizing_mode
+            }
+            _ => self
+                .world_object_view
+                .property_view
+                .and_then(|property_view| property_view.string("presentation_sizing_mode"))
+                .and_then(|raw_value| match raw_value.trim() {
+                    "authored" => Some(StaticSpritePresentationSizingModeSchema::Authored),
+                    "fit" => Some(StaticSpritePresentationSizingModeSchema::Fit),
+                    "cover" => Some(StaticSpritePresentationSizingModeSchema::Cover),
+                    "stretch" => Some(StaticSpritePresentationSizingModeSchema::Stretch),
+                    "tile" => Some(StaticSpritePresentationSizingModeSchema::Tile),
+                    _ => None,
+                }),
+        }
     }
 }
 
