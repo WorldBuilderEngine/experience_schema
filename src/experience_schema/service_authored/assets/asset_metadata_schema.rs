@@ -5,6 +5,11 @@ use serde::{Deserialize, Serialize};
 /// Trusted runtime metadata for a single runtime-visible asset.
 #[derive(Deserialize, Serialize, Clone, PartialEq, Message)]
 pub struct AssetBundleManifestAssetMetadataSchema {
+    /// Optional runtime-visible content hash derived from raw asset bytes during publish/build flows.
+    #[serde(default)]
+    #[prost(string, tag = "2")]
+    pub content_hash: String,
+
     /// Kinded service-authored asset metadata.
     #[serde(flatten)]
     #[prost(
