@@ -205,6 +205,9 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 "anchor_normalized_xy" => static_sprite.anchor_normalized_xy.map(|value| value.to_vec()),
                 "pivot_normalized_xy" => static_sprite.pivot_normalized_xy.map(|value| value.to_vec()),
                 "margin_px" => static_sprite.margin_px.map(|value| value.to_vec()),
+                "interaction_bounds_px" => static_sprite
+                    .interaction_bounds_px
+                    .map(|value| value.to_vec()),
                 _ => self.property_view.and_then(|property_view| property_view.float_array(property_name).cloned()),
             },
             Some(KindedWorldObjectSchema::StaticText(static_text)) => match property_name {

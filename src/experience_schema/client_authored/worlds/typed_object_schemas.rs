@@ -116,6 +116,7 @@ pub struct StaticSpriteObjectSchema {
     pub pivot_normalized_xy: Option<[f64; 2]>,
     pub margin_px: Option<[f64; 2]>,
     pub interaction_enabled: bool,
+    pub interaction_bounds_px: Option<[f64; 4]>,
 }
 
 impl StaticSpriteObjectSchema {
@@ -142,6 +143,7 @@ impl StaticSpriteObjectSchema {
             pivot_normalized_xy: None,
             margin_px: None,
             interaction_enabled: false,
+            interaction_bounds_px: None,
         }
     }
 }
