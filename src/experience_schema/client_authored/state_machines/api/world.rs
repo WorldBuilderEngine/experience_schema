@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub enum WorldStateMachineApiSchema {
     SetNodePosition,
     SetNodeScale,
+    SetNodeSpriteOpacity,
     SetNodeVisibility,
     SetNodeText,
     SetNodeTextColor,

@@ -38,6 +38,7 @@ impl StateMachineApiSchema {
             "physics2d:add_node_force_by_tag" => Some("physics2d:add_node_force"),
             "world:set_node_position_by_tag" => Some("world:set_node_position"),
             "world:set_node_scale_by_tag" => Some("world:set_node_scale"),
+            "world:set_node_sprite_opacity_by_tag" => Some("world:set_node_sprite_opacity"),
             "world:set_node_visibility_by_tag" => Some("world:set_node_visibility"),
             "world:set_node_text_by_tag" => Some("world:set_node_text"),
             "world:set_node_text_color_by_tag" => Some("world:set_node_text_color"),
@@ -209,6 +210,9 @@ impl StateMachineApiSchema {
             Self::String(StringStateMachineApiSchema::ArrayLength) => "string:array_length",
             Self::World(WorldStateMachineApiSchema::SetNodePosition) => "world:set_node_position",
             Self::World(WorldStateMachineApiSchema::SetNodeScale) => "world:set_node_scale",
+            Self::World(WorldStateMachineApiSchema::SetNodeSpriteOpacity) => {
+                "world:set_node_sprite_opacity"
+            }
             Self::World(WorldStateMachineApiSchema::SetNodeVisibility) => {
                 "world:set_node_visibility"
             }
@@ -391,6 +395,9 @@ impl StateMachineApiSchema {
             "string:array_length" => Self::String(StringStateMachineApiSchema::ArrayLength),
             "world:set_node_position" => Self::World(WorldStateMachineApiSchema::SetNodePosition),
             "world:set_node_scale" => Self::World(WorldStateMachineApiSchema::SetNodeScale),
+            "world:set_node_sprite_opacity" => {
+                Self::World(WorldStateMachineApiSchema::SetNodeSpriteOpacity)
+            }
             "world:set_node_visibility" => {
                 Self::World(WorldStateMachineApiSchema::SetNodeVisibility)
             }
