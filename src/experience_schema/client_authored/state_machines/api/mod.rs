@@ -1,4 +1,5 @@
 pub mod animation2d;
+pub mod audio;
 pub mod data_buffer;
 pub mod math;
 pub mod physics2d;
@@ -8,6 +9,7 @@ pub mod string;
 pub mod world;
 
 pub use animation2d::Animation2dStateMachineApiSchema;
+pub use audio::AudioStateMachineApiSchema;
 pub use data_buffer::DataBufferStateMachineApiSchema;
 pub use math::MathStateMachineApiSchema;
 pub use physics2d::Physics2dStateMachineApiSchema;

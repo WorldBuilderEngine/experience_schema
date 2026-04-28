@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub enum StateMachineBootNamedHandleKindSchema {
     Node = 0,
     Camera = 1,
+    Asset = 2,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Message)]

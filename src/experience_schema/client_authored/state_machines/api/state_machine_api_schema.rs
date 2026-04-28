@@ -6,14 +6,15 @@ use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use super::{
-    Animation2dStateMachineApiSchema, DataBufferStateMachineApiSchema, MathStateMachineApiSchema,
-    Physics2dStateMachineApiSchema, RuntimeStateMachineApiSchema, StringStateMachineApiSchema,
-    WorldStateMachineApiSchema,
+    Animation2dStateMachineApiSchema, AudioStateMachineApiSchema, DataBufferStateMachineApiSchema,
+    MathStateMachineApiSchema, Physics2dStateMachineApiSchema, RuntimeStateMachineApiSchema,
+    StringStateMachineApiSchema, WorldStateMachineApiSchema,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum StateMachineApiSchema {
     Animation2d(Animation2dStateMachineApiSchema),
+    Audio(AudioStateMachineApiSchema),
     DataBuffer(DataBufferStateMachineApiSchema),
     Math(MathStateMachineApiSchema),
     Physics2d(Physics2dStateMachineApiSchema),
@@ -53,6 +54,7 @@ impl StateMachineApiSchema {
             Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers) => {
                 "animation2d:step_players"
             }
+            Self::Audio(AudioStateMachineApiSchema::PlaySound) => "audio:play_sound",
             Self::DataBuffer(DataBufferStateMachineApiSchema::Copy) => "data_buffer:copy",
             Self::DataBuffer(DataBufferStateMachineApiSchema::Concat) => "data_buffer:concat",
             Self::DataBuffer(DataBufferStateMachineApiSchema::Alloc) => "data_buffer:alloc",
@@ -238,6 +240,7 @@ impl StateMachineApiSchema {
             "animation2d:step_players" => {
                 Self::Animation2d(Animation2dStateMachineApiSchema::StepPlayers)
             }
+            "audio:play_sound" => Self::Audio(AudioStateMachineApiSchema::PlaySound),
             "data_buffer:copy" => Self::DataBuffer(DataBufferStateMachineApiSchema::Copy),
             "data_buffer:concat" => Self::DataBuffer(DataBufferStateMachineApiSchema::Concat),
             "data_buffer:alloc" => Self::DataBuffer(DataBufferStateMachineApiSchema::Alloc),
