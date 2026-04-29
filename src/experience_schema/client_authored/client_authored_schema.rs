@@ -1,5 +1,7 @@
 use crate::client_authored::{
-    assets::asset_bundles_schema::AssetBundlesSchema, worlds::world_schema::WorldSchema,
+    assets::asset_bundles_schema::AssetBundlesSchema,
+    cursors::cursor_sets_schema::CursorSetsSchema,
+    worlds::world_schema::WorldSchema,
 };
 use crate::properties::{
     compiled_property_layout_schema::CompiledPropertyLayoutsSchema, property_map::PropertyMap,
@@ -31,6 +33,11 @@ pub struct ClientAuthoredSchema {
     #[serde(default)]
     #[prost(message, optional, tag = "4")]
     pub compiled_property_layouts: Option<CompiledPropertyLayoutsSchema>,
+
+    /// Experience-owned cursor art. Empty means the client should use the platform cursor.
+    #[serde(default, skip_serializing_if = "CursorSetsSchema::is_empty")]
+    #[prost(message, required, tag = "5")]
+    pub cursor_sets: CursorSetsSchema,
 }
 
 impl ClientAuthoredSchema {}
@@ -91,6 +98,7 @@ mod tests {
             Some("fixed_height_reveal")
         );
         assert!(client_authored_schema.compiled_property_layouts.is_none());
+        assert!(client_authored_schema.cursor_sets.is_empty());
     }
 
     #[test]
