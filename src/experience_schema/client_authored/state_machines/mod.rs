@@ -1,4 +1,5 @@
 pub mod api;
+pub mod state_machine_boot_handle_binding_schema;
 pub mod state_machine_boot_named_handle_binding_schema;
 pub mod state_machine_finite_domain_abstraction_schema;
 pub mod state_machine_local_field_schema;

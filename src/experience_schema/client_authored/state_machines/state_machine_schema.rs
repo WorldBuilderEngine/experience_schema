@@ -1,4 +1,5 @@
 use crate::client_authored::state_machines::api::StateMachineApiSchema;
+use crate::client_authored::state_machines::state_machine_boot_handle_binding_schema::StateMachineBootHandleBindingSchema;
 use crate::client_authored::state_machines::state_machine_boot_named_handle_binding_schema::StateMachineBootNamedHandleBindingSchema;
 use crate::client_authored::state_machines::state_machine_local_field_schema::StateMachineLocalFieldSchema;
 use crate::client_authored::state_machines::state_machine_local_schema::StateMachineLocalSchema;
@@ -25,6 +26,8 @@ pub struct StateMachineSchema {
     #[serde(default)]
     pub boot_named_handle_bindings: Vec<StateMachineBootNamedHandleBindingSchema>,
     #[serde(default)]
+    pub boot_handle_bindings: Vec<StateMachineBootHandleBindingSchema>,
+    #[serde(default)]
     pub machine_owned_collection_capacities: Vec<StateMachineOwnedCollectionCapacitySchema>,
     #[serde(default)]
     pub nodes: Vec<StateMachineNodeSchema>,
@@ -47,6 +50,7 @@ impl StateMachineSchema {
             deterministic_seed,
             machine_locals: Vec::new(),
             boot_named_handle_bindings: Vec::new(),
+            boot_handle_bindings: Vec::new(),
             machine_owned_collection_capacities: Vec::new(),
             nodes: Vec::new(),
         }
@@ -58,6 +62,10 @@ impl StateMachineSchema {
 
     pub fn boot_named_handle_bindings(&self) -> &[StateMachineBootNamedHandleBindingSchema] {
         self.boot_named_handle_bindings.as_slice()
+    }
+
+    pub fn boot_handle_bindings(&self) -> &[StateMachineBootHandleBindingSchema] {
+        self.boot_handle_bindings.as_slice()
     }
 
     pub fn register_machine_local(&mut self, local_id: impl Into<String>, properties: PropertyMap) {
@@ -131,6 +139,22 @@ impl StateMachineSchema {
         }
 
         self.boot_named_handle_bindings.push(binding);
+    }
+
+    pub fn register_boot_handle_binding(&mut self, binding: StateMachineBootHandleBindingSchema) {
+        if let Some(existing_binding_index) =
+            self.boot_handle_bindings
+                .iter()
+                .position(|existing_binding| {
+                    existing_binding.local_id == binding.local_id
+                        && existing_binding.property_id == binding.property_id
+                })
+        {
+            self.boot_handle_bindings[existing_binding_index] = binding;
+            return;
+        }
+
+        self.boot_handle_bindings.push(binding);
     }
 
     pub fn add_transition(
@@ -247,6 +271,8 @@ struct StateMachineSchemaBinaryWire {
     machine_owned_collection_capacities: Vec<StateMachineOwnedCollectionCapacitySchema>,
     #[prost(message, repeated, tag = "21")]
     nodes: Vec<StateMachineNodeSchema>,
+    #[prost(message, repeated, tag = "22")]
+    boot_handle_bindings: Vec<StateMachineBootHandleBindingSchema>,
 }
 
 impl From<StateMachineSchema> for StateMachineSchemaBinaryWire {
@@ -256,6 +282,7 @@ impl From<StateMachineSchema> for StateMachineSchemaBinaryWire {
             deterministic_seed,
             machine_locals,
             boot_named_handle_bindings,
+            boot_handle_bindings,
             machine_owned_collection_capacities,
             nodes,
         } = value;
@@ -264,6 +291,7 @@ impl From<StateMachineSchema> for StateMachineSchemaBinaryWire {
             deterministic_seed,
             machine_locals,
             boot_named_handle_bindings,
+            boot_handle_bindings,
             machine_owned_collection_capacities,
             nodes,
         }
@@ -277,6 +305,7 @@ impl StateMachineSchemaBinaryWire {
             deterministic_seed: self.deterministic_seed,
             machine_locals: self.machine_locals,
             boot_named_handle_bindings: self.boot_named_handle_bindings,
+            boot_handle_bindings: self.boot_handle_bindings,
             machine_owned_collection_capacities: self.machine_owned_collection_capacities,
             nodes: self.nodes,
         })
