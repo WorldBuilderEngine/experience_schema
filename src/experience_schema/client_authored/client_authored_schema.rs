@@ -1,7 +1,6 @@
 use crate::client_authored::{
     assets::asset_bundles_schema::AssetBundlesSchema,
-    cursors::cursor_sets_schema::CursorSetsSchema,
-    worlds::world_schema::WorldSchema,
+    cursors::cursor_sets_schema::CursorSetsSchema, worlds::world_schema::WorldSchema,
 };
 use crate::properties::{
     compiled_property_layout_schema::CompiledPropertyLayoutsSchema, property_map::PropertyMap,

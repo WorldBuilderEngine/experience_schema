@@ -89,8 +89,7 @@ fn compile_state_machine_boot_handle_bindings(
     state_machine: &mut StateMachineSchema,
     named_object_indices: &std::collections::HashMap<String, u32>,
 ) -> anyhow::Result<()> {
-    let named_bindings = std::mem::take(&mut state_machine.boot_named_handle_bindings);
-    for binding in named_bindings {
+    for binding in state_machine.boot_named_handle_bindings.clone() {
         let compiled_binding = match binding.resolved_handle_kind() {
             StateMachineBootNamedHandleKindSchema::Node => {
                 let Some(target_object_index) = named_object_indices
@@ -286,7 +285,30 @@ mod tests {
 
         let compiled_state_machine =
             &schema.client_authored_schema.worlds["default"].state_machines[0];
-        assert!(compiled_state_machine.boot_named_handle_bindings.is_empty());
+        assert_eq!(
+            compiled_state_machine.boot_named_handle_bindings,
+            vec![
+                StateMachineBootNamedHandleBindingSchema::new(
+                    "node_args",
+                    "target_node",
+                    StateMachineBootNamedHandleKindSchema::Node,
+                    "player",
+                ),
+                StateMachineBootNamedHandleBindingSchema::new(
+                    "camera_args",
+                    "target_camera",
+                    StateMachineBootNamedHandleKindSchema::Camera,
+                    "camera:main",
+                ),
+                StateMachineBootNamedHandleBindingSchema::new(
+                    "asset_args",
+                    "target_asset",
+                    StateMachineBootNamedHandleKindSchema::Asset,
+                    "ui:icons/start.png",
+                ),
+            ],
+            "compiled schemas keep named boot bindings as a compatibility fallback for runtimes that have not moved to dense object-index bindings yet"
+        );
         assert_eq!(
             compiled_state_machine.boot_handle_bindings,
             vec![
