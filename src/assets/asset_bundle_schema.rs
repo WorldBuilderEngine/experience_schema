@@ -28,6 +28,21 @@ impl Default for AssetBundleKind {
     }
 }
 
+/// Runtime loading policy for a bundle's payload bytes.
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
+pub enum AssetBundleLoadPolicy {
+    /// Bytes should be present before the experience becomes interactable.
+    Required = 0,
+    /// Bytes may be fetched opportunistically and can fall back to placeholders while unavailable.
+    Streamed = 1,
+}
+
+impl Default for AssetBundleLoadPolicy {
+    fn default() -> Self {
+        Self::Required
+    }
+}
+
 /// A single serialized asset entry.
 #[derive(Deserialize, Serialize, Clone, Default, Debug, PartialEq, Eq)]
 pub struct StoredAssetSchema {
@@ -81,6 +96,9 @@ pub struct AssetBundleSchema {
     pub bundle_id: String,
     /// Bundle source classification.
     pub bundle_kind: AssetBundleKind,
+    /// Runtime loading policy for bundle payload bytes.
+    #[serde(default)]
+    pub load_policy: AssetBundleLoadPolicy,
     /// Serialized assets for this bundle.
     pub assets: Vec<StoredAssetSchema>,
 }
@@ -90,8 +108,14 @@ impl AssetBundleSchema {
         Self {
             bundle_id: normalize_bundle_identifier(bundle_id),
             bundle_kind,
+            load_policy: AssetBundleLoadPolicy::Required,
             assets: Vec::new(),
         }
+    }
+
+    pub fn with_load_policy(mut self, load_policy: AssetBundleLoadPolicy) -> Self {
+        self.load_policy = load_policy;
+        self
     }
 
     pub fn upsert_asset(&mut self, asset_path: PathBuf, asset_data: Vec<u8>) {
@@ -175,6 +199,8 @@ struct AssetBundleSchemaBinaryWire {
     bundle_kind: i32,
     #[prost(message, repeated, tag = "18")]
     assets: Vec<StoredAssetSchema>,
+    #[prost(int32, tag = "19")]
+    load_policy: i32,
 }
 
 impl From<AssetBundleSchema> for AssetBundleSchemaBinaryWire {
@@ -182,6 +208,7 @@ impl From<AssetBundleSchema> for AssetBundleSchemaBinaryWire {
         Self {
             bundle_id: value.bundle_id,
             bundle_kind: value.bundle_kind as i32,
+            load_policy: value.load_policy as i32,
             assets: value.assets,
         }
     }
@@ -195,6 +222,10 @@ impl AssetBundleSchemaBinaryWire {
                 0 => AssetBundleKind::Unpacked,
                 2 => AssetBundleKind::Generated,
                 _ => AssetBundleKind::Packed,
+            },
+            load_policy: match self.load_policy {
+                1 => AssetBundleLoadPolicy::Streamed,
+                _ => AssetBundleLoadPolicy::Required,
             },
             assets: self.assets,
         }
@@ -263,7 +294,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{AssetBundleKind, AssetBundleSchema, StoredAssetSchema};
+    use super::{AssetBundleKind, AssetBundleLoadPolicy, AssetBundleSchema, StoredAssetSchema};
     use prost::Message;
     use std::path::PathBuf;
 
@@ -280,6 +311,7 @@ mod tests {
     #[test]
     fn prost_round_trips_asset_bundle_schema_as_binary_message() {
         let mut bundle = AssetBundleSchema::new("ui", AssetBundleKind::Packed);
+        bundle.load_policy = AssetBundleLoadPolicy::Streamed;
         bundle.upsert_asset(PathBuf::from("sprites/example.png"), vec![1, 2, 3]);
 
         let encoded = bundle.encode_to_vec();
