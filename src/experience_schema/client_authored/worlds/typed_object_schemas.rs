@@ -205,3 +205,104 @@ impl StaticTextObjectSchema {
         }
     }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UiScalarSchema {
+    pub scale: f64,
+    pub offset_px: f64,
+}
+
+impl UiScalarSchema {
+    pub const fn new(scale: f64, offset_px: f64) -> Self {
+        Self { scale, offset_px }
+    }
+
+    pub const fn px(offset_px: f64) -> Self {
+        Self::new(0.0, offset_px)
+    }
+
+    pub const fn fraction(scale: f64) -> Self {
+        Self::new(scale, 0.0)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UiRectSpecSchema {
+    pub left: UiScalarSchema,
+    pub top: UiScalarSchema,
+    pub right: UiScalarSchema,
+    pub bottom: UiScalarSchema,
+}
+
+impl UiRectSpecSchema {
+    pub const FILL_PARENT: Self = Self {
+        left: UiScalarSchema::new(0.0, 0.0),
+        top: UiScalarSchema::new(0.0, 0.0),
+        right: UiScalarSchema::new(1.0, 0.0),
+        bottom: UiScalarSchema::new(1.0, 0.0),
+    };
+
+    pub const fn from_edges(
+        left: UiScalarSchema,
+        top: UiScalarSchema,
+        right: UiScalarSchema,
+        bottom: UiScalarSchema,
+    ) -> Self {
+        Self {
+            left,
+            top,
+            right,
+            bottom,
+        }
+    }
+}
+
+impl Default for UiRectSpecSchema {
+    fn default() -> Self {
+        Self::FILL_PARENT
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UiRectStyleSchema {
+    pub fill_rgba: [f64; 4],
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stroke_rgba: Option<[f64; 4]>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stroke_width_px: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub corner_radius_px: Option<f64>,
+}
+
+impl UiRectStyleSchema {
+    pub fn filled(fill_rgba: [f64; 4]) -> Self {
+        Self {
+            fill_rgba,
+            stroke_rgba: None,
+            stroke_width_px: None,
+            corner_radius_px: None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UiRectPrimitiveObjectSchema {
+    #[serde(default)]
+    pub rect: UiRectSpecSchema,
+    pub style: UiRectStyleSchema,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_world_object_index: Option<u32>,
+    #[serde(default)]
+    pub clip_to_parent: bool,
+}
+
+impl UiRectPrimitiveObjectSchema {
+    pub fn new(rect: UiRectSpecSchema, style: UiRectStyleSchema) -> Self {
+        Self {
+            rect,
+            style,
+            parent_world_object_index: None,
+            clip_to_parent: false,
+        }
+    }
+}

@@ -3,6 +3,7 @@ use crate::client_authored::worlds::hotspot_object_schemas::{
 };
 use crate::client_authored::worlds::typed_object_schemas::{
     CameraObjectSchema, StaticSpriteObjectSchema, StaticTextObjectSchema,
+    UiRectPrimitiveObjectSchema,
 };
 use serde::{Deserialize, Serialize};
 
@@ -12,6 +13,7 @@ pub enum KindedWorldObjectSchema {
     Camera(CameraObjectSchema),
     StaticSprite(StaticSpriteObjectSchema),
     StaticText(StaticTextObjectSchema),
+    UiRect(UiRectPrimitiveObjectSchema),
     TransitionHotspot(TransitionHotspotObjectSchema),
     InteractableHotspot(InteractableHotspotObjectSchema),
     HotspotMarkerSprite(HotspotMarkerSpriteObjectSchema),
@@ -23,6 +25,7 @@ impl KindedWorldObjectSchema {
             Self::Camera(_) => "camera",
             Self::StaticSprite(_) => "static_sprite",
             Self::StaticText(_) => "static_text",
+            Self::UiRect(_) => "ui_rect",
             Self::TransitionHotspot(transition_hotspot) => transition_hotspot.object_type.as_str(),
             Self::InteractableHotspot(interactable_hotspot) => {
                 interactable_hotspot.object_type.as_str()
