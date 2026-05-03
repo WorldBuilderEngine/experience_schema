@@ -237,7 +237,7 @@ impl<'a> AuthoredWorldObjectView<'a> {
                 "rotation_deg" => Some(hotspot_marker.rotation_deg_xyz.to_vec()),
                 _ => self.property_view.and_then(|property_view| property_view.float_array(property_name).cloned()),
             },
-            Some(KindedWorldObjectSchema::UiRect(_)) => self
+            Some(KindedWorldObjectSchema::UiRect(_) | KindedWorldObjectSchema::UiHitRegion(_)) => self
                 .property_view
                 .and_then(|property_view| property_view.float_array(property_name).cloned()),
             None => self

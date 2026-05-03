@@ -4,8 +4,7 @@ use crate::client_authored::worlds::hotspot_object_schemas::{
 };
 use crate::client_authored::worlds::kinded_world_object_schema::KindedWorldObjectSchema;
 use crate::client_authored::worlds::typed_object_schemas::{
-    CameraObjectSchema, StaticSpriteObjectSchema, StaticTextObjectSchema,
-    UiRectPrimitiveObjectSchema,
+    CameraObjectSchema, StaticSpriteObjectSchema, StaticTextObjectSchema, UiHitRegionPrimitiveObjectSchema, UiRectPrimitiveObjectSchema,
 };
 use crate::properties::property_map::PropertyMap;
 use prost::bytes::{Buf, BufMut};
@@ -68,6 +67,14 @@ impl WorldObjectSchema {
     pub fn ui_rect(ui_rect: UiRectPrimitiveObjectSchema) -> Self {
         Self {
             kinded: Some(KindedWorldObjectSchema::UiRect(ui_rect)),
+            properties: PropertyMap::new(),
+            state_machines: Vec::new(),
+        }
+    }
+
+    pub fn ui_hit_region(ui_hit_region: UiHitRegionPrimitiveObjectSchema) -> Self {
+        Self {
+            kinded: Some(KindedWorldObjectSchema::UiHitRegion(ui_hit_region)),
             properties: PropertyMap::new(),
             state_machines: Vec::new(),
         }
@@ -182,7 +189,7 @@ mod tests {
     use crate::client_authored::worlds::kinded_world_object_schema::KindedWorldObjectSchema;
     use crate::client_authored::worlds::typed_object_schemas::{
         CameraObjectSchema, CameraProjectionSchema, StaticSpriteObjectSchema,
-        UiRectPrimitiveObjectSchema, UiRectSpecSchema, UiRectStyleSchema,
+        UiHitRegionPrimitiveObjectSchema, UiRectPrimitiveObjectSchema, UiRectSpecSchema, UiRectStyleSchema,
     };
     use crate::client_authored::worlds::world_object_view::AuthoredWorldObjectView;
     use prost::Message;
@@ -261,6 +268,19 @@ mod tests {
         assert!(matches!(
             world_object.kinded,
             Some(KindedWorldObjectSchema::UiRect(_))
+        ));
+    }
+
+    #[test]
+    fn ui_hit_region_constructor_emits_kinded_payload_without_mirrored_property_bag() {
+        let world_object = WorldObjectSchema::ui_hit_region(UiHitRegionPrimitiveObjectSchema::new(UiRectSpecSchema::default()));
+        let world_object_view = AuthoredWorldObjectView::new(&world_object);
+
+        assert!(world_object.properties.is_empty());
+        assert_eq!(world_object_view.object_type(), Some("ui_hit_region"));
+        assert!(matches!(
+            world_object.kinded,
+            Some(KindedWorldObjectSchema::UiHitRegion(_))
         ));
     }
 

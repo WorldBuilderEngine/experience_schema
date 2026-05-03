@@ -306,3 +306,23 @@ impl UiRectPrimitiveObjectSchema {
         }
     }
 }
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UiHitRegionPrimitiveObjectSchema {
+    #[serde(default)]
+    pub rect: UiRectSpecSchema,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_world_object_index: Option<u32>,
+    #[serde(default)]
+    pub clip_to_parent: bool,
+}
+
+impl UiHitRegionPrimitiveObjectSchema {
+    pub fn new(rect: UiRectSpecSchema) -> Self {
+        Self {
+            rect,
+            parent_world_object_index: None,
+            clip_to_parent: false,
+        }
+    }
+}
